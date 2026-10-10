@@ -1,0 +1,16 @@
+#include "ggml-backend.h"
+#include "ggml.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cstring>
+#include <fcntl.h>
+#include <vector>
+#include <unistd.h>
+static bool rd(int f,void*p,size_t n,off_t o){for(size_t d=0;d<n;){ssize_t r=pread(f,(uint8_t*)p+d,n-d,o+(off_t)d);if(r<=0)return false;d+=(size_t)r;}return true;}
+static uint64_t hashv(const float*p,size_t n){uint64_t h=1469598103934665603ull;for(size_t i=0;i<n;++i){uint32_t u;memcpy(&u,p+i,4);h^=u;h*=1099511628211ull;}return h;}
+static uint64_t dump(ggml_backend_t be,ggml_tensor*t,const char*path){std::vector<float>v((size_t)ggml_nelements(t));ggml_backend_tensor_get(t,v.data(),0,v.size()*4);FILE*f=fopen(path,"wb");if(f){fwrite(v.data(),4,v.size(),f);fclose(f);}return hashv(v.data(),v.size());}
+int main(int ac,char**av){
+ // shard gate up down scalar hidden output-prefix
+ if(ac!=8)return 2;int f=open(av[1],O_RDONLY|O_CLOEXEC);if(f<0)return 3;uint64_t o[4];for(int i=0;i<4;++i)o[i]=strtoull(av[2+i],0,0);std::vector<uint8_t>gw(870400),uw(870400),dw(921600);std::vector<float>sg(2560),x(2560);if(!rd(f,gw.data(),gw.size(),o[0])||!rd(f,uw.data(),uw.size(),o[1])||!rd(f,dw.data(),dw.size(),o[2])||!rd(f,sg.data(),sg.size()*4,o[3]))return 4;close(f);FILE*hf=fopen(av[6],"rb");if(!hf)return 5;if(fread(x.data(),4,x.size(),hf)!=x.size())return 6;fclose(hf);
+ ggml_backend_load_all();ggml_backend_t be=ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,0);ggml_init_params ip={64*1024*1024,0,true};ggml_context*c=ggml_init(ip);ggml_tensor*G=ggml_new_tensor_2d(c,(ggml_type)23,2560,640),*U=ggml_new_tensor_2d(c,(ggml_type)23,2560,640),*D=ggml_new_tensor_2d(c,(ggml_type)20,640,2560),*S=ggml_new_tensor_2d(c,GGML_TYPE_F32,2560,1),*X=ggml_new_tensor_2d(c,GGML_TYPE_F32,2560,1);ggml_tensor*gp=ggml_mul_mat(c,G,X);ggml_tensor*up=ggml_mul_mat(c,U,X);ggml_tensor*sa=ggml_silu(c,gp);ggml_tensor*prod=ggml_mul(c,sa,up);ggml_tensor*down=ggml_mul_mat(c,D,prod);ggml_tensor*ctrl=ggml_mul_mat(c,S,X);ggml_tensor*sig=ggml_sigmoid(c,ctrl);ggml_tensor*contrib=ggml_mul(c,down,sig);ggml_cgraph*g=ggml_new_graph(c);ggml_build_forward_expand(g,contrib);ggml_backend_buffer_t b=ggml_backend_alloc_ctx_tensors(c,be);G->data=gw.data();U->data=uw.data();D->data=dw.data();S->data=sg.data();ggml_backend_tensor_set(X,x.data(),0,x.size()*4);if(ggml_backend_graph_compute(be,g)!=GGML_STATUS_SUCCESS)return 7;char p[512];uint64_t h0=dump(be,gp,(snprintf(p,sizeof(p),"%s.gate.f32",av[7]),p)),h1=dump(be,up,(snprintf(p,sizeof(p),"%s.up.f32",av[7]),p)),h2=dump(be,sa,(snprintf(p,sizeof(p),"%s.silu.f32",av[7]),p)),h3=dump(be,prod,(snprintf(p,sizeof(p),"%s.prod.f32",av[7]),p)),h4=dump(be,down,(snprintf(p,sizeof(p),"%s.down.f32",av[7]),p)),h5=dump(be,ctrl,(snprintf(p,sizeof(p),"%s.ctrl.f32",av[7]),p)),h6=dump(be,sig,(snprintf(p,sizeof(p),"%s.sigmoid.f32",av[7]),p)),h7=dump(be,contrib,(snprintf(p,sizeof(p),"%s.contrib.f32",av[7]),p));printf("FLASHNEXT_REFERENCE_SHARED gate=%016llx up=%016llx silu=%016llx prod=%016llx down=%016llx ctrl=%016llx sigmoid=%016llx contribution=%016llx\n",(unsigned long long)h0,(unsigned long long)h1,(unsigned long long)h2,(unsigned long long)h3,(unsigned long long)h4,(unsigned long long)h5,(unsigned long long)h6,(unsigned long long)h7);ggml_backend_buffer_free(b);ggml_free(c);ggml_backend_free(be);return 0;}

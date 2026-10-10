@@ -1,0 +1,5 @@
+[project]
+name = "cortex-stream-forge"
+version = "0.1.0"
+description = "Architecture-neutral orchestration for Cortex external-weight streaming"
+requires-python = ">=3.10"

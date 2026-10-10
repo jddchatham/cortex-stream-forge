@@ -1,0 +1,40 @@
+# Model weights and tokenizer artifacts
+*.gguf
+*.gguf.inp
+*.gguf.out
+*.safetensors
+*.bin
+*.f32
+
+# Build and generated output
+*-build/
+build/
+runtime-*/bin/
+runtime-*/models/
+runtime-*/runtime-build/
+runtime-*/ggml-build/
+runtime-*/.cache/
+runtime-*/CMakeFiles/
+runtime-*/Testing/
+runtime-*/compile_commands.json
+runtime-*/CMakeCache.txt
+runtime-*/Makefile
+runtime-*/cmake_install.cmake
+
+# Local caches, logs, and Python artifacts
+*.log
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+
+# Local tools and generated binaries
+tools/libio_trace.so
+bin/
+
+# Nonessential vendored/project artifacts for this runtime checkpoint
+runtime-flashnext-layer-exp/docs/
+runtime-flashnext-layer-exp/benches/
+runtime-flashnext-layer-exp/media/
+runtime-flashnext-layer-exp/skills/
+runtime-flashnext-layer-exp/tools/ui/
