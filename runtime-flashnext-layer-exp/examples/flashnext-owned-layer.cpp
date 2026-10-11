@@ -886,8 +886,21 @@ static layer_transaction_result run_layer_decode(
     if (!batch.embd) {
         return result;
     }
+    // Qwen4Exp uses three position planes for embedding batches.  The legacy
+    // llama_batch allocator reserves one position per token, so provide the
+    // two additional planes explicitly before llama_batch_compat reads them.
+    // Uninitialized M-RoPE coordinates otherwise enter the serialized KV
+    // extension and make recreated full-attention layers run-dependent.
+    free(batch.pos);
+    batch.pos = (llama_pos *) calloc(3, sizeof(llama_pos));
+    if (!batch.pos) {
+        llama_batch_free(batch);
+        return result;
+    }
     std::memcpy(batch.embd, owned_hidden.data(), owned_hidden.size() * sizeof(float));
     batch.pos[0] = position;
+    batch.pos[1] = 0;
+    batch.pos[2] = 0;
     batch.n_seq_id[0] = 1;
     batch.seq_id[0][0] = 0;
     batch.logits[0] = 1;
