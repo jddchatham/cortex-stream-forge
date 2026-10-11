@@ -32,11 +32,11 @@ static void cortex_diag_ssm_conv_operand(const char * role, const ggml_tensor * 
         }
     }
     std::fprintf(stderr,
-        "CORTEX_SSM_CONV_OPERAND role=%s name=%s op=%d type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu data=%p buffer=%p nan=%zu inf=%zu first_bad=%s first=%g\n",
+        "CORTEX_SSM_CONV_OPERAND role=%s name=%s op=%d type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu data=%p buffer=%p nan=%zu inf=%zu first_bad_index=%lld first=%g\n",
         role, t->name, (int) t->op, (int) t->type,
         (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
         t->nb[0], t->nb[1], t->nb[2], t->nb[3], ggml_nbytes(t), t->data, (void *)t->buffer,
-        nan_count, inf_count, bad == n ? "NONE" : "PRESENT", first);
+        nan_count, inf_count, bad == n ? -1LL : (long long) bad, first);
 }
 
 // ggml_compute_forward_dup
