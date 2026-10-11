@@ -57,6 +57,7 @@ public:
     bool prepare(const std::vector<llama_ubatch> & ubatches);
 
     ggml_tensor * debug_get_r_l(int32_t il) const { return r_l[il]; }
+    ggml_tensor * debug_get_p_l(int32_t il) const { return p_l[il]; }
     ggml_tensor * debug_get_s_l(int32_t il) const { return s_l[il]; }
 
     // find a contiguous slot of memory cells and emplace the ubatch there

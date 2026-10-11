@@ -15,6 +15,8 @@
 #include <array>
 #include <atomic>
 #include <map>
+#include <mutex>
+#include <unordered_map>
 #include <vector>
 
 struct llama_model;
@@ -77,7 +79,13 @@ struct llama_context {
     llama_memory_t get_memory() const;
 
     size_t debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap);
+    std::string debug_recurrent_state_metadata(int layer) const;
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
+    bool debug_diag_moe_provenance(uint64_t & execution_id, uint64_t & hash) const {
+        execution_id = flashnext_diag_moe_execution_id;
+        hash = flashnext_diag_moe_hash;
+        return execution_id != 0 && hash != 0;
+    }
     bool debug_copy_final_head_output(std::vector<uint8_t> & bytes, std::array<int64_t, 4> & ne,
             std::array<size_t, 4> & nb, enum ggml_type & type, std::string & name);
     size_t debug_copy_cpu_operand(const char * name, void * dst, size_t cap) const;
@@ -370,6 +378,14 @@ private:
 
     ggml_backend_t backend_cpu = nullptr;
     std::atomic<uint64_t> flashnext_post_node_observer_invocations{0};
+    std::unordered_map<const ggml_tensor *, int> flashnext_graph_probe_indices;
+    bool flashnext_graph_node_probe_active = false;
+    uint64_t flashnext_graph_execution_id = 0;
+    uint64_t flashnext_diag_moe_execution_id = 0;
+    uint64_t flashnext_diag_moe_hash = 0;
+    uint64_t flashnext_diag_moe_stored_execution_id = 0;
+    std::mutex flashnext_diag_moe_mutex;
+    std::vector<uint8_t> flashnext_diag_moe_owned;
     bool flashnext_post_node_observer_active = false;
     bool flashnext_concat_capture_found = false;
     ggml_cpu_diagnostic_target flashnext_cpu_diagnostic_target{};

@@ -181,6 +181,10 @@ public:
     bool next()  override;
     bool apply() override;
 
+    // Diagnostic-only snapshot of logical post-apply ownership/mapping.
+    // Returns copied scalar/vector data; no internal pointers are exposed.
+    std::string debug_post_apply_mapping(llama_seq_id seq_id) const;
+
     //
     // llama_memory_hybrid_idx_context specific API
     //

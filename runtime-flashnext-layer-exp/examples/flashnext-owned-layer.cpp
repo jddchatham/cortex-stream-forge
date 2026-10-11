@@ -345,6 +345,7 @@ struct layer_transaction_result {
     std::vector<uint8_t> state_before;
     std::array<float, flashnext_layer_transaction::hidden * flashnext_layer_transaction::streams> output{};
     uint64_t output_hash = 0;
+    uint64_t graph_a_hash = 0;
     uint64_t sparse_output_hash = 0;
     bool state_committed = false;
     bool rollback_restored = false;
@@ -427,19 +428,57 @@ struct flashnext_transaction_context {
     bool state_committed = false;
 };
 
+// Optional coordinator boundary.  The callback owns the vault adapter and
+// receives the already-synchronized context; nullptr/disabled preserves the
+// historical path exactly and performs no allocation or I/O.
+struct flashnext_state_vault_hooks {
+    bool enabled = false;
+    void * userdata = nullptr;
+    bool (*sync_export_commit)(void * userdata, llama_context * ctx,
+                               llama_seq_id sequence_id, uint32_t layer,
+                               int position, uint64_t generation) = nullptr;
+};
+
 static bool capture_transaction_router(
         flashnext_transaction_context & txc, llama_context * ctx, const flashnext_layer_descriptor & layer) {
     const std::string suffix = "-" + std::to_string(layer.index);
-    const size_t moe_bytes = ctx->debug_copy_flashnext_tensor(("diag_moe_input" + suffix).c_str(),
-        txc.moe_input.data(), sizeof(txc.moe_input));
     const size_t router_bytes = ctx->debug_copy_flashnext_tensor(("diag_router_logits" + suffix).c_str(),
         txc.router_logits.data(), sizeof(txc.router_logits));
     const size_t residual_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_residual" + suffix).c_str(),
         txc.residual_hc.data(), sizeof(txc.residual_hc));
     const size_t inject_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_inject" + suffix).c_str(),
         txc.injection.data(), sizeof(txc.injection));
+    const size_t moe_bytes = ctx->debug_copy_flashnext_tensor(("diag_moe_input" + suffix).c_str(),
+        txc.moe_input.data(), sizeof(txc.moe_input));
+    const uint64_t destination_byte_hash = hash_bytes(
+        reinterpret_cast<const uint8_t *>(txc.moe_input.data()), sizeof(txc.moe_input));
+    std::printf("CORTEX_MOE_DEST_AFTER_ASSIGN moe=%p hash=%016llx\n",
+        (void *) txc.moe_input.data(),
+        (unsigned long long) hash_f32(txc.moe_input.data(), txc.moe_input.size()));
+    std::printf("CORTEX_MOE_DEST_BYTE_HASH hash=%016llx\n",
+        (unsigned long long) destination_byte_hash);
+    std::printf("CORTEX_ROUTER_HASH byte=%016llx f32=%016llx bytes=%zu\n",
+        (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(txc.router_logits.data()), sizeof(txc.router_logits)),
+        (unsigned long long) hash_f32(txc.router_logits.data(), txc.router_logits.size()),
+        sizeof(txc.router_logits));
+    std::printf("CORTEX_GRAPH_B_HANDOFF residual_byte=%016llx inject_byte=%016llx residual_bytes=%zu inject_bytes=%zu\n",
+        (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(txc.residual_hc.data()), sizeof(txc.residual_hc)),
+        (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(txc.injection.data()), sizeof(txc.injection)),
+        sizeof(txc.residual_hc), sizeof(txc.injection));
+    std::fflush(stdout);
     if (moe_bytes != sizeof(txc.moe_input) || router_bytes != sizeof(txc.router_logits) ||
         residual_bytes != sizeof(txc.residual_hc) || inject_bytes != sizeof(txc.injection)) return false;
+    uint64_t producer_execution_id = 0, producer_hash = 0;
+    const bool producer_valid = ctx->debug_diag_moe_provenance(producer_execution_id, producer_hash);
+    std::printf("CORTEX_MOE_COPY layer=%u position=%d sequence=0 producer_execution_id=%llu "
+        "producer_byte_hash=%016llx destination_byte_hash=%016llx destination_f32_hash=%016llx "
+        "bytes=%zu producer_valid=%s\n",
+        layer.index, txc.values.position, (unsigned long long) producer_execution_id,
+        (unsigned long long) producer_hash,
+        (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(txc.moe_input.data()), sizeof(txc.moe_input)),
+        (unsigned long long) hash_f32(txc.moe_input.data(), txc.moe_input.size()),
+        sizeof(txc.moe_input), producer_valid ? "YES" : "NO");
+    std::fflush(stdout);
     for (float x : txc.moe_input) if (!std::isfinite(x)) return false;
     for (float x : txc.router_logits) if (!std::isfinite(x)) return false;
     for (float x : txc.residual_hc) if (!std::isfinite(x)) return false;
@@ -739,20 +778,20 @@ static layer_transaction_result run_layer_decode(
 
 static layer_transaction_result run_layer_transaction(
         llama_context * ctx, uint32_t layer, int position, const std::vector<float> & owned_hidden,
-        const std::string & index_path) {
+        const std::string & index_path, const flashnext_state_vault_hooks * vault_hooks = nullptr) {
     layer_transaction_result result = run_layer_decode(ctx, position, owned_hidden);
     if (result.decode_status != 0) { result.failure_stage = "graph_a_decode"; return result; }
     result.graph_a_ok = true;
-    // The CPU operand diagnostic is a narrower capture path.  It must not be
-    // rejected because the optional HC boundary-name collector did not find
-    // every historical alias; the exact MUL_MAT source is captured below by
-    // the execution-scoped CPU descriptor.
-    if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr &&
-        std::getenv("CORTEX_FLASHNEXT_CPU_OPERAND_CAPTURE") == nullptr) {
-        const bool captured = capture_hc_attention_boundaries(ctx, (int) layer);
-        if (!captured) {
-            LLAMA_LOG_INFO("FLASHNEXT_HC_BOUNDARY_CAPTURE_INCOMPLETE continuing_with_production_transaction=YES\n");
-        }
+    if (std::getenv("CORTEX_FLASHNEXT_TRACE_GRAPH_A") != nullptr && position == 1) {
+        std::printf("GRAPH_A_ENTRY layer=%u position=%d sequence=0 input_hash=%016llx "
+                    "recurrent_snapshot_hash=%016llx state_bytes=%zu state_metadata=\"%s\"\n",
+            layer, position,
+            (unsigned long long) hash_f32(owned_hidden.data(), owned_hidden.size()),
+            (unsigned long long) (result.state_before.empty() ? 0 :
+                hash_bytes(result.state_before.data(), result.state_before.size())),
+            result.state_before.size(),
+            ctx->debug_recurrent_state_metadata((int) layer).c_str());
+        std::fflush(stdout);
     }
     flashnext_transaction_context txc;
     txc.ctx = ctx;
@@ -766,6 +805,17 @@ static layer_transaction_result run_layer_transaction(
     txc.values.position = position;
     flashnext_tensor_index index;
     txc.tensor_index = &index;
+    // The CPU operand diagnostic is a narrower capture path.  It must not be
+    // rejected because the optional HC boundary-name collector did not find
+    // every historical alias; the exact MUL_MAT source is captured below by
+    // the execution-scoped CPU descriptor.
+    if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr &&
+        std::getenv("CORTEX_FLASHNEXT_CPU_OPERAND_CAPTURE") == nullptr) {
+        const bool captured = capture_hc_attention_boundaries(ctx, (int) layer);
+        if (!captured) {
+            LLAMA_LOG_INFO("FLASHNEXT_HC_BOUNDARY_CAPTURE_INCOMPLETE continuing_with_production_transaction=YES\n");
+        }
+    }
     if (std::getenv("CORTEX_FLASHNEXT_HC_ORACLE") != nullptr &&
         std::getenv("CORTEX_FLASHNEXT_HC_ORACLE_OUTER_ONLY") == nullptr) {
         std::string hc_error;
@@ -775,7 +825,28 @@ static layer_transaction_result run_layer_transaction(
         if (!hc_ok) { result.failure_stage = "hc_attention_oracle"; }
     }
     const bool router_capture_ok = capture_transaction_router(txc, ctx, txc.layer_desc);
+    if (router_capture_ok) result.graph_a_hash = hash_f32(txc.moe_input.data(), txc.moe_input.size());
+    if (router_capture_ok && std::getenv("CORTEX_FLASHNEXT_TRACE_GRAPH_A") != nullptr) {
+        std::printf("GRAPH_A_BOUNDARY layer=%u position=%d input_hash=%016llx output_hash=%016llx\n",
+            layer, position,
+            (unsigned long long) hash_f32(owned_hidden.data(), owned_hidden.size()),
+            (unsigned long long) hash_f32(txc.moe_input.data(), txc.moe_input.size()));
+        std::fflush(stdout);
+    }
+    if (router_capture_ok && std::getenv("CORTEX_FLASHNEXT_TRACE_POSITION1") != nullptr) {
+        std::printf("TX_TRACE layer=%u position=%d stage=GRAPH_A input_hash=%016llx moe_input_hash=%016llx\n",
+            layer, position, (unsigned long long) hash_f32(owned_hidden.data(), owned_hidden.size()),
+            (unsigned long long) hash_f32(txc.moe_input.data(), txc.moe_input.size()));
+        std::fflush(stdout);
+    }
     const bool sparse_moe_ok = router_capture_ok && execute_transaction_sparse_moe(txc, index_path, error);
+    if (std::getenv("CORTEX_FLASHNEXT_TRACE_POSITION1") != nullptr) {
+        std::printf("TX_TRACE layer=%u position=%d stage=ROUTER capture=%s router_hash=%016llx ids=",
+            layer, position, router_capture_ok ? "PASS" : "FAIL",
+            (unsigned long long) hash_f32(txc.router_logits.data(), txc.router_logits.size()));
+        for (size_t i = 0; i < txc.selected_ids.size(); ++i) std::printf("%s%d", i ? "," : "", txc.selected_ids[i]);
+        std::printf("\n"); std::fflush(stdout);
+    }
     if (!sparse_moe_ok) {
         std::fprintf(stderr, "FLASHNEXT_TRANSACTION_FAILURE layer=%u stage=capture_or_sparse_moe router_capture=%s error=%s\n",
             layer, router_capture_ok ? "PASS" : "FAIL", error.empty() ? "none" : error.c_str());
@@ -786,6 +857,10 @@ static layer_transaction_result run_layer_transaction(
     }
     result.sparse_moe_ok = true;
     result.sparse_output_hash = hash_f32(txc.values.selected_moe.data(), txc.values.selected_moe.size());
+    if (std::getenv("CORTEX_FLASHNEXT_TRACE_POSITION1") != nullptr) {
+        std::printf("TX_TRACE layer=%u position=%d stage=SPARSE_MOE hash=%016llx\n", layer, position,
+            (unsigned long long) result.sparse_output_hash); std::fflush(stdout);
+    }
     if (!execute_transaction_graph_b(txc, index_path, error)) {
         if (!result.state_before.empty()) llama_state_seq_set_data(ctx, result.state_before.data(), result.state_before.size(), 0);
         result.failure_stage = "graph_b";
@@ -795,6 +870,10 @@ static layer_transaction_result run_layer_transaction(
     result.graph_b_ok = true;
     result.output = txc.output;
     result.output_hash = hash_f32(result.output.data(), result.output.size());
+    if (std::getenv("CORTEX_FLASHNEXT_TRACE_POSITION1") != nullptr) {
+        std::printf("TX_TRACE layer=%u position=%d stage=GRAPH_B hash=%016llx\n", layer, position,
+            (unsigned long long) result.output_hash); std::fflush(stdout);
+    }
     if (std::getenv("CORTEX_FLASHNEXT_SHARED_ORACLE") != nullptr) {
         std::array<float, flashnext_layer_transaction::hidden> reference_shared{};
         std::string reference_error;
@@ -890,6 +969,17 @@ static layer_transaction_result run_layer_transaction(
         result.rollback_restored = true;
         return result;
     }
+    if (vault_hooks && vault_hooks->enabled && vault_hooks->sync_export_commit) {
+        // llama_decode has completed and run_layer_decode synchronized it;
+        // the callback is therefore at the complete token-position boundary.
+        if (!vault_hooks->sync_export_commit(vault_hooks->userdata, ctx, 0, layer,
+                                              position, (uint64_t) position)) {
+            if (!result.state_before.empty()) llama_state_seq_set_data(ctx, result.state_before.data(), result.state_before.size(), 0);
+            result.failure_stage = "state_vault_commit";
+            result.rollback_restored = true;
+            return result;
+        }
+    }
     result.state_committed = true;
     return result;
 }
@@ -913,6 +1003,11 @@ int main(int argc, char ** argv) {
         // boundary so dense MUL_MAT_ID expert tensors are not reachable by
         // graph allocation.
         setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
+        // The coordinator's sparse-MoE bridge consumes these optional,
+        // execution-owned boundary copies.  Range mode must enable the
+        // existing capture path before graph construction; this does not
+        // alter graph mathematics or expert selection.
+        setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
         if (std::getenv("CORTEX_FLASHNEXT_PRE_MOE") != nullptr) {
             LLAMA_LOG_INFO("FLASHNEXT_PRE_MOE_RUN start=1 end=2\n");
         }
@@ -988,6 +1083,25 @@ int main(int argc, char ** argv) {
         const uint64_t before = hash_f32(owned_hidden.data(), owned_hidden.size());
         std::printf("FLASHNEXT_RANGE_INPUT owned=YES shape=[2560,4,1] bytes=%zu hash_before=%016llx\n",
                 owned_hidden.size()*sizeof(float), (unsigned long long) before);
+        if (std::getenv("CORTEX_FLASHNEXT_FRESH_CONTEXT_TEST") != nullptr) {
+            llama_context * f1_ctx = llama_init_from_model(model, cp);
+            const layer_transaction_result f1 = f1_ctx ?
+                run_layer_transaction(f1_ctx, target_layer, 0, owned_hidden, argv[2]) : layer_transaction_result{};
+            std::printf("F1_CONTEXT_POSITION0=%s GRAPH_A_HASH=%016llx OUTPUT_HASH=%016llx\n",
+                f1.state_committed ? "PASS" : "FAIL",
+                (unsigned long long) f1.graph_a_hash, (unsigned long long) f1.output_hash);
+            std::fflush(stdout);
+            if (f1_ctx) llama_free(f1_ctx);
+            llama_context * f2_ctx = llama_init_from_model(model, cp);
+            const layer_transaction_result f2 = f2_ctx ?
+                run_layer_transaction(f2_ctx, target_layer, 0, owned_hidden, argv[2]) : layer_transaction_result{};
+            std::printf("F2_CONTEXT_POSITION0=%s GRAPH_A_HASH=%016llx OUTPUT_HASH=%016llx FRESH_CONTEXT_POSITION0_MATCH=%s\n",
+                f2.state_committed ? "PASS" : "FAIL",
+                (unsigned long long) f2.graph_a_hash, (unsigned long long) f2.output_hash,
+                f1.graph_a_hash == f2.graph_a_hash && f1.output_hash == f2.output_hash ? "YES" : "NO");
+            std::fflush(stdout);
+            if (f2_ctx) llama_free(f2_ctx);
+        }
         layer_transaction_result transaction;
         bool range_rollback_pass = false;
         if (std::getenv("CORTEX_FLASHNEXT_ROLLBACK_TEST") != nullptr) {
@@ -1373,6 +1487,152 @@ int main(int argc, char ** argv) {
             std::printf("\nPOSITION0_OUTPUT_HASH=%016llx UNSELECTED_EXPERT_READS=%llu\n",
                 (unsigned long long) transaction.output_hash,
                 (unsigned long long) transaction.unselected_expert_reads);
+            const bool state_roundtrip_requested = std::getenv("CORTEX_FLASHNEXT_STATE_ROUNDTRIP") != nullptr;
+            if (state_roundtrip_requested && !transaction.state_committed) {
+                std::printf("STATE_ROUNDTRIP_SKIPPED reason=transaction_not_committed\n"); std::fflush(stdout);
+            } else if (state_roundtrip_requested && transaction.state_before.empty()) {
+                std::printf("STATE_ROUNDTRIP_SKIPPED reason=pre_state_empty\n"); std::fflush(stdout);
+            }
+            if (state_roundtrip_requested && transaction.state_committed) {
+                std::printf("PROBE_ENTERED\n"); std::fflush(stdout);
+                const llama_seq_id state_seq = 0;
+                const size_t snapshot_size = llama_state_seq_get_size(ctx, state_seq);
+                std::vector<uint8_t> snapshot(snapshot_size);
+                const size_t snapshot_written = snapshot_size != 0 ?
+                    llama_state_seq_get_data(ctx, snapshot.data(), snapshot.size(), state_seq) : 0;
+                const uint64_t original_hash = snapshot_written == snapshot.size() ?
+                    hash_bytes(snapshot.data(), snapshot.size()) : 0;
+                if (snapshot_written == snapshot.size()) { std::printf("SNAPSHOT_EXPORTED\n"); std::fflush(stdout); }
+                const bool continuity_requested = std::getenv("CORTEX_FLASHNEXT_STATE_CONTINUITY") != nullptr;
+                std::vector<float> continuity_input(2560 * 4);
+                for (size_t i = 0; i < continuity_input.size(); ++i) continuity_input[i] = std::sin(0.001f * (float) i + 0.25f);
+                layer_transaction_result same_context_pos1;
+                std::vector<uint8_t> same_context_state;
+                bool same_context_roundtrip = false;
+                if (continuity_requested && snapshot_written == snapshot.size()) {
+                    const size_t d_restore = llama_state_seq_set_data(ctx, snapshot.data(), snapshot.size(), state_seq);
+                    std::vector<uint8_t> d_reexport(snapshot.size());
+                    const size_t d_written = llama_state_seq_get_data(ctx, d_reexport.data(), d_reexport.size(), state_seq);
+                    same_context_roundtrip = d_restore == snapshot.size() && d_written == snapshot.size() && d_reexport == snapshot;
+                    if (same_context_roundtrip) {
+                        same_context_pos1 = run_layer_transaction(ctx, target_layer, 1, continuity_input, argv[2]);
+                        same_context_state = capture_seq_state(ctx);
+                    }
+                    std::printf("D_SAME_CONTEXT_RESTORE=%s D_GRAPH_A_HASH=%016llx D_OUTPUT_HASH=%016llx D_STATE_HASH=%016llx\n",
+                        same_context_roundtrip && same_context_pos1.state_committed ? "PASS" : "FAIL",
+                        (unsigned long long) same_context_pos1.graph_a_hash,
+                        (unsigned long long) same_context_pos1.output_hash,
+                        (unsigned long long) (same_context_state.empty() ? 0 : hash_bytes(same_context_state.data(), same_context_state.size())));
+                    std::fflush(stdout);
+                }
+                layer_transaction_result reference_pos1;
+                std::vector<uint8_t> reference_state;
+                if (continuity_requested && snapshot_written == snapshot.size()) {
+                    // Restore position-0 again so A and D receive identical state.
+                    if (llama_state_seq_set_data(ctx, snapshot.data(), snapshot.size(), state_seq) != snapshot.size()) {
+                        std::printf("REFERENCE_POSITION1_EXECUTED=NO reason=same_context_restore_failed\n");
+                        std::fflush(stdout);
+                    }
+                    reference_pos1 = run_layer_transaction(ctx, target_layer, 1, continuity_input, argv[2]);
+                    reference_state = capture_seq_state(ctx);
+                    std::printf("REFERENCE_POSITION1_EXECUTED=%s\n", reference_pos1.state_committed ? "YES" : "NO");
+                    std::fflush(stdout);
+                }
+                layer_transaction_result retained_model_pos1;
+                std::vector<uint8_t> retained_model_state;
+                bool retained_model_restore = false;
+                const std::string state_metadata = ctx->debug_recurrent_state_metadata((int) target_layer);
+                // E: destroy only the context, retain the loaded model, then
+                // recreate one context from that same model and restore state.
+                if (continuity_requested && snapshot_written == snapshot.size()) {
+                    llama_free(ctx);
+                    ctx = nullptr;
+                    ctx = model ? llama_init_from_model(model, cp) : nullptr;
+                    if (ctx) {
+                        const size_t e_restore = llama_state_seq_set_data(ctx, snapshot.data(), snapshot.size(), state_seq);
+                        std::vector<uint8_t> e_reexport(snapshot.size());
+                        const size_t e_written = e_restore == snapshot.size() ?
+                            llama_state_seq_get_data(ctx, e_reexport.data(), e_reexport.size(), state_seq) : 0;
+                        retained_model_restore = e_restore == snapshot.size() && e_written == snapshot.size() && e_reexport == snapshot;
+                        if (retained_model_restore) {
+                            retained_model_pos1 = run_layer_transaction(ctx, target_layer, 1, continuity_input, argv[2]);
+                            retained_model_state = capture_seq_state(ctx);
+                        }
+                    }
+                    std::printf("E_RETAIN_MODEL_CONTEXT_RECREATE=%s E_GRAPH_A_HASH=%016llx E_OUTPUT_HASH=%016llx E_STATE_HASH=%016llx\n",
+                        retained_model_restore && retained_model_pos1.state_committed ? "PASS" : "FAIL",
+                        (unsigned long long) retained_model_pos1.graph_a_hash,
+                        (unsigned long long) retained_model_pos1.output_hash,
+                        (unsigned long long) (retained_model_state.empty() ? 0 : hash_bytes(retained_model_state.data(), retained_model_state.size())));
+                    std::fflush(stdout);
+                    llama_free(ctx);
+                    ctx = nullptr;
+                }
+                llama_free(ctx);
+                ctx = nullptr;
+                std::printf("ORIGINAL_CONTEXT_FREED\n"); std::fflush(stdout);
+                llama_model_free(model);
+                model = nullptr;
+                std::printf("ORIGINAL_MODEL_FREED\n"); std::fflush(stdout);
+                size_t restored_size = 0;
+                size_t restore_written = 0;
+                uint64_t restored_hash = 0;
+                bool restore_ok = false;
+                layer_transaction_result restored_pos1;
+                std::vector<uint8_t> restored_state;
+                const uint64_t restore_begin_us = ggml_time_us();
+                if (snapshot_written == snapshot.size()) {
+                    model = llama_model_load_from_file(argv[1], mp);
+                    ctx = model ? llama_init_from_model(model, cp) : nullptr;
+                    if (ctx) {
+                        std::printf("NEW_CONTEXT_CREATED\n"); std::fflush(stdout);
+                        restore_written = llama_state_seq_set_data(ctx, snapshot.data(), snapshot.size(), state_seq);
+                        if (restore_written == snapshot.size()) { std::printf("SNAPSHOT_RESTORED\n"); std::fflush(stdout); }
+                        restored_size = llama_state_seq_get_size(ctx, state_seq);
+                        std::vector<uint8_t> restored(restored_size);
+                        const size_t restored_written = restored_size != 0 ?
+                            llama_state_seq_get_data(ctx, restored.data(), restored.size(), state_seq) : 0;
+                        restore_ok = restore_written == snapshot.size() && restored_written == snapshot.size() && restored == snapshot;
+                        if (restored_written == snapshot.size()) { std::printf("SNAPSHOT_REEXPORTED\n"); std::fflush(stdout); }
+                        if (restore_ok) restored_hash = hash_bytes(restored.data(), restored.size());
+                        if (continuity_requested && restore_ok) {
+                            restored_pos1 = run_layer_transaction(ctx, target_layer, 1, continuity_input, argv[2]);
+                            restored_state = capture_seq_state(ctx);
+                            const bool output_equal = reference_pos1.state_committed && restored_pos1.state_committed &&
+                                reference_pos1.output == restored_pos1.output;
+                            const bool state_equal = reference_state == restored_state;
+                            const bool experts_equal = reference_pos1.selected_ids == restored_pos1.selected_ids;
+                            std::printf("RESTORED_POSITION1_EXECUTED=%s POSITION1_INPUT_HASH=%016llx "
+                                "POSITION1_OUTPUT_HASH_REFERENCE=%016llx POSITION1_OUTPUT_HASH_RESTORED=%016llx "
+                                "POSITION1_STATE_HASH_REFERENCE=%016llx POSITION1_STATE_HASH_RESTORED=%016llx "
+                                "OUTPUT_BYTE_EXACT=%s POST_STATE_BYTE_EXACT=%s EXPERT_SELECTION_MATCH=%s "
+                                "POSITION1_METADATA_MATCH=%s\n",
+                                restored_pos1.state_committed ? "YES" : "NO",
+                                (unsigned long long) hash_f32(continuity_input.data(), continuity_input.size()),
+                                (unsigned long long) reference_pos1.output_hash,
+                                (unsigned long long) restored_pos1.output_hash,
+                                (unsigned long long) (reference_state.empty() ? 0 : hash_bytes(reference_state.data(), reference_state.size())),
+                                (unsigned long long) (restored_state.empty() ? 0 : hash_bytes(restored_state.data(), restored_state.size())),
+                                output_equal ? "YES" : "NO", state_equal ? "YES" : "NO", experts_equal ? "YES" : "NO",
+                                state_equal ? "YES" : "NO");
+                            std::fflush(stdout);
+                        }
+                    }
+                }
+                const uint64_t restore_elapsed_us = ggml_time_us() - restore_begin_us;
+                std::printf("STATE_ROUNDTRIP layer=%u sequence=%d state_api_coverage=memory_module_r_l_p_l_s_l "
+                    "state_bytes=%zu snapshot_export=%s context_destroy=PASS snapshot_restore=%s "
+                    "round_trip_byte_exact=%s original_hash=%016llx restored_hash=%016llx "
+                    "position_metadata_match=%s sequence_ownership_match=%s restore_us=%llu\n",
+                    target_layer, state_seq, snapshot.size(), snapshot_written == snapshot.size() ? "PASS" : "FAIL",
+                    restore_ok ? "PASS" : "FAIL", restore_ok ? "PASS" : "FAIL",
+                    (unsigned long long) original_hash, (unsigned long long) restored_hash,
+                    restore_ok ? "PASS" : "FAIL", restore_ok ? "PASS" : "FAIL",
+                    (unsigned long long) restore_elapsed_us);
+                std::printf("STATE_TENSOR_METADATA layer=%u %s\n", target_layer, state_metadata.c_str());
+                std::fflush(stdout);
+                std::fflush(stdout);
+            }
             if (std::getenv("CORTEX_FLASHNEXT_CPU_OBSERVER") != nullptr) {
                 std::printf("OBSERVER_INVOCATIONS=%llu\n",
                     (unsigned long long) ctx->debug_post_node_observer_invocations());

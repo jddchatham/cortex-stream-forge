@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <type_traits>
+#include <sstream>
 
 #include "llama-impl.h"
 #include "llama-batch.h"
@@ -597,6 +598,59 @@ bool llama_memory_hybrid_idx_context::apply() {
     }
 
     return res;
+}
+
+std::string llama_memory_hybrid_idx_context::debug_post_apply_mapping(llama_seq_id seq_id) const {
+    std::ostringstream out;
+    out << "seq=" << seq_id << " i_cur=" << i_cur << " i_kpool=" << i_kpool;
+    const auto dump_cells = [&](const char * tag, const llama_kv_cache * cache) {
+        out << " " << tag << "=";
+        if (!cache) { out << "absent"; return; }
+        const auto & cells = cache->get_cells(seq_id).seq_pos_get(seq_id);
+        out << "[";
+        bool first = true;
+        for (const auto & p : cells) {
+            if (!first) out << ",";
+            first = false;
+            out << p.first << ":" << p.second;
+        }
+        out << "]";
+    };
+    dump_cells("attn", mem->get_mem_attn());
+    dump_cells("idx", mem->get_mem_idx());
+    const auto & stale = mem->mem_idx_stale_get();
+    out << " stale=" << stale[(size_t) seq_id];
+    if (mem->kpool_layout_get().seqs[(size_t) seq_id].cells.empty()) {
+        out << " pool=[]";
+    } else {
+        const auto & ps = mem->kpool_layout_get().seqs[(size_t) seq_id];
+        out << " pool_cells=[";
+        for (size_t i = 0; i < ps.cells.size(); ++i) {
+            if (i) out << ",";
+            out << ps.cells[i].first << ":" << ps.cells[i].second;
+        }
+        out << "] pool_ids=[";
+        for (size_t i = 0; i < ps.pools.size(); ++i) {
+            if (i) out << ",";
+            out << ps.pools[i];
+        }
+        out << "] n_pool_real=" << mem->kpool_layout_get().n_pool_real
+            << " cache_safe=" << (mem->kpool_layout_get().cache_safe ? 1 : 0);
+    }
+    if (!sinfos_kpool.empty() && i_cur < sinfos_kpool.size()) {
+        const auto & si = sinfos_kpool[i_cur];
+        out << " slot_streams=" << si.strm.size() << " slot_idxs=";
+        if (!si.idxs.empty()) {
+            out << "[";
+            for (size_t i = 0; i < si.idxs[0].size(); ++i) {
+                if (i) out << ",";
+                out << si.idxs[0][i];
+            }
+            out << "]";
+        }
+    }
+    if (kpool_st) out << " kpool_new=" << kpool_st->n_new << " kpool_gen=" << kpool_st->generation;
+    return out.str();
 }
 
 bool llama_memory_hybrid_idx_context::kpool_track() const {

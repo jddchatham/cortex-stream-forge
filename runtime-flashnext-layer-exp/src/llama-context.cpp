@@ -1,6 +1,7 @@
 #include "llama-context.h"
 
 #include "ggml.h"
+#include "../ggml/src/ggml-impl.h"
 #include "llama-arch.h"
 #include "llama-graph.h"
 #include "llama-impl.h"
@@ -8,6 +9,7 @@
 #include "llama-io.h"
 #include "llama-memory.h"
 #include "llama-memory-hybrid.h"
+#include "llama-memory-hybrid-idx.h"
 #include "llama-memory-recurrent.h"
 #include "llama-mmap.h"
 #include "llama-model.h"
@@ -21,6 +23,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 //
@@ -47,6 +50,68 @@ static uint64_t flashnext_hash_f32(const std::vector<float> & values) {
         hash ^= bytes[i]; hash *= 1099511628211ull;
     }
     return hash;
+}
+
+static void flashnext_probe_graph_leaves(ggml_cgraph * gf, ggml_backend_sched_t sched) {
+    if (!gf || !sched) {
+        LLAMA_LOG_INFO("CORTEX_GRAPH_INPUT_PROBE unavailable graph_or_scheduler\n");
+        return;
+    }
+    int comparable = 0;
+    int unreadable = 0;
+    for (int i = 0; i < gf->n_leafs; ++i) {
+        ggml_tensor * t = gf->leafs[i];
+        if (!t) { ++unreadable; continue; }
+        const size_t bytes = ggml_nbytes(t);
+        ggml_backend_t backend = t->buffer ? ggml_backend_sched_get_tensor_backend(sched, t) : nullptr;
+        const char * backend_name = backend ? ggml_backend_name(backend) : "unassigned";
+        const char * buffer_name = t->buffer ? ggml_backend_buffer_name(t->buffer) : "none";
+        uint64_t hash = 1469598103934665603ull;
+        const bool graph_input = (t->flags & GGML_TENSOR_FLAG_INPUT) != 0;
+        const bool cache_leaf = std::strncmp(t->name, "cache_ple_r_l1", 14) == 0 ||
+                                std::strncmp(t->name, "cache_r_l1", 10) == 0 ||
+                                std::strncmp(t->name, "cache_s_l1", 10) == 0;
+        bool readable = (graph_input || cache_leaf) && t->buffer != nullptr && bytes != 0;
+        if (readable) {
+            std::vector<uint8_t> chunk(std::min<size_t>(bytes, 64 * 1024));
+            for (size_t off = 0; off < bytes; off += chunk.size()) {
+                const size_t n = std::min(chunk.size(), bytes - off);
+                ggml_backend_tensor_get(t, chunk.data(), off, n);
+                for (size_t j = 0; j < n; ++j) {
+                    hash ^= chunk[j]; hash *= 1099511628211ull;
+                }
+            }
+            ++comparable;
+        } else {
+            ++unreadable;
+        }
+        LLAMA_LOG_INFO("CORTEX_GRAPH_INPUT_LEAF index=%d name=%s type=%s flags=0x%x ne=[%lld,%lld,%lld,%lld] "
+                       "nb=[%zu,%zu,%zu,%zu] bytes=%zu backend=%s buffer=%s buffer_id=%p "
+                       "readable=%s hash=%016llx\n",
+            i, t->name, ggml_type_name(t->type), t->flags,
+            (long long) t->ne[0], (long long) t->ne[1], (long long) t->ne[2], (long long) t->ne[3],
+            t->nb[0], t->nb[1], t->nb[2], t->nb[3], bytes, backend_name, buffer_name,
+            (void *) t->buffer, readable ? "YES" : "NO", (unsigned long long) hash);
+    }
+    LLAMA_LOG_INFO("CORTEX_GRAPH_INPUT_PROBE leaves=%d comparable=%d unreadable=%d\n",
+        gf->n_leafs, comparable, unreadable);
+}
+
+static bool flashnext_hash_backend_tensor(const ggml_tensor * tensor, uint64_t & hash) {
+    if (!tensor || !tensor->buffer) return false;
+    const size_t bytes = ggml_nbytes(tensor);
+    if (bytes == 0 || bytes > 64u * 1024u * 1024u) return false;
+    std::array<uint8_t, 64 * 1024> chunk{};
+    hash = 1469598103934665603ull;
+    for (size_t off = 0; off < bytes; off += chunk.size()) {
+        const size_t n = std::min(chunk.size(), bytes - off);
+        ggml_backend_tensor_get(tensor, chunk.data(), off, n);
+        for (size_t i = 0; i < n; ++i) {
+            hash ^= chunk[i];
+            hash *= 1099511628211ull;
+        }
+    }
+    return true;
 }
 
 static void flashnext_independent_concat_oracle(
@@ -204,6 +269,45 @@ static bool flashnext_capture_logical_f32(const ggml_tensor * tensor, std::vecto
 
 void llama_context::debug_capture_post_node(const ggml_tensor * node) {
     flashnext_post_node_observer_invocations.fetch_add(1, std::memory_order_relaxed);
+    if (flashnext_graph_node_probe_active && node) {
+        const auto it = flashnext_graph_probe_indices.find(node);
+        if (it != flashnext_graph_probe_indices.end()) {
+            uint64_t hash = 0;
+            const bool readable = flashnext_hash_backend_tensor(node, hash);
+            LLAMA_LOG_INFO("CORTEX_GRAPH_NODE_PROBE index=%d op=%d name=%s node=%p readable=%s "
+                           "ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu "
+                           "buffer=%p src0=%p src0_name=%s src1=%p src1_name=%s src2=%p src2_name=%s hash=%016llx\n",
+                it->second, (int) node->op, node->name, (const void *) node,
+                readable ? "YES" : "NO",
+                (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3],
+                node->nb[0], node->nb[1], node->nb[2], node->nb[3], ggml_nbytes(node),
+                (void *) node->buffer,
+                (const void *) node->src[0], node->src[0] ? node->src[0]->name : "",
+                (const void *) node->src[1], node->src[1] ? node->src[1]->name : "",
+                (const void *) node->src[2], node->src[2] ? node->src[2]->name : "",
+                (unsigned long long) hash);
+        }
+    }
+    if (node && std::strcmp(node->name, "diag_moe_input-1") == 0) {
+        std::lock_guard<std::mutex> lock(flashnext_diag_moe_mutex);
+        const size_t bytes = ggml_nbytes(node);
+        if (node->buffer && bytes == 2560u * sizeof(float) &&
+            flashnext_diag_moe_stored_execution_id != flashnext_graph_execution_id) {
+            flashnext_diag_moe_owned.resize(bytes);
+            ggml_backend_tensor_get(node, flashnext_diag_moe_owned.data(), 0, bytes);
+            uint64_t hash = 1469598103934665603ull;
+            for (uint8_t byte : flashnext_diag_moe_owned) {
+                hash ^= byte;
+                hash *= 1099511628211ull;
+            }
+            flashnext_diag_moe_execution_id = flashnext_graph_execution_id;
+            flashnext_diag_moe_hash = hash;
+            flashnext_diag_moe_stored_execution_id = flashnext_graph_execution_id;
+            LLAMA_LOG_INFO("CORTEX_MOE_PRODUCER execution_id=%llu node=%p name=%s bytes=%zu hash=%016llx\n",
+                (unsigned long long) flashnext_graph_execution_id, (const void *) node, node->name,
+                ggml_nbytes(node), (unsigned long long) hash);
+        }
+    }
     if (std::getenv("CORTEX_FLASHNEXT_CPU_CONCAT_CAPTURE") == nullptr || !node) return;
 
     if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr &&
@@ -1152,7 +1256,13 @@ void llama_context::synchronize() {
     if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr &&
         !flashnext_diag_tensors.empty()) {
         for (const auto & it : flashnext_diag_tensors) {
-            if (flashnext_diag_owned.find(it.first) != flashnext_diag_owned.end()) {
+            // diag_moe_input is consumed immediately by the transaction
+            // coordinator after synchronization. Refresh this execution's
+            // value instead of applying historical first-capture-wins,
+            // which otherwise returns a prior position/context.
+            if (it.first != "diag_moe_input-1" && it.first != "diag_router_logits-1" &&
+                it.first != "diag_hc_residual-1" && it.first != "diag_hc_inject-1" &&
+                flashnext_diag_owned.find(it.first) != flashnext_diag_owned.end()) {
                 continue;
             }
             ggml_tensor * t = it.second;
@@ -1291,14 +1401,55 @@ size_t llama_context::debug_copy_recurrent_state(int layer, bool convolution, vo
     return bytes;
 }
 
+std::string llama_context::debug_recurrent_state_metadata(int layer) const {
+    if (layer < 0) return {};
+    auto * hybrid = dynamic_cast<llama_memory_hybrid *>(memory.get());
+    if (!hybrid || !hybrid->get_mem_recr()) return {};
+    auto * recr = hybrid->get_mem_recr();
+    auto describe = [](const char * name, ggml_tensor * t) {
+        if (!t) return std::string(name) + "=absent";
+        return format("%s=shape[%lld,%lld,%lld,%lld],type=%s,bytes=%zu", name,
+            (long long) t->ne[0], (long long) t->ne[1], (long long) t->ne[2], (long long) t->ne[3],
+            ggml_type_name(t->type), ggml_nbytes(t));
+    };
+    return describe("r_l", recr->debug_get_r_l(layer)) + " " +
+        describe("p_l", recr->debug_get_p_l(layer)) + " " +
+        describe("s_l", recr->debug_get_s_l(layer));
+}
+
 size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const {
     if (!name) return 0;
+    if (std::strcmp(name, "diag_moe_input-1") == 0 && !flashnext_diag_moe_owned.empty()) {
+        uint64_t owned_hash = 1469598103934665603ull;
+        for (uint8_t byte : flashnext_diag_moe_owned) {
+            owned_hash ^= byte;
+            owned_hash *= 1099511628211ull;
+        }
+        LLAMA_LOG_INFO("CORTEX_MOE_OWNED_READBACK execution_id=%llu bytes=%zu hash=%016llx\n",
+            (unsigned long long) flashnext_diag_moe_execution_id, flashnext_diag_moe_owned.size(),
+            (unsigned long long) owned_hash);
+        if (cap < flashnext_diag_moe_owned.size()) return flashnext_diag_moe_owned.size();
+        if (dst) {
+            std::memcpy(dst, flashnext_diag_moe_owned.data(), flashnext_diag_moe_owned.size());
+            uint64_t destination_hash = 1469598103934665603ull;
+            const auto * destination = static_cast<const uint8_t *>(dst);
+            for (size_t i = 0; i < flashnext_diag_moe_owned.size(); ++i) {
+                destination_hash ^= destination[i];
+                destination_hash *= 1099511628211ull;
+            }
+            LLAMA_LOG_INFO("CORTEX_MOE_COPY_RETURN execution_id=%llu bytes=%zu destination_hash=%016llx\n",
+                (unsigned long long) flashnext_diag_moe_execution_id, flashnext_diag_moe_owned.size(),
+                (unsigned long long) destination_hash);
+        }
+        return flashnext_diag_moe_owned.size();
+    }
     auto it = flashnext_diag_owned.find(name);
     if (it == flashnext_diag_owned.end()) return 0;
     if (cap < it->second.size()) return it->second.size();
     if (dst && !it->second.empty()) std::memcpy(dst, it->second.data(), it->second.size());
     return it->second.size();
 }
+
 
 bool llama_context::debug_copy_final_head_output(std::vector<uint8_t> & bytes,
         std::array<int64_t, 4> & ne, std::array<size_t, 4> & nb,
@@ -1902,6 +2053,14 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
         ret = GGML_STATUS_FAILED;
         return nullptr;
     }
+    if (mctx && std::getenv("CORTEX_FLASHNEXT_TRACE_MEMORY_APPLY") != nullptr) {
+        auto * idx_ctx = dynamic_cast<llama_memory_hybrid_idx_context *>(mctx);
+        if (idx_ctx) {
+            LLAMA_LOG_INFO("CORTEX_MEMORY_POST_APPLY %s\n", idx_ctx->debug_post_apply_mapping(ubatch.seq_id[0][0]).c_str());
+        } else {
+            LLAMA_LOG_INFO("CORTEX_MEMORY_POST_APPLY unavailable_non_indexed_context\n");
+        }
+    }
 
     auto * res = get_gf_res_prev();
     auto * gf  = res->get_gf();
@@ -1973,6 +2132,25 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
 
         // FIXME this call causes a crash if any model inputs were not used in the graph and were therefore not allocated
         res->set_inputs(&ubatch);
+
+        if (std::getenv("CORTEX_FLASHNEXT_GRAPH_INPUT_PROBE") != nullptr &&
+            ubatch.n_tokens == 1 && ubatch.pos && ubatch.pos[0] == 1) {
+            ggml_backend_sched_synchronize(sched.get());
+            flashnext_probe_graph_leaves(res->get_gf(), sched.get());
+        }
+
+        flashnext_graph_probe_indices.clear();
+        flashnext_graph_node_probe_active =
+            std::getenv("CORTEX_FLASHNEXT_GRAPH_NODE_PROBE") != nullptr &&
+            ubatch.n_tokens == 1 && ubatch.pos && ubatch.pos[0] == 1;
+        if (flashnext_graph_node_probe_active) {
+            ggml_cgraph * graph = res->get_gf();
+            for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
+                ggml_tensor * node = ggml_graph_node(graph, i);
+                if (node) flashnext_graph_probe_indices.emplace(node, i);
+            }
+            LLAMA_LOG_INFO("CORTEX_GRAPH_NODE_PROBE_SUBMITTED nodes=%d\n", ggml_graph_n_nodes(graph));
+        }
 
         //LLAMA_LOG_INFO("graph set inputs time: %.3f ms\n", (ggml_time_us() - t_start_us)/1000.0);
     }
@@ -3164,6 +3342,7 @@ ggml_status llama_context::graph_compute(
                    bool   batched) {
     int n_threads        = batched ? cparams.n_threads_batch : cparams.n_threads;
     ggml_threadpool_t tp = batched ? threadpool_batch        : threadpool;
+    ++flashnext_graph_execution_id;
 
     if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr) {
         for (int i = 0; i < ggml_graph_n_nodes(gf); ++i) {
@@ -3211,7 +3390,7 @@ ggml_status llama_context::graph_compute(
             ggml_backend_cpu_set_diagnostic_target(backend_cpu, nullptr);
         }
 
-        if (std::getenv("CORTEX_FLASHNEXT_CPU_OBSERVER") != nullptr) {
+        if (std::getenv("CORTEX_FLASHNEXT_CPU_OBSERVER") != nullptr || flashnext_graph_node_probe_active) {
             flashnext_post_node_observer_invocations.store(0, std::memory_order_relaxed);
             flashnext_concat_capture_found = false;
             flashnext_concat_source_a.resize(4 * 10240 * 1);
