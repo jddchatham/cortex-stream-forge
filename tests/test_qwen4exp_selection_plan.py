@@ -20,5 +20,14 @@ class Qwen4ExpSelectionPlanTests(unittest.TestCase):
     def test_plan_reports_tensor_identity(self):
         self.assertIn('CORTEX_SELECTION_TENSOR', LOADER)
 
+    def test_invalid_range_is_rejected(self):
+        self.assertIn('layer < 1 || end != layer + 1 || end > 48', WRAPPER)
+
+    def test_strict_plan_rejects_unexpected_totals(self):
+        self.assertIn('CORTEX_FLASHNEXT_PLAN_STRICT', WRAPPER)
+        self.assertIn('CORTEX_SELECTION_PLAN_FAIL', LOADER)
+        self.assertIn('global_total != 337715200', LOADER)
+        self.assertIn('layer_total != 67851136', LOADER)
+
 if __name__ == '__main__':
     unittest.main()

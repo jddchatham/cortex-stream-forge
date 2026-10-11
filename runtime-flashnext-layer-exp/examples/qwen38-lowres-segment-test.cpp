@@ -44,6 +44,7 @@ int main(int argc, char ** argv) {
     const int layer = std::atoi(argv[2]);
     const int end = std::atoi(argv[3]);
     const bool plan_only = argc == 5 && std::string(argv[4]) == "--plan";
+    if (layer < 1 || end != layer + 1 || end > 48) return 2;
     char layer_text[32], end_text[32];
     std::snprintf(layer_text, sizeof(layer_text), "%d", layer);
     std::snprintf(end_text, sizeof(end_text), "%d", end);
@@ -60,6 +61,7 @@ int main(int argc, char ** argv) {
         setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
     }
     if (plan_only) setenv("CORTEX_FLASHNEXT_PLAN_ONLY", "1", 1);
+    if (plan_only) setenv("CORTEX_FLASHNEXT_PLAN_STRICT", "1", 1);
 
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
