@@ -69,6 +69,16 @@ int main(int argc, char ** argv) {
     llama_model * model = llama_model_load_from_file(model_path, mp);
     if (!model) return 3;
     if (plan_only) {
+        const auto finished = std::chrono::steady_clock::now();
+        const size_t rss_after = proc_kib("/proc/self/status", "VmRSS:");
+        const size_t pss_after = proc_kib("/proc/self/smaps_rollup", "Pss:");
+        const size_t read_after = proc_io_bytes("read_bytes");
+        const double elapsed_ms = std::chrono::duration<double, std::milli>(finished - started).count();
+        std::printf("CORTEX_PLAN_METRICS rss_before_kib=%zu rss_after_kib=%zu "
+                    "pss_before_kib=%zu pss_after_kib=%zu bytes_read=%zu elapsed_ms=%.3f "
+                    "model_payload_allocation=SKIPPED graph_execution=SKIPPED\n",
+                    rss_before, rss_after, pss_before, pss_after,
+                    read_after >= read_before ? read_after - read_before : 0, elapsed_ms);
         llama_model_free(model);
         llama_backend_free();
         return 0;
