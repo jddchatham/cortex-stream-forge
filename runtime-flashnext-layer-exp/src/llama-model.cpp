@@ -2079,6 +2079,10 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             for (const ggml_tensor * t : selected) {
                 LLAMA_LOG_INFO("CORTEX_SELECTION_TENSOR name=%s bytes=%zu\n", ggml_get_name(t), ggml_nbytes(t));
             }
+            if (std::getenv("CORTEX_FLASHNEXT_PLAN_STRICT") != nullptr && forge_layer != 0 && forge_layer != 1) {
+                LLAMA_LOG_ERROR("CORTEX_SELECTION_PLAN_FAIL unsupported_layer_range=[%d,%d)\n", forge_layer, forge_layer + 1);
+                return false;
+            }
             const bool layer0_plan = forge_layer == 0;
             const size_t expected_global = layer0_plan ? 337715200 : 0;
             const size_t expected_layer = layer0_plan ? 50238336 : 67851136;

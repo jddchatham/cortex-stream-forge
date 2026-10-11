@@ -71,6 +71,10 @@ class Qwen4ExpSelectionPlanTests(unittest.TestCase):
         self.assertIn('expected_layer = layer0_plan ? 50238336 : 67851136', LOADER)
         self.assertIn('expected_tensors = layer0_plan ? 23 : 28', LOADER)
 
+    def test_strict_plan_rejects_unvalidated_ranges(self):
+        self.assertIn('forge_layer != 0 && forge_layer != 1', LOADER)
+        self.assertIn('unsupported_layer_range', LOADER)
+
     def test_manifest_has_exact_compiled_selection(self):
         self.assertEqual(len(PLAN_MANIFEST), 28)
         self.assertEqual(sum(v for k, v in PLAN_MANIFEST.items() if k.startswith('blk.')), 67851136)
