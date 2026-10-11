@@ -2071,6 +2071,14 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
         }
         LLAMA_LOG_INFO("CORTEX_GLOBAL_BYTES=%zu CORTEX_LAYER_BYTES=%zu CORTEX_SELECTED_TENSORS=%zu\n",
                 global_total, layer_total, selected.size());
+        if (std::getenv("CORTEX_FLASHNEXT_PLAN_ONLY") != nullptr) {
+            LLAMA_LOG_INFO("CORTEX_SELECTION_PLAN global_bytes=%zu layer_bytes=%zu tensors=%zu\n",
+                global_total, layer_total, selected.size());
+            for (const ggml_tensor * t : selected) {
+                LLAMA_LOG_INFO("CORTEX_SELECTION_TENSOR name=%s bytes=%zu\n", ggml_get_name(t), ggml_nbytes(t));
+            }
+            return true;
+        }
         const size_t cumulative_budget = 768ull * 1024ull * 1024ull;
         if (flashnext_layer_range && global_total + layer_total > cumulative_budget) {
             throw std::runtime_error(format(
