@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Cortex Stream Forge
+Comment=Bounded Cortex streaming runtime status
+Exec=foot -e /path/to/cortex-stream-forge-launcher.sh
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true

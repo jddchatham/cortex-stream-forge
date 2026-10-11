@@ -92,7 +92,12 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
             }
         }
     }
-    if (ubatch->token) {
+    // Layer-range graphs intentionally omit the token tensor because their
+    // numerical input is an externally supplied embedding.  Token metadata
+    // may still be present for model-specific consumers such as Qwen4Exp
+    // PLE, which read ubatch->token directly.  Never upload through a null
+    // generic graph tensor.
+    if (ubatch->token && tokens) {
         const int64_t n_tokens = ubatch->n_tokens;
 
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
@@ -144,7 +149,7 @@ void llm_graph_input_embd_h::set_input(const llama_ubatch * ubatch) {
     }
     const int64_t n_tokens = ubatch->n_tokens;
 
-    if (ubatch->token) {
+    if (ubatch->token && tokens) {
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
     } else {
         // note: mtmd embedding input goes through here

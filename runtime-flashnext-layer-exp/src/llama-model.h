@@ -859,6 +859,10 @@ struct llama_model_base : public llama_model {
     // external buffer.
     bool cortex_rebind_layer(int il);
     bool flashnext_layer_range_ple_rows(const int32_t * ids, size_t count, float * dst) const;
+    uint64_t flashnext_ple_rows_provisioned() const { return ple_rows_provisioned; }
+    uint64_t flashnext_ple_bytes_read() const { return ple_bytes_read; }
+    mutable uint64_t ple_rows_provisioned = 0;
+    mutable uint64_t ple_bytes_read = 0;
 
     // model must define these
     void load_arch_hparams(llama_model_loader & ml) override = 0;

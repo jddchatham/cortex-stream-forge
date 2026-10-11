@@ -2248,6 +2248,8 @@ bool llama_model_base::flashnext_layer_range_ple_rows(const int32_t * ids, size_
     }
     if (!flashnext_read_quantized_rows(fd, (uint64_t) it->second.second,
             per_layer_tok_embd->type, (int64_t) elems, per_layer_tok_embd->ne[1], ids, count, dst)) return false;
+    ple_rows_provisioned += count;
+    ple_bytes_read += count * bytes;
     LLAMA_LOG_INFO("FLASHNEXT_PLE_ROWS count=%zu row_elems=%zu row_bytes=%zu bytes_read=%zu\n",
             count, elems, bytes, count * bytes);
     return true;

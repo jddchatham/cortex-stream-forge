@@ -617,6 +617,7 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     const bool internal_diag = std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr;
     const bool segment_a = std::getenv("CORTEX_FLASHNEXT_SEGMENT_A") != nullptr;
     const bool pre_moe_cut = std::getenv("CORTEX_FLASHNEXT_PRE_MOE") != nullptr;
+    const bool final_head = std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr;
     const bool partial_prefix = route_only || segment_a;
     // A pre-MoE cut still needs positional/KV inputs when the selected range
     // begins with full attention.  Recurrent ranges do not consume them.
@@ -662,7 +663,14 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     // inp_out_ids, while positional/KV inputs remain required above.
     const bool omit_slice_out_ids = std::getenv("CORTEX_FLASHNEXT_LAYER3_SLICE") != nullptr ||
         std::getenv("CORTEX_FLASHNEXT_LAYER3_TRANSACTION") != nullptr;
-    ggml_tensor * inp_out_ids = cut_without_kv_inputs || omit_slice_out_ids ? nullptr : build_inp_out_ids();
+    // Non-final layer-range graphs return the HC-wide owned output directly;
+    // they do not perform the final token-row gather.  Do not register an
+    // out_ids input that has no graph consumer: the scheduler leaves such a
+    // leaf unallocated, and its binder would otherwise dereference a null
+    // backend buffer during the next context's first decode.
+    const bool omit_range_out_ids = layer_start > 0 && !final_head;
+    ggml_tensor * inp_out_ids = cut_without_kv_inputs || omit_slice_out_ids || omit_range_out_ids
+        ? nullptr : build_inp_out_ids();
 
     ggml_tensor * ple_emb = nullptr;
     if (hparams.ple_n_heads > 0 && !partial_prefix) {
@@ -908,7 +916,6 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     // A bounded range is a hidden-state transaction, not a model-final
     // decode.  Export the HC-wide state produced by the last requested layer
     // and deliberately skip final normalization and vocabulary projection.
-    const bool final_head = std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr;
     if ((layer_start > 0 || n_layer < hparams.n_layer()) && !final_head) {
         res->t_layer_inp[n_layer] = res_hc;
         res->t_embd = res_hc;

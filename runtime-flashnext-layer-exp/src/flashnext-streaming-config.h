@@ -18,7 +18,16 @@ struct flashnext_streaming_config {
     std::string profile = "auto";
     bool require_hard_limits = false;
     bool hard_limits_verified = false;
+    std::string resolved_cgroup_path;
+    uint64_t effective_memory_limit_bytes = 0;
+    uint64_t effective_swap_limit_bytes = 0;
 };
+
+// Resolve a cgroup-v2 membership using proc-style fixture files.  Empty paths
+// use the live process.  This is also used by deterministic resolver tests.
+bool flashnext_resolve_cgroup_limits(const std::string & cgroup_file,
+        const std::string & mountinfo_file, uint64_t * memory_limit,
+        uint64_t * swap_limit, std::string * resolved_path, std::string * error);
 
 flashnext_streaming_config flashnext_streaming_config_from_environment();
 bool flashnext_streaming_config_validate(const flashnext_streaming_config &, std::string * error);

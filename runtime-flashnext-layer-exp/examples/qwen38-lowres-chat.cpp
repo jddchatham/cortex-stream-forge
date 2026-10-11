@@ -100,6 +100,11 @@ int main(int argc, char ** argv) {
     if (argc < 2 || argc > 3) return 2;
     const int max_generate = argc == 3 ? std::atoi(argv[2]) : 8;
     setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
+    // Use the bounded tensor-selection path used by the verified owned-layer
+    // runtime. Generic loading otherwise retains the complete global tensor
+    // set before the first token and exceeds the 2 GiB reference gate.
+    setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+    setenv("CORTEX_PREAD_ARENA", "1", 1);
     llama_backend_init();
     llama_model_params mp = llama_model_default_params(); mp.n_gpu_layers = 0;
     llama_model * model = llama_model_load_from_file(argv[1], mp);

@@ -26,6 +26,9 @@
 #include <sys/resource.h>
 #include <fstream>
 #include <sstream>
+#include <cerrno>
+#include <limits>
+#include <openssl/sha.h>
 
 static uint64_t hash_f32(const float * p, size_t n) {
     uint64_t h = 1469598103934665603ull;
@@ -37,6 +40,124 @@ static uint64_t hash_bytes(const uint8_t * p, size_t n) {
     uint64_t h = 1469598103934665603ull;
     for (size_t i = 0; i < n; ++i) { h ^= p[i]; h *= 1099511628211ull; }
     return h;
+}
+
+static std::string sha256_hex(const void * data, size_t n) {
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256(reinterpret_cast<const unsigned char *>(data), n, digest);
+    char out[SHA256_DIGEST_LENGTH * 2 + 1] = {};
+    for (size_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        std::snprintf(out + i * 2, 3, "%02x", digest[i]);
+    }
+    return out;
+}
+
+static std::string sha256_f32(const float * values, size_t n) {
+    return sha256_hex(values, n * sizeof(float));
+}
+
+static std::string sha256_f32(const std::vector<float> & values) {
+    return sha256_f32(values.data(), values.size());
+}
+
+template<size_t N>
+static std::string sha256_f32(const std::array<float, N> & values) {
+    return sha256_f32(values.data(), values.size());
+}
+
+struct flashnext_requested_range {
+    uint32_t start = 0;
+    uint32_t end = 0;
+};
+
+// Parse the public consecutive-layer contract.  This is deliberately kept
+// independent of model loading so malformed requests cannot be interpreted
+// as a default or partially completed chain.
+static bool flashnext_parse_layer_range(const char * start_text, const char * end_text,
+        uint32_t model_layers, flashnext_requested_range & range, std::string & error) {
+    if (!start_text || !end_text || !*start_text || !*end_text) {
+        error = "both RANGE_START and RANGE_END are required";
+        return false;
+    }
+    auto parse = [&](const char * text, uint32_t & value, const char * name) {
+        if (text[0] == '-' || text[0] == '+') {
+            error = std::string(name) + " must be an unsigned decimal integer";
+            return false;
+        }
+        errno = 0;
+        char * end = nullptr;
+        const unsigned long long parsed = std::strtoull(text, &end, 10);
+        if (errno == ERANGE || end == text || *end != '\0' ||
+                parsed > std::numeric_limits<uint32_t>::max()) {
+            error = std::string(name) + " is not a valid uint32";
+            return false;
+        }
+        value = (uint32_t) parsed;
+        return true;
+    };
+    if (!parse(start_text, range.start, "RANGE_START") ||
+            !parse(end_text, range.end, "RANGE_END")) return false;
+    if (range.start < 1) { error = "RANGE_START must be >= 1 in external-HC mode"; return false; }
+    if (range.end <= range.start) { error = "RANGE_END must be greater than RANGE_START"; return false; }
+    if (range.end > model_layers) { error = "RANGE_END exceeds model layer count"; return false; }
+    return true;
+}
+
+static bool flashnext_any_legacy_chain_flag() {
+    return std::getenv("CORTEX_FLASHNEXT_CHAIN_1_2") ||
+        std::getenv("CORTEX_FLASHNEXT_CHAIN_1_2_3") ||
+        std::getenv("CORTEX_FLASHNEXT_CHAIN_1_6") ||
+        std::getenv("CORTEX_FLASHNEXT_CHAIN_1_12") ||
+        std::getenv("CORTEX_FLASHNEXT_CHAIN_1_48");
+}
+
+struct flashnext_external_fixture {
+    std::vector<float> hc_input;
+    std::vector<uint8_t> sequence_state;
+    int position = 0;
+    int sequence_id = 0;
+    llama_token token_id = LLAMA_TOKEN_NULL;
+    bool loaded = false;
+};
+
+static bool flashnext_read_file(const std::string & path, std::vector<uint8_t> & out) {
+    std::ifstream f(path, std::ios::binary | std::ios::ate);
+    if (!f) return false;
+    const std::streamsize size = f.tellg();
+    if (size < 0 || (size_t) size > (size_t) 512 * 1024 * 1024) return false;
+    f.seekg(0, std::ios::beg);
+    out.resize((size_t) size);
+    return size == 0 || f.read((char *) out.data(), size).good();
+}
+
+// Runtime bridge for the versioned fixture.  The manifest validator owns
+// SHA-256/schema validation; this native boundary deliberately validates only
+// the exact bytes it consumes and never changes the mathematical graph.
+static bool flashnext_load_external_fixture(const char * root, flashnext_external_fixture & fixture) {
+    if (!root || !*root) return false;
+    std::vector<uint8_t> hc;
+    if (!flashnext_read_file(std::string(root) + "/hc_input.bin", hc) || hc.size() != 2560u * 4u * sizeof(float)) return false;
+    if (hc.size() % sizeof(float) != 0) return false;
+    fixture.hc_input.resize(hc.size() / sizeof(float));
+    std::memcpy(fixture.hc_input.data(), hc.data(), hc.size());
+    if (!flashnext_read_file(std::string(root) + "/sequence_state.bin", fixture.sequence_state)) {
+        const char * init = std::getenv("CORTEX_FLASHNEXT_FIXTURE_INITIAL_STATE");
+        if (!init || std::strcmp(init, "fresh_zero") != 0) return false;
+        // New contexts already perform the supported zero initialization of
+        // recurrent r/s/P buffers and start with empty attention/indexer cells.
+        // Do not manufacture an opaque serialized state payload.
+    }
+    const char * p = std::getenv("CORTEX_FLASHNEXT_FIXTURE_POSITION");
+    if (p) fixture.position = std::atoi(p);
+    const char * s = std::getenv("CORTEX_FLASHNEXT_FIXTURE_SEQUENCE");
+    if (s) fixture.sequence_id = std::atoi(s);
+    const char * t = std::getenv("CORTEX_FLASHNEXT_FIXTURE_TOKEN_ID");
+    if (t) fixture.token_id = (llama_token) std::strtol(t, nullptr, 10);
+    fixture.loaded = true;
+    LLAMA_LOG_INFO("FLASHNEXT_FIXTURE_INPUT bytes=%zu hash_f32=%016llx position=%d sequence=%d\n",
+        hc.size(), (unsigned long long) hash_f32(fixture.hc_input.data(), fixture.hc_input.size()),
+        fixture.position, fixture.sequence_id);
+    return true;
 }
 
 static bool flashnext_stream_output_q6k(const flashnext_tensor_descriptor & d,
@@ -357,6 +478,40 @@ struct layer_transaction_result {
     uint64_t unselected_expert_reads = 0;
 };
 
+static void append_range_evidence(uint32_t layer, const std::vector<float> & input,
+        const layer_transaction_result & result, bool handoff_ok, uint64_t ple_rows,
+        uint64_t ple_bytes, bool ple_consumed) {
+    const char * dir = std::getenv("CORTEX_FLASHNEXT_EVIDENCE_DIR");
+    if (!dir) return;
+    mkdir(dir, 0755);
+    FILE * f = std::fopen((std::string(dir) + "/layers.jsonl").c_str(), "a");
+    if (!f) return;
+    std::fprintf(f,
+        "{\"layer\":%u,\"input_shape\":[2560,4,1],\"output_shape\":[2560,4,1],"
+        "\"input_bytes\":%zu,\"output_bytes\":%zu,\"input_sha256\":\"%s\","
+        "\"output_sha256\":\"%s\",\"input_fnv1a\":\"%016llx\",\"output_fnv1a\":\"%016llx\","
+        "\"transaction\":\"%s\",\"handoff\":\"%s\",\"state_commit\":\"%s\","
+        "\"pre_moe\":\"%s\",\"sparse_moe\":\"%s\",\"graph_b\":\"%s\","
+        "\"ple_rows_provisioned\":%llu,\"ple_bytes_read\":%llu,\"ple_consumption\":\"%s\","
+        "\"selected_experts\":%zu,\"unselected_expert_reads\":%llu}\n",
+        layer, input.size() * sizeof(float), result.output.size() * sizeof(float),
+        sha256_f32(input).c_str(), sha256_f32(result.output).c_str(),
+        (unsigned long long) hash_f32(input.data(), input.size()),
+        (unsigned long long) result.output_hash,
+        result.state_committed && result.graph_a_ok && result.sparse_moe_ok && result.graph_b_ok ? "PASS" : "FAIL",
+        handoff_ok ? "PASS" : "FAIL", result.state_committed ? "PASS" : "FAIL",
+        result.graph_a_ok ? "PASS" : "FAIL", result.sparse_moe_ok ? "PASS" : "FAIL",
+        result.graph_b_ok ? "PASS" : "FAIL", (unsigned long long) ple_rows,
+        (unsigned long long) ple_bytes, ple_consumed ? "CONSUMED" : "NOT_CONSUMED",
+        result.selected_ids.size(), (unsigned long long) result.unselected_expert_reads);
+    std::fflush(f);
+    std::fclose(f);
+}
+
+static llama_model_base * flashnext_model_base(llama_model * model) {
+    return static_cast<llama_model_base *>(model);
+}
+
 // Metadata-derived description of the model layer used by the experimental
 // transaction bridge.  This is deliberately non-owning: model tensors and
 // recurrent state belong to llama_model/llama_context and must not outlive
@@ -439,6 +594,10 @@ static bool capture_transaction_router(
         txc.residual_hc.data(), sizeof(txc.residual_hc));
     const size_t inject_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_inject" + suffix).c_str(),
         txc.injection.data(), sizeof(txc.injection));
+    std::fprintf(stderr,
+        "FLASHNEXT_ROUTER_CAPTURE layer=%u moe_bytes=%zu/%zu router_bytes=%zu/%zu residual_bytes=%zu/%zu inject_bytes=%zu/%zu\n",
+        layer.index, moe_bytes, sizeof(txc.moe_input), router_bytes, sizeof(txc.router_logits),
+        residual_bytes, sizeof(txc.residual_hc), inject_bytes, sizeof(txc.injection));
     if (moe_bytes != sizeof(txc.moe_input) || router_bytes != sizeof(txc.router_logits) ||
         residual_bytes != sizeof(txc.residual_hc) || inject_bytes != sizeof(txc.injection)) return false;
     for (float x : txc.moe_input) if (!std::isfinite(x)) return false;
@@ -719,13 +878,22 @@ static bool execute_transaction_graph_b(
 }
 
 static layer_transaction_result run_layer_decode(
-        llama_context * ctx, int position, const std::vector<float> & owned_hidden) {
+        llama_context * ctx, int position, const std::vector<float> & owned_hidden,
+        llama_token fixture_token = LLAMA_TOKEN_NULL) {
     layer_transaction_result result;
     llama_batch batch = llama_batch_init(1, (int) owned_hidden.size(), 1);
     if (!batch.embd) {
         return result;
     }
     std::memcpy(batch.embd, owned_hidden.data(), owned_hidden.size() * sizeof(float));
+    // An external embedding may carry its token id as well.  This preserves
+    // Qwen4Exp PLE row hashing while retaining the historical fallback when
+    // no token id is supplied.
+    if (fixture_token != LLAMA_TOKEN_NULL) {
+        batch.token = (llama_token *) std::malloc(sizeof(llama_token));
+        if (!batch.token) { llama_batch_free(batch); return result; }
+        batch.token[0] = fixture_token;
+    }
     batch.pos[0] = position;
     batch.n_seq_id[0] = 1;
     batch.seq_id[0][0] = 0;
@@ -740,8 +908,8 @@ static layer_transaction_result run_layer_decode(
 
 static layer_transaction_result run_layer_transaction(
         llama_context * ctx, uint32_t layer, int position, const std::vector<float> & owned_hidden,
-        const std::string & index_path) {
-    layer_transaction_result result = run_layer_decode(ctx, position, owned_hidden);
+        const std::string & index_path, llama_token fixture_token = LLAMA_TOKEN_NULL) {
+    layer_transaction_result result = run_layer_decode(ctx, position, owned_hidden, fixture_token);
     if (result.decode_status != 0) { result.failure_stage = "graph_a_decode"; return result; }
     result.graph_a_ok = true;
     // The CPU operand diagnostic is a narrower capture path.  It must not be
@@ -895,18 +1063,135 @@ static layer_transaction_result run_layer_transaction(
     return result;
 }
 
+// Execute the consecutive tail after the already-completed first external
+// input transaction. Context/model ownership is local to each iteration: the
+// prior pair is destroyed before the next model is opened.
+static int flashnext_run_range_tail(
+        llama_model * & model, llama_context * & ctx,
+        const llama_model_params & mp, const llama_context_params & cp,
+        const char * model_path, const char * index_path,
+        uint32_t start, uint32_t end, std::vector<float> previous_output) {
+    for (uint32_t layer = start + 1; layer < end; ++layer) {
+        const uint64_t input_hash = hash_f32(previous_output.data(), previous_output.size());
+        if (ctx) { llama_free(ctx); ctx = nullptr; }
+        if (model) { llama_model_free(model); model = nullptr; }
+        setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(layer).c_str(), 1);
+        setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(layer).c_str(), 1);
+        setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(layer + 1).c_str(), 1);
+        setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(layer + 1).c_str(), 1);
+        setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
+        setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
+        model = llama_model_load_from_file(model_path, mp);
+        ctx = model ? llama_init_from_model(model, cp) : nullptr;
+        if (!model || !ctx) {
+            std::fprintf(stderr, "FLASHNEXT_RANGE_LAYER_FAIL layer=%u stage=model_or_context_load\n", layer);
+            if (ctx) { llama_free(ctx); ctx = nullptr; }
+            if (model) { llama_model_free(model); model = nullptr; }
+            return 22;
+        }
+        const layer_transaction_result result =
+            run_layer_transaction(ctx, layer, 0, previous_output, index_path);
+        const bool finite = result.output.size() == previous_output.size() &&
+            std::all_of(result.output.begin(), result.output.end(),
+                [](float v) { return std::isfinite(v); });
+        const bool committed = result.state_committed && finite;
+        std::printf("FLASHNEXT_RANGE_LAYER layer=%u input_hash=%016llx output_hash=%016llx "
+            "output_elements=%zu finite=%s state_commit=%s selected_experts=%zu ple_status=PROVIDER_BOUND\n",
+            layer, (unsigned long long) input_hash,
+            (unsigned long long) result.output_hash, result.output.size(),
+            finite ? "YES" : "NO", committed ? "PASS" : "FAIL",
+            result.selected_ids.size());
+        const llama_model_base * base = flashnext_model_base(model);
+        append_range_evidence(layer, previous_output, result, true,
+            base->flashnext_ple_rows_provisioned(), base->flashnext_ple_bytes_read(),
+            model->hparams.is_ple(layer));
+        std::fflush(stdout);
+        std::vector<float> next_output(result.output.begin(), result.output.end());
+        llama_free(ctx); ctx = nullptr;
+        llama_model_free(model); model = nullptr;
+        if (!committed) {
+            std::fprintf(stderr, "FLASHNEXT_RANGE_ABORT layer=%u stage=%s\n", layer,
+                result.failure_stage ? result.failure_stage : "transaction");
+            return 22;
+        }
+        previous_output = std::move(next_output);
+    }
+    if (ctx) { llama_free(ctx); ctx = nullptr; }
+    if (model) { llama_model_free(model); model = nullptr; }
+    return 0;
+}
+
 int main(int argc, char ** argv) {
     // semantic inputs only: model path and flashnext-tensor-index.json
     if (argc != 3) return 2;
     const flashnext_streaming_config streaming_config = flashnext_streaming_config_from_environment();
     std::string streaming_config_error;
     if (!flashnext_streaming_config_validate(streaming_config, &streaming_config_error)) {
-        std::fprintf(stderr, "FLASHNEXT_STREAMING_CONFIG_FAIL %s\n", streaming_config_error.c_str());
+        std::fprintf(stderr, "FLASHNEXT_STREAMING_CONFIG_FAIL %s cgroup=%s effective_memory=%llu effective_swap=%llu\n",
+            streaming_config_error.c_str(), streaming_config.resolved_cgroup_path.c_str(),
+            (unsigned long long) streaming_config.effective_memory_limit_bytes,
+            (unsigned long long) streaming_config.effective_swap_limit_bytes);
         return 16;
     }
+    std::printf("FLASHNEXT_STREAMING_CONFIG_PASS cgroup=%s effective_memory=%llu effective_swap=%llu\n",
+        streaming_config.resolved_cgroup_path.c_str(),
+        (unsigned long long) streaming_config.effective_memory_limit_bytes,
+        (unsigned long long) streaming_config.effective_swap_limit_bytes);
     const char * layer_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
-    const uint32_t target_layer = layer_start_env ? (uint32_t) std::strtoul(layer_start_env, nullptr, 10) : 1;
-    const bool range_mode = layer_start_env != nullptr && target_layer > 0;
+    const char * range_start_env = std::getenv("CORTEX_FLASHNEXT_RANGE_START");
+    const char * range_end_env = std::getenv("CORTEX_FLASHNEXT_RANGE_END");
+    const bool explicit_range = range_start_env != nullptr || range_end_env != nullptr;
+    flashnext_requested_range requested_range;
+    uint32_t target_layer = 1;
+    bool range_mode = false;
+    if (explicit_range) {
+        if (flashnext_any_legacy_chain_flag()) {
+            std::fprintf(stderr, "FLASHNEXT_RANGE_REJECTED legacy chain flags cannot be combined with explicit range\n");
+            return 16;
+        }
+        std::string range_error;
+        if (!flashnext_parse_layer_range(range_start_env, range_end_env,
+                std::numeric_limits<uint32_t>::max(), requested_range, range_error)) {
+            std::fprintf(stderr, "FLASHNEXT_RANGE_REJECTED %s\n", range_error.c_str());
+            return 16;
+        }
+        if (layer_start_env) {
+            errno = 0;
+            char * parse_end = nullptr;
+            const unsigned long long layer_start = std::strtoull(layer_start_env, &parse_end, 10);
+            if (errno == ERANGE || parse_end == layer_start_env || *parse_end != '\0' ||
+                    layer_start != requested_range.start) {
+                std::fprintf(stderr, "FLASHNEXT_RANGE_REJECTED LAYER_START must equal RANGE_START\n");
+                return 16;
+            }
+        }
+        target_layer = requested_range.start;
+        range_mode = true;
+    } else if (layer_start_env) {
+        errno = 0;
+        char * parse_end = nullptr;
+        const unsigned long long parsed = std::strtoull(layer_start_env, &parse_end, 10);
+        if (errno == ERANGE || parse_end == layer_start_env || *parse_end != '\0' ||
+                parsed > std::numeric_limits<uint32_t>::max() || parsed == 0) {
+            std::fprintf(stderr, "FLASHNEXT_LAYER_REJECTED invalid LAYER_START\n");
+            return 16;
+        }
+        target_layer = (uint32_t) parsed;
+        range_mode = true;
+    }
+    if (!explicit_range && flashnext_any_legacy_chain_flag()) {
+        std::fprintf(stderr,
+            "FLASHNEXT_LEGACY_CHAIN_REJECTED use CORTEX_FLASHNEXT_RANGE_START and CORTEX_FLASHNEXT_RANGE_END\n");
+        return 16;
+    }
+    // Keep the loader and decode paths on the same explicit range contract.
+    // The model loader uses CORTEX_LOW_RESIDENCY_LAYER, while llama_context
+    // checks CORTEX_FLASHNEXT_LAYER_START before accepting external F32 input.
+    // Export the already-validated CLI value rather than relying on callers to
+    // provide two independently maintained environment variables.
+    if (range_mode) {
+        setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(target_layer).c_str(), 1);
+    }
     setenv("CORTEX_PREAD_ARENA", "1", 1);
     setenv("CORTEX_LOW_RESIDENCY_LAYER", range_mode ? std::to_string(target_layer).c_str() : "0", 1);
     if (!range_mode) {
@@ -924,9 +1209,11 @@ int main(int argc, char ** argv) {
             LLAMA_LOG_INFO("FLASHNEXT_PRE_MOE_RUN start=1 end=2\n");
         }
         setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(target_layer + 1).c_str(), 1);
-        if (target_layer == 3 && std::getenv("CORTEX_FLASHNEXT_LAYER3_TRANSACTION") != nullptr) {
-            setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
-        }
+        // The external transaction coordinator consumes the execution-scoped
+        // pre-MoE/router captures for every bounded layer, not only layer 3.
+        // Keep this diagnostic-only graph capture enabled for range mode so
+        // diag_moe_input-N and diag_router_logits-N are created and scheduled.
+        setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
         LLAMA_LOG_INFO("FLASHNEXT_RANGE_RUN start=%u end=%u owned_input_width=10240 embedding_path=SKIPPED\n",
                 target_layer, target_layer + 1);
     }
@@ -935,10 +1222,49 @@ int main(int argc, char ** argv) {
     llama_model_params mp = llama_model_default_params(); mp.n_gpu_layers = 0;
     llama_model * model = llama_model_load_from_file(argv[1], mp);
     if (!model) return 3;
+
+    if (explicit_range) {
+        std::string range_error;
+        if (!flashnext_parse_layer_range(range_start_env, range_end_env,
+                    model->hparams.n_layer(), requested_range, range_error)) {
+            std::fprintf(stderr, "FLASHNEXT_RANGE_REJECTED %s\n",
+                range_error.c_str());
+            llama_model_free(model); llama_backend_free();
+            return 16;
+        }
+        if (requested_range.start != target_layer) {
+            std::fprintf(stderr, "FLASHNEXT_RANGE_REJECTED RANGE_START must match LAYER_START\n");
+            llama_model_free(model); llama_backend_free();
+            return 16;
+        }
+        std::printf("FLASHNEXT_RANGE_VALID start=%u end=%u model_layers=%u\n",
+            requested_range.start, requested_range.end, model->hparams.n_layer());
+    }
     llama_context_params cp = llama_context_default_params(); cp.n_ctx = 256; cp.n_batch = 1;
     if (range_mode) cp.embeddings = true;
     llama_context * ctx = llama_init_from_model(model, cp);
     if (!ctx) return 4;
+
+    flashnext_external_fixture external_fixture;
+    const char * fixture_root = std::getenv("CORTEX_FLASHNEXT_FIXTURE_DIR");
+    if (fixture_root) {
+        if (!flashnext_load_external_fixture(fixture_root, external_fixture)) {
+            std::fprintf(stderr, "FLASHNEXT_FIXTURE_LOAD_FAIL\n");
+            llama_free(ctx); llama_model_free(model); llama_backend_free();
+            return 19;
+        }
+        if (!external_fixture.sequence_state.empty() &&
+            llama_state_seq_set_data(ctx, external_fixture.sequence_state.data(),
+                external_fixture.sequence_state.size(), external_fixture.sequence_id) != external_fixture.sequence_state.size()) {
+            std::fprintf(stderr, "FLASHNEXT_FIXTURE_STATE_RESTORE_FAIL\n");
+            llama_free(ctx); llama_model_free(model); llama_backend_free();
+            return 19;
+        }
+        llama_synchronize(ctx);
+        std::printf("FLASHNEXT_FIXTURE_STATE_%s bytes=%zu sequence=%d\n",
+            external_fixture.sequence_state.empty() ? "INITIALIZED_FRESH_ZERO" : "RESTORED",
+            external_fixture.sequence_state.size(), external_fixture.sequence_id);
+    }
 
     // First real full-attention milestone: execute the stock layer-3 graph
     // through its existing pre-MoE boundary.  This intentionally does not
@@ -989,11 +1315,17 @@ int main(int argc, char ** argv) {
         // chained layer-0 producer will replace this fixture in the next
         // harness step once the [1,2) lifecycle is proven.
         std::vector<float> owned_hidden(2560*4, 0.0f);
-        for (size_t i = 0; i < owned_hidden.size(); ++i) {
-            owned_hidden[i] = std::sin(0.001f * (float) i);
+        if (external_fixture.loaded) {
+            owned_hidden = external_fixture.hc_input;
+        } else {
+            for (size_t i = 0; i < owned_hidden.size(); ++i) {
+                owned_hidden[i] = std::sin(0.001f * (float) i);
+            }
         }
+        const int input_position = external_fixture.loaded ? external_fixture.position : 0;
         const uint64_t before = hash_f32(owned_hidden.data(), owned_hidden.size());
-        std::printf("FLASHNEXT_RANGE_INPUT owned=YES shape=[2560,4,1] bytes=%zu hash_before=%016llx\n",
+        std::printf("FLASHNEXT_RANGE_INPUT owned=YES external=%s shape=[2560,4,1] bytes=%zu hash_before=%016llx\n",
+                external_fixture.loaded ? "YES" : "NO",
                 owned_hidden.size()*sizeof(float), (unsigned long long) before);
         layer_transaction_result transaction;
         bool range_rollback_pass = false;
@@ -1021,9 +1353,9 @@ int main(int argc, char ** argv) {
                 run_layer_transaction(rollback_ctx, target_layer, 1, rollback_input, argv[2]) : failed;
             std::printf("STATE_RETRY=%s\n", retry.state_committed ? "PASS" : "FAIL");
             if (rollback_ctx) llama_free(rollback_ctx);
-            transaction = run_layer_transaction(ctx, target_layer, 0, owned_hidden, argv[2]);
+            transaction = run_layer_transaction(ctx, target_layer, input_position, owned_hidden, argv[2], external_fixture.token_id);
         } else {
-            transaction = run_layer_transaction(ctx, target_layer, 0, owned_hidden, argv[2]);
+            transaction = run_layer_transaction(ctx, target_layer, input_position, owned_hidden, argv[2], external_fixture.token_id);
         }
         if (std::getenv("CORTEX_FLASHNEXT_CPU_OPERAND_CAPTURE") != nullptr) {
             auto read_cpu_diag = [&](const char * name) {
@@ -1105,6 +1437,35 @@ int main(int argc, char ** argv) {
                 hc_attention_reference(ctx, hc_index, (int) target_layer, hc_error);
             std::printf("HC_DOWN_ORACLE_INVOKED=YES HC_DOWN_ORACLE_PASS=%s HC_DOWN_ORACLE_ERROR=%s\n",
                 hc_ok ? "YES" : "NO", hc_error.c_str());
+        }
+        if (explicit_range && target_layer == requested_range.start) {
+            if (!transaction.state_committed || transaction.output.size() != 2560u * 4u ||
+                    !std::all_of(transaction.output.begin(), transaction.output.end(),
+                        [](float v) { return std::isfinite(v); })) {
+                const llama_model_base * base = flashnext_model_base(model);
+                append_range_evidence(target_layer, owned_hidden, transaction, false,
+                    base->flashnext_ple_rows_provisioned(), base->flashnext_ple_bytes_read(),
+                    model->hparams.is_ple(target_layer));
+                std::fprintf(stderr, "FLASHNEXT_RANGE_ABORT layer=%u stage=first_transaction\n", target_layer);
+                llama_free(ctx); ctx = nullptr;
+                llama_model_free(model); model = nullptr;
+                llama_backend_free();
+                return 22;
+            }
+            const std::vector<float> first_output(transaction.output.begin(), transaction.output.end());
+            const uint64_t first_hash = hash_f32(first_output.data(), first_output.size());
+            std::printf("FLASHNEXT_RANGE_LAYER layer=%u input_hash=%016llx output_hash=%016llx "
+                "output_elements=%zu finite=YES state_commit=PASS selected_experts=%zu ple_status=PROVIDER_BOUND\n",
+                target_layer, (unsigned long long) hash_f32(owned_hidden.data(), owned_hidden.size()),
+                (unsigned long long) first_hash, first_output.size(), transaction.selected_ids.size());
+            const llama_model_base * base = flashnext_model_base(model);
+            append_range_evidence(target_layer, owned_hidden, transaction, true,
+                base->flashnext_ple_rows_provisioned(), base->flashnext_ple_bytes_read(),
+                model->hparams.is_ple(target_layer));
+            const int range_rc = flashnext_run_range_tail(model, ctx, mp, cp, argv[1], argv[2],
+                requested_range.start, requested_range.end, first_output);
+            llama_backend_free();
+            return range_rc;
         }
         if ((std::getenv("CORTEX_FLASHNEXT_CHAIN_1_2") != nullptr ||
              std::getenv("CORTEX_FLASHNEXT_CHAIN_1_2_3") != nullptr ||
@@ -1359,7 +1720,8 @@ int main(int argc, char ** argv) {
             llama_backend_free();
             if ((chain_3 || chain_6 || chain_12 || chain_48) && (!layer3_rebound || !layer3_result.state_committed)) return 21;
             if ((chain_6 || chain_12 || chain_48) && !layers4_6_pass) return 22;
-            return 0;
+            // Do not report success when the owned transaction failed.
+            return transaction.state_committed ? 0 : 17;
         }
         const int rc = transaction.decode_status;
         const std::vector<uint8_t> & state_before_transaction = transaction.state_before;
