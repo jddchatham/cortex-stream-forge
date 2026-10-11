@@ -328,6 +328,35 @@ static std::vector<uint8_t> capture_seq_state(llama_context * ctx) {
     return state;
 }
 
+static bool flashnext_write_state_file(const std::string & path, const std::vector<uint8_t> & state) {
+    if (state.empty()) return false;
+    const int fd = ::open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+    if (fd < 0) return false;
+    size_t done = 0;
+    while (done < state.size()) {
+        const ssize_t n = ::write(fd, state.data() + done, state.size() - done);
+        if (n <= 0) { ::close(fd); return false; }
+        done += (size_t) n;
+    }
+    const bool durable = ::fsync(fd) == 0;
+    // State is immediately durable and will be read by a later transaction;
+    // do not retain all completed snapshots in the protected page cache.
+    (void) ::posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED);
+    ::close(fd);
+    return durable;
+}
+
+static bool flashnext_read_state_file(const std::string & path, std::vector<uint8_t> & state) {
+    std::ifstream in(path, std::ios::binary | std::ios::ate);
+    if (!in) return false;
+    const std::streamoff size = in.tellg();
+    if (size <= 0) return false;
+    in.seekg(0, std::ios::beg);
+    state.resize((size_t) size);
+    in.read(reinterpret_cast<char *>(state.data()), size);
+    return in.good() || in.eof() && in.gcount() == size;
+}
+
 static std::vector<uint8_t> capture_layer_recurrent_state(llama_context * ctx, int layer) {
     std::vector<uint8_t> out;
     for (bool convolution : { false, true }) {
@@ -754,6 +783,100 @@ static bool execute_transaction_graph_b(
     txc.output = txc.values.layer_output;
     for (float x : txc.output) if (!std::isfinite(x)) { error = "non-finite Graph-B output"; return false; }
     return true;
+}
+
+// Execute the stock layer-0 graph for a continuation token.  The layer-0
+// context is disposable; its opaque sequence snapshot is restored before the
+// decode, and the resulting owned activation is returned to the streaming
+// coordinator.
+static bool flashnext_run_layer0_continuation(
+        const char * model_path, const char * index_path, const llama_model_params & mp,
+        llama_context_params cp, llama_token token, int position,
+        const std::vector<uint8_t> & state, std::vector<float> & output) {
+    // The continuation is the real layer-0 token-input graph.  The preceding
+    // layer-range loop leaves range variables set for its last nonzero layer;
+    // loading under those flags creates a pre-bound weight descriptor while
+    // the token graph still reaches token_embd.weight.  Restore the same
+    // router-only loader configuration used by the original layer-0 pass
+    // before constructing this replacement context.
+    unsetenv("CORTEX_FLASHNEXT_LAYER_RANGE");
+    unsetenv("CORTEX_FLASHNEXT_LAYER_START");
+    unsetenv("CORTEX_FLASHNEXT_LAYER_END");
+    unsetenv("CORTEX_QWEN35_SEGMENT_END");
+    unsetenv("CORTEX_FLASHNEXT_PRE_MOE");
+    setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
+    setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
+    setenv("CORTEX_FLASHNEXT_SEGMENT_A", "1", 1);
+    setenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER", "1", 1);
+    llama_model * model = llama_model_load_from_file(model_path, mp);
+    llama_context * ctx = model ? llama_init_from_model(model, cp) : nullptr;
+    if (!model || !ctx) {
+        if (ctx) llama_free(ctx);
+        if (model) llama_model_free(model);
+        return false;
+    }
+    const bool restored = !state.empty() &&
+        llama_state_seq_set_data(ctx, state.data(), state.size(), 0) == state.size();
+    llama_batch batch = llama_batch_init(1, 0, 1);
+    batch.token[0] = token;
+    batch.pos[0] = position;
+    batch.n_seq_id[0] = 1;
+    batch.seq_id[0][0] = 0;
+    batch.logits[0] = 1;
+    batch.n_tokens = 1;
+    const int rc = restored ? llama_decode(ctx, batch) : -1;
+    llama_synchronize(ctx);
+    const float * artifact = rc == 0 ? llama_get_logits_ith(ctx, 0) : nullptr;
+    bool ok = artifact != nullptr;
+    flashnext_layer_transaction tx;
+    if (ok) {
+        std::memcpy(tx.pre_moe_hidden.data(), artifact, tx.pre_moe_hidden.size() * sizeof(float));
+        std::memcpy(tx.residual_hc.data(), artifact + 2560, tx.residual_hc.size() * sizeof(float));
+        std::memcpy(tx.inject.data(), artifact + 2560 + tx.residual_hc.size(), tx.inject.size() * sizeof(float));
+        const float * route = artifact + 12804;
+        std::array<int, 512> order{};
+        for (int i = 0; i < 512; ++i) order[i] = i;
+        std::partial_sort(order.begin(), order.begin() + 10, order.end(),
+            [route](int a, int b) { return route[a] > route[b]; });
+        double z = 0.0, ex[10];
+        const float mx = route[order[0]];
+        for (int i = 0; i < 10; ++i) {
+            ex[i] = std::exp((double) route[order[i]] - (double) mx);
+            z += ex[i];
+        }
+        for (int i = 0; i < 10; ++i) {
+            tx.selected_expert_ids[i] = order[i];
+            tx.routing_weights[i] = ex[i] / z;
+        }
+        tx.layer = 0;
+        flashnext_tensor_index index;
+        std::string error;
+        ok = index.load(index_path, &error) && flashnext_execute_selected_moe(index, index_path, tx);
+        flashnext_tensor_descriptor sg, su, sd, sc;
+        if (ok) ok = index.resolve_shared(0, flashnext_projection::gate, sg, &error) &&
+            index.resolve_shared(0, flashnext_projection::up, su, &error) &&
+            index.resolve_shared(0, flashnext_projection::down, sd, &error) &&
+            index.resolve_shared(0, flashnext_projection::shared_control, sc, &error);
+        std::array<int, 4> fds{{-1, -1, -1, -1}};
+        if (ok) {
+            fds = {{::open(sg.path.c_str(), O_RDONLY | O_CLOEXEC), -1, -1, -1}};
+            ok = fds[0] >= 0 && sg.path == su.path && sg.path == sd.path && sg.path == sc.path;
+            fds[1] = fds[2] = fds[3] = fds[0];
+            flashnext_shared_expert_slices shared{fds, sg.offset, su.offset, sd.offset, sc.offset};
+            ok = ok && flashnext_execute_shared_expert(shared, tx);
+            if (fds[0] >= 0) ::close(fds[0]);
+        }
+        if (ok) {
+            for (size_t i = 0; i < tx.complete_moe.size(); ++i)
+                tx.complete_moe[i] = tx.selected_moe[i] + tx.shared_moe[i];
+            ok = flashnext_execute_segment_b(tx);
+        }
+        if (ok) output.assign(tx.layer_output.begin(), tx.layer_output.end());
+    }
+    llama_batch_free(batch);
+    llama_free(ctx);
+    llama_model_free(model);
+    return ok;
 }
 
 static layer_transaction_result run_layer_decode(
@@ -2063,6 +2186,23 @@ int main(int argc, char ** argv) {
         unsetenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER");
         setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
         std::vector<float> previous_output = layer0_output;
+        const bool second_token_requested = std::getenv("CORTEX_FLASHNEXT_SECOND_TOKEN_0_48") != nullptr;
+        const char * spool_root_env = std::getenv("CORTEX_FLASHNEXT_STATE_SPOOL_DIR");
+        const std::string spool_root = spool_root_env && spool_root_env[0] != '\0' ? spool_root_env : "/home/user";
+        const std::string state_spool = spool_root + "/cortex-flashnext-token-state-" + std::to_string((long long) getpid());
+        if (second_token_requested) {
+            ::mkdir(state_spool.c_str(), 0700);
+            const std::string layer0_state_path = state_spool + "/layer-0.state";
+            if (!flashnext_write_state_file(layer0_state_path, state_after_position0)) {
+                std::fprintf(stderr, "SECOND_TOKEN_STATE_SPOOL=FAIL layer=0\n");
+                llama_backend_free();
+                return 24;
+            }
+            std::printf("SECOND_TOKEN_STATE_SPOOL layer=0 bytes=%zu hash=%016llx\n",
+                state_after_position0.size(),
+                (unsigned long long) hash_bytes(state_after_position0.data(), state_after_position0.size()));
+            std::fflush(stdout);
+        }
         bool chain_ok = true;
         for (uint32_t il = 1; il < std::min<uint32_t>(48, model_layer_count); ++il) {
             std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT next_load_begin=%u\n", il); std::fflush(stderr);
@@ -2099,9 +2239,98 @@ int main(int argc, char ** argv) {
                 if (next_model) llama_model_free(next_model);
                 break;
             }
+            if (second_token_requested) {
+                const std::vector<uint8_t> committed = capture_seq_state(next_ctx);
+                const std::string path = state_spool + "/layer-" + std::to_string(il) + ".state";
+                if (!flashnext_write_state_file(path, committed)) {
+                    std::fprintf(stderr, "SECOND_TOKEN_STATE_SPOOL=FAIL layer=%u\n", il);
+                    chain_ok = false;
+                    llama_free(next_ctx);
+                    llama_model_free(next_model);
+                    break;
+                }
+                std::printf("SECOND_TOKEN_STATE_SPOOL layer=%u bytes=%zu hash=%016llx\n", il,
+                    committed.size(), (unsigned long long) hash_bytes(committed.data(), committed.size()));
+                std::fflush(stdout);
+            }
             previous_output.assign(next_result.output.begin(), next_result.output.end());
             llama_free(next_ctx);
             llama_model_free(next_model);
+        }
+        if (chain_ok && second_token_requested) {
+            constexpr llama_token second_token_id = 180671;
+            std::vector<uint8_t> layer0_state;
+            const bool layer0_state_ok = flashnext_read_state_file(state_spool + "/layer-0.state", layer0_state);
+            setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
+            setenv("CORTEX_FLASHNEXT_SEGMENT_A", "1", 1);
+            setenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER", "1", 1);
+            unsetenv("CORTEX_FLASHNEXT_LAYER_START");
+            unsetenv("CORTEX_FLASHNEXT_LAYER_END");
+            unsetenv("CORTEX_QWEN35_SEGMENT_END");
+            unsetenv("CORTEX_FLASHNEXT_PRE_MOE");
+            llama_context_params token1_cp = chain_cp;
+            token1_cp.embeddings = true;
+            std::vector<float> token1_output;
+            const bool layer0_token1_ok = layer0_state_ok && flashnext_run_layer0_continuation(
+                argv[1], argv[2], mp, token1_cp, second_token_id, 1, layer0_state, token1_output);
+            std::printf("SECOND_TOKEN_LAYER index=0 input_token=%u output_hash=%016llx state_restore=%s commit=%s\n",
+                (unsigned) second_token_id,
+                (unsigned long long) (token1_output.empty() ? 0 : hash_f32(token1_output.data(), token1_output.size())),
+                layer0_state_ok ? "PASS" : "FAIL", layer0_token1_ok ? "PASS" : "FAIL");
+            std::fflush(stdout);
+            if (!layer0_token1_ok) {
+                chain_ok = false;
+            } else {
+                // The layer-0 continuation intentionally uses the token-input
+                // router-only graph.  Nonzero token-1 layers consume the
+                // preceding HC activation through the range graph; do not
+                // let the layer-0 loader mode leak into their model load.
+                unsetenv("CORTEX_FLASHNEXT_ROUTER_ONLY");
+                unsetenv("CORTEX_FLASHNEXT_SEGMENT_A");
+                unsetenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER");
+                setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+                for (uint32_t il = 1; il < std::min<uint32_t>(48, model_layer_count) && chain_ok; ++il) {
+                    setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(il).c_str(), 1);
+                    setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(il).c_str(), 1);
+                    setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(il + 1).c_str(), 1);
+                    setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(il + 1).c_str(), 1);
+                    setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
+                    setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
+                    setenv("CORTEX_FLASHNEXT_LAYER3_TRANSACTION", "1", 1);
+                    std::vector<uint8_t> state;
+                    const bool state_ok = flashnext_read_state_file(
+                        state_spool + "/layer-" + std::to_string(il) + ".state", state);
+                    llama_model * next_model = state_ok ? llama_model_load_from_file(argv[1], mp) : nullptr;
+                    llama_context * next_ctx = next_model ? llama_init_from_model(next_model, token1_cp) : nullptr;
+                    const bool restored = next_ctx && llama_state_seq_set_data(
+                        next_ctx, state.data(), state.size(), 0) == state.size();
+                    layer_transaction_result token1_result;
+                    if (restored) token1_result = run_layer_transaction(next_ctx, il, 1, token1_output, argv[2]);
+                    const bool pass = restored && token1_result.state_committed &&
+                        token1_result.output.size() == token1_output.size();
+                    std::printf("SECOND_TOKEN_LAYER index=%u input_hash=%016llx output_hash=%016llx "
+                        "state_restore=%s graph_a=%s sparse_moe=%s graph_b=%s commit=%s "
+                        "selected=%zu unselected=%llu failure=%s\n",
+                        il, (unsigned long long) hash_f32(token1_output.data(), token1_output.size()),
+                        (unsigned long long) token1_result.output_hash,
+                        restored ? "PASS" : "FAIL", token1_result.graph_a_ok ? "PASS" : "FAIL",
+                        token1_result.sparse_moe_ok ? "PASS" : "FAIL", token1_result.graph_b_ok ? "PASS" : "FAIL",
+                        token1_result.state_committed ? "PASS" : "FAIL", token1_result.selected_ids.size(),
+                        (unsigned long long) token1_result.unselected_expert_reads,
+                        token1_result.failure_stage ? token1_result.failure_stage : "none");
+                    std::fflush(stdout);
+                    if (next_ctx) llama_free(next_ctx);
+                    if (next_model) llama_model_free(next_model);
+                    if (!pass) chain_ok = false;
+                    else token1_output.assign(token1_result.output.begin(), token1_result.output.end());
+                }
+                if (chain_ok) {
+                    previous_output = std::move(token1_output);
+                    std::printf("SECOND_TOKEN_CHAIN_0_TO_47_PASS=YES FINAL_ACTIVATION_HASH=%016llx\n",
+                        (unsigned long long) hash_f32(previous_output.data(), previous_output.size()));
+                    std::fflush(stdout);
+                }
+            }
         }
         if (chain_ok) {
             const uint64_t final_activation_hash = hash_f32(previous_output.data(), previous_output.size());
