@@ -2321,15 +2321,18 @@ int main(int argc, char ** argv) {
                     if (restored) token1_result = run_layer_transaction(next_ctx, il, 1, token1_output, argv[2]);
                     const bool pass = restored && token1_result.state_committed &&
                         token1_result.output.size() == token1_output.size();
+                    const std::vector<uint8_t> token1_state = next_ctx && pass ? capture_seq_state(next_ctx) : std::vector<uint8_t>();
                     std::printf("SECOND_TOKEN_LAYER index=%u input_hash=%016llx output_hash=%016llx "
                         "state_restore=%s graph_a=%s sparse_moe=%s graph_b=%s commit=%s "
-                        "selected=%zu unselected=%llu failure=%s\n",
+                        "selected=%zu unselected=%llu state_bytes=%zu state_hash=%016llx failure=%s\n",
                         il, (unsigned long long) hash_f32(token1_output.data(), token1_output.size()),
                         (unsigned long long) token1_result.output_hash,
                         restored ? "PASS" : "FAIL", token1_result.graph_a_ok ? "PASS" : "FAIL",
                         token1_result.sparse_moe_ok ? "PASS" : "FAIL", token1_result.graph_b_ok ? "PASS" : "FAIL",
                         token1_result.state_committed ? "PASS" : "FAIL", token1_result.selected_ids.size(),
                         (unsigned long long) token1_result.unselected_expert_reads,
+                        token1_state.size(), token1_state.empty() ? 0ull :
+                            (unsigned long long) hash_bytes(token1_state.data(), token1_state.size()),
                         token1_result.failure_stage ? token1_result.failure_stage : "none");
                     std::fflush(stdout);
                     if (next_ctx) llama_free(next_ctx);
