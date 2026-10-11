@@ -2,25 +2,40 @@
 #include "llama-ext.h"
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 int main(int argc, char ** argv) {
-    if (argc != 4) return 2;
+    if (argc != 4 && argc != 5) return 2;
     const char * model_path = argv[1];
     const int layer = std::atoi(argv[2]);
     const int end = std::atoi(argv[3]);
+    const bool plan_only = argc == 5 && std::string(argv[4]) == "--plan";
     char layer_text[32], end_text[32];
     std::snprintf(layer_text, sizeof(layer_text), "%d", layer);
     std::snprintf(end_text, sizeof(end_text), "%d", end);
     setenv("CORTEX_LOW_RESIDENCY_LAYER", layer_text, 1);
     setenv("CORTEX_QWEN35_SEGMENT_START", layer_text, 1);
     setenv("CORTEX_QWEN35_SEGMENT_END", end_text, 1);
+    if (layer > 0) {
+        // This wrapper targets the Flash-Next low-residency selector.  The
+        // older Qwen35 names alone leave the generic loader path active.
+        setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+        setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
+        setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
+    }
+    if (plan_only) setenv("CORTEX_FLASHNEXT_PLAN_ONLY", "1", 1);
 
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
     llama_model * model = llama_model_load_from_file(model_path, mp);
     if (!model) return 3;
+    if (plan_only) {
+        llama_model_free(model);
+        llama_backend_free();
+        return 0;
+    }
 
     llama_context_params cp = llama_context_default_params();
     cp.n_ctx = 8;
