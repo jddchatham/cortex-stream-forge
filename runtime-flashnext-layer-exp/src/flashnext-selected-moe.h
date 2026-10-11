@@ -18,13 +18,13 @@ struct flashnext_selected_expert_slice {
 bool flashnext_execute_selected_moe(
         const std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> & slices,
         flashnext_layer_transaction & tx,
-        size_t arena_bytes = 16 * 1024);
+        size_t arena_bytes = 0);
 
 bool flashnext_execute_selected_moe(
         const flashnext_tensor_index & index,
         const std::string & index_path,
         flashnext_layer_transaction & tx,
-        size_t arena_bytes = 16 * 1024);
+        size_t arena_bytes = 0);
 
 // Independent stock-compatible validation path. It uses the same GGML
 // quantized matvec semantics but performs its own expert accumulation.
@@ -32,4 +32,4 @@ bool flashnext_execute_selected_moe_reference(
         const flashnext_tensor_index & index,
         const std::string & index_path,
         flashnext_layer_transaction & tx,
-        size_t arena_bytes = 16 * 1024);
+        size_t arena_bytes = 0);

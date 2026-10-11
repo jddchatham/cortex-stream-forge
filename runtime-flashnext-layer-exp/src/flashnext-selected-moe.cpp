@@ -1,4 +1,5 @@
 #include "flashnext-selected-moe.h"
+#include "flashnext-streaming-config.h"
 
 #include "ggml.h"
 
@@ -70,6 +71,8 @@ bool tiled_matvec(ggml_backend_t backend, int fd, ggml_type type, int64_t rows,
 bool flashnext_execute_selected_moe(
         const std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> & slices,
         flashnext_layer_transaction & tx, size_t arena_bytes) {
+    if (arena_bytes == 0) arena_bytes = flashnext_effective_expert_cache_bytes();
+    if (arena_bytes == 0) return false;
     tx.selected_moe.fill(0.0f);
     std::array<double, K> accumulated{};
     tx.io.selected_expert_bytes_read = 0;
@@ -119,6 +122,8 @@ bool flashnext_execute_selected_moe(
 
 bool flashnext_execute_selected_moe(const flashnext_tensor_index & index,
         const std::string &, flashnext_layer_transaction & tx, size_t arena_bytes) {
+    if (arena_bytes == 0) arena_bytes = flashnext_effective_expert_cache_bytes();
+    if (arena_bytes == 0) return false;
     std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> slices{};
     std::array<int, 3> fds{{-1, -1, -1}};
     for (size_t i=0; i<slices.size(); ++i) {
@@ -139,6 +144,8 @@ bool flashnext_execute_selected_moe(const flashnext_tensor_index & index,
 
 bool flashnext_execute_selected_moe_reference(const flashnext_tensor_index & index,
         const std::string &, flashnext_layer_transaction & tx, size_t arena_bytes) {
+    if (arena_bytes == 0) arena_bytes = flashnext_effective_expert_cache_bytes();
+    if (arena_bytes == 0) return false;
     std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> slices{};
     std::array<int, 3> fds{{-1, -1, -1}};
     for (size_t i = 0; i < slices.size(); ++i) {
