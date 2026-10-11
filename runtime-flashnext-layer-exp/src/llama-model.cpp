@@ -1550,6 +1550,14 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     const char * forge_layer_env = std::getenv("CORTEX_LOW_RESIDENCY_LAYER");
     const int forge_layer = forge_layer_env ? std::atoi(forge_layer_env) : -1;
     const bool forge_layer_probe = forge_layer >= 0;
+    const bool plan_strict = std::getenv("CORTEX_FLASHNEXT_PLAN_STRICT") != nullptr;
+    const char * forge_layer_end_env = std::getenv("CORTEX_FLASHNEXT_LAYER_END");
+    if (plan_strict && (!forge_layer_probe || forge_layer > 1 || forge_layer < 0 ||
+            !forge_layer_end_env || std::atoi(forge_layer_end_env) != forge_layer + 1)) {
+        LLAMA_LOG_ERROR("CORTEX_SELECTION_PLAN_FAIL unsupported_or_invalid_layer_range start=%d end=%s\n",
+            forge_layer, forge_layer_end_env ? forge_layer_end_env : "unset");
+        return false;
+    }
     const bool flashnext_layer_range = std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE") != nullptr;
     const bool flashnext_final_head = std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr;
     if (forge_layer_probe) {

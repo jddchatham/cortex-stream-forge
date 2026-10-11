@@ -75,6 +75,11 @@ class Qwen4ExpSelectionPlanTests(unittest.TestCase):
         self.assertIn('forge_layer != 0 && forge_layer != 1', LOADER)
         self.assertIn('unsupported_layer_range', LOADER)
 
+    def test_strict_plan_requires_matching_start_and_end_environment(self):
+        self.assertIn('CORTEX_FLASHNEXT_LAYER_END', LOADER)
+        self.assertIn('unsupported_or_invalid_layer_range', LOADER)
+        self.assertIn('std::atoi(forge_layer_end_env) != forge_layer + 1', LOADER)
+
     def test_manifest_has_exact_compiled_selection(self):
         self.assertEqual(len(PLAN_MANIFEST), 28)
         self.assertEqual(sum(v for k, v in PLAN_MANIFEST.items() if k.startswith('blk.')), 67851136)
