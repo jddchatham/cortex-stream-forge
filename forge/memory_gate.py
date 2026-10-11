@@ -14,6 +14,22 @@ o = {"cgroup": "0::" + cg}
 for n in ("memory.max", "memory.swap.max", "memory.current", "memory.peak", "memory.events"): o[n] = r(os.path.join(root, n))
 print(json.dumps(o, sort_keys=True), flush=True)'''
 
+EXEC_CODE = r'''import json, os, sys
+def r(p):
+    with open(p, encoding="ascii") as f: return f.read().strip()
+cg = next((x[3:] for x in r("/proc/self/cgroup").splitlines() if x.startswith("0::")), None)
+if cg is None: raise SystemExit("unified cgroup unavailable")
+root = "/sys/fs/cgroup" + cg
+o = {"cgroup": "0::" + cg}
+for n in ("memory.max", "memory.swap.max", "memory.current", "memory.peak", "memory.events"): o[n] = r(os.path.join(root, n))
+if o.get("memory.max") != "EXPECTED_MEMORY" or o.get("memory.swap.max") != "EXPECTED_SWAP": raise SystemExit("cgroup limits do not match requested workload limits")
+events = dict((p[0], p[1]) for p in (x.split() for x in o["memory.events"].splitlines()) if len(p) == 2)
+for k in ("oom", "oom_kill", "oom_group_kill"):
+    if k not in events or events[k] != "0": raise SystemExit("required zero OOM evidence missing")
+print("CORTEX_FORGE_SCOPE=" + json.dumps(o, sort_keys=True), flush=True)
+if not sys.argv[1:]: raise SystemExit("missing workload argv")
+os.execv(sys.argv[1], sys.argv[1:])'''
+
 @dataclass(frozen=True)
 class GateResult:
     status: str
@@ -38,9 +54,15 @@ def _validate(c, mem, swap):
     for key in ("memory.current", "memory.peak"):
         try: int(c[key])
         except (TypeError, ValueError): return f"non-numeric {key}"
-    events = dict((p[0], p[1]) for p in (x.split() for x in str(c["memory.events"]).splitlines()) if len(p) == 2)
+    events = {}
+    for line in str(c["memory.events"]).splitlines():
+        fields = line.split()
+        if len(fields) != 2 or fields[0] in events: continue
+        try: events[fields[0]] = int(fields[1])
+        except ValueError: continue
     for key in ("oom", "oom_kill", "oom_group_kill"):
-        if events.get(key, "0") != "0": return f"probe reported {key}={events[key]}"
+        if key not in events: return f"missing memory.events field {key}"
+        if events[key] != 0: return f"probe reported {key}={events[key]}"
     return None
 
 def verify_hard_memory_gate(memory_max=64*1024*1024, memory_swap_max=0, timeout_seconds=20.0, runner=subprocess.run):
@@ -70,6 +92,15 @@ def require_hard_memory_gate(**kwargs):
     result = verify_hard_memory_gate(**kwargs)
     if not result.verified: raise RuntimeError("hard memory gate unavailable: " + (result.reason or result.status))
     return result
+
+def verified_scope_argv(command, memory_max=64*1024*1024, memory_swap_max=0):
+    """Build argv that verifies the eventual workload child before execv."""
+    if not command or not all(isinstance(x, str) and x for x in command):
+        raise ValueError("workload argv must be a non-empty string sequence")
+    systemd, python = shutil.which("systemd-run"), shutil.which("python3")
+    if not systemd or not python: raise RuntimeError("systemd-run and python3 are required")
+    code = EXEC_CODE.replace("EXPECTED_MEMORY", str(memory_max)).replace("EXPECTED_SWAP", str(memory_swap_max))
+    return [systemd, "--user", "--scope", "--quiet", "--unit=cortex-forge-workload-" + uuid.uuid4().hex[:12], f"--property=MemoryMax={memory_max}", f"--property=MemorySwapMax={memory_swap_max}", python, "-c", code, *command]
 
 def result_json(result):
     return json.dumps({"status": result.status, "reason": result.reason, "requested_memory_max": result.requested_memory_max, "requested_swap_max": result.requested_swap_max, "child": result.child, "returncode": result.returncode, "duration_seconds": result.duration_seconds}, indent=2, sort_keys=True)

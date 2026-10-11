@@ -3,11 +3,15 @@
 Forge verifies a tiny non-model child inside a delegated user systemd scope.
 The child reads its own unified cgroup files. PASS requires finite exact
 `memory.max` and `memory.swap.max` readback plus zero OOM events. RSS sampling
-and RLIMIT_AS are not enforcement evidence.
+and RLIMIT_AS are not enforcement evidence. The workload wrapper reads the
+same limits in the actual child immediately before `execv`; a prior probe
+alone is not sufficient.
 
-Observed on the Lenovo with a 64 MiB probe: `memory.max=67108864`,
-`memory.swap.max=0`, `memory.current=5156864`, `memory.peak=5156864`, and
-`low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0`. Exit status was 0.
+One observed Lenovo run (the evidence in this PR) with a 64 MiB probe:
+`memory.max=67108864`, `memory.swap.max=0`, `memory.current=5148672`,
+`memory.peak=5173248`, and `low=0 high=0 max=0 oom=0 oom_kill=0
+oom_group_kill=0`. Exit status was 0. Earlier observations are not combined
+with this run.
 This proves only the tiny probe; no model was loaded and it is not a model
 budget.
 
