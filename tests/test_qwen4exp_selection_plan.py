@@ -6,7 +6,6 @@ WRAPPER = (ROOT / "runtime-flashnext-layer-exp/examples/qwen38-lowres-segment-te
 LOADER = (ROOT / "runtime-flashnext-layer-exp/src/llama-model.cpp").read_text()
 
 PLAN_MANIFEST = {
-    "token_embd.weight": 337715200,
     "blk.1.hc_attn_norm.weight": 40960,
     "blk.1.hc_attn_down.weight": 1740800,
     "blk.1.hc_attn_inject.weight": 21760,
@@ -53,17 +52,33 @@ class Qwen4ExpSelectionPlanTests(unittest.TestCase):
         self.assertIn('CORTEX_SELECTION_TENSOR', LOADER)
 
     def test_invalid_range_is_rejected(self):
-        self.assertIn('layer < 1 || end != layer + 1 || end > 48', WRAPPER)
+        self.assertIn('layer < 0 || end != layer + 1 || end > 48', WRAPPER)
 
     def test_strict_plan_rejects_unexpected_totals(self):
         self.assertIn('CORTEX_FLASHNEXT_PLAN_STRICT', WRAPPER)
         self.assertIn('CORTEX_SELECTION_PLAN_FAIL', LOADER)
-        self.assertIn('global_total != 337715200', LOADER)
-        self.assertIn('layer_total != 67851136', LOADER)
+        self.assertIn('expected_global = layer0_plan ? 337715200 : 0', LOADER)
+        self.assertIn('expected_layer = layer0_plan ? 50238336 : 67851136', LOADER)
+        self.assertIn('expected_tensors = layer0_plan ? 23 : 28', LOADER)
+
+    def test_layer_zero_preserves_token_lookup_but_range_does_not(self):
+        self.assertIn('forge_layer == 0 &&', LOADER)
+        self.assertIn('std::strncmp(name, "token_embd", 10)', LOADER)
+        self.assertIn('external', LOADER)
+
+    def test_two_stage_plan_totals_are_explicit(self):
+        self.assertIn('expected_global = layer0_plan ? 337715200 : 0', LOADER)
+        self.assertIn('expected_layer = layer0_plan ? 50238336 : 67851136', LOADER)
+        self.assertIn('expected_tensors = layer0_plan ? 23 : 28', LOADER)
 
     def test_manifest_has_exact_compiled_selection(self):
-        self.assertEqual(len(PLAN_MANIFEST), 29)
+        self.assertEqual(len(PLAN_MANIFEST), 28)
         self.assertEqual(sum(v for k, v in PLAN_MANIFEST.items() if k.startswith('blk.')), 67851136)
+
+    def test_historical_layer_zero_manifest_totals_are_preserved(self):
+        self.assertIn('expected_global = layer0_plan ? 337715200 : 0', LOADER)
+        self.assertIn('expected_layer = layer0_plan ? 50238336 : 67851136', LOADER)
+        self.assertIn('expected_tensors = layer0_plan ? 23 : 28', LOADER)
 
     def test_plan_reports_measurements_without_execution(self):
         self.assertIn('CORTEX_PLAN_METRICS', WRAPPER)

@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
     const int layer = std::atoi(argv[2]);
     const int end = std::atoi(argv[3]);
     const bool plan_only = argc == 5 && std::string(argv[4]) == "--plan";
-    if (layer < 1 || end != layer + 1 || end > 48) return 2;
+    if (layer < 0 || end != layer + 1 || end > 48) return 2;
     char layer_text[32], end_text[32];
     std::snprintf(layer_text, sizeof(layer_text), "%d", layer);
     std::snprintf(end_text, sizeof(end_text), "%d", end);

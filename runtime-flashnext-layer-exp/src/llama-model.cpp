@@ -2021,9 +2021,11 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                 const bool global_weight = std::strncmp(name, "blk.", 4) != 0;
                 const bool flashnext_router_only = std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr;
                 const bool expert_payload = std::strstr(name, "_exps.") != nullptr;
-                const bool router_global = std::strncmp(name, "token_embd", 10) == 0;
-                const bool layer0_input_global =
-                    forge_layer == 0 && std::strcmp(name, "per_layer_token_embd.weight") == 0;
+                // Layer zero uses token_embd for token lookup.  Nonzero range
+                // transactions bind caller-owned F32 hidden activations and
+                // must not retain either token lookup or the dense PLE table.
+                const bool router_global = forge_layer == 0 &&
+                    std::strncmp(name, "token_embd", 10) == 0;
                 // Segment B is a pure post-MoE combine graph.  It consumes
                 // only transaction-owned F32 inputs and therefore must not
                 // retain embeddings, per-layer embeddings, or any model
@@ -2041,7 +2043,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                 // segmented graph: layer 0 needs the token embedding, but it
                 // must not fall through to the complete global tensor set.
                 const bool eligible_global = final_head_tensor ||
-                    (forge_layer_probe ? (router_global || layer0_input_global) :
+                    (forge_layer_probe ? router_global :
                     (flashnext_segment_b || flashnext_layer_range ? false :
                         (flashnext_router_only ? router_global : global_weight)));
                 // A single segment still needs the model-global embedding,
@@ -2077,9 +2079,14 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             for (const ggml_tensor * t : selected) {
                 LLAMA_LOG_INFO("CORTEX_SELECTION_TENSOR name=%s bytes=%zu\n", ggml_get_name(t), ggml_nbytes(t));
             }
+            const bool layer0_plan = forge_layer == 0;
+            const size_t expected_global = layer0_plan ? 337715200 : 0;
+            const size_t expected_layer = layer0_plan ? 50238336 : 67851136;
+            const size_t expected_tensors = layer0_plan ? 23 : 28;
             if (std::getenv("CORTEX_FLASHNEXT_PLAN_STRICT") != nullptr &&
-                (global_total != 337715200 || layer_total != 67851136 || selected.size() != 29)) {
-                LLAMA_LOG_ERROR("CORTEX_SELECTION_PLAN_FAIL expected_global=337715200 expected_layer=67851136 expected_tensors=29\n");
+                (global_total != expected_global || layer_total != expected_layer || selected.size() != expected_tensors)) {
+                LLAMA_LOG_ERROR("CORTEX_SELECTION_PLAN_FAIL expected_global=%zu expected_layer=%zu expected_tensors=%zu\n",
+                    expected_global, expected_layer, expected_tensors);
                 return false;
             }
             return true;
