@@ -23,7 +23,11 @@ root = "/sys/fs/cgroup" + cg
 o = {"cgroup": "0::" + cg}
 for n in ("memory.max", "memory.swap.max", "memory.current", "memory.peak", "memory.events"): o[n] = r(os.path.join(root, n))
 if o.get("memory.max") != "EXPECTED_MEMORY" or o.get("memory.swap.max") != "EXPECTED_SWAP": raise SystemExit("cgroup limits do not match requested workload limits")
-events = dict((p[0], p[1]) for p in (x.split() for x in o["memory.events"].splitlines()) if len(p) == 2)
+events = {}
+for line in o["memory.events"].splitlines():
+    fields = line.split()
+    if len(fields) != 2 or fields[0] in events: raise SystemExit("malformed or duplicate memory.events field")
+    events[fields[0]] = fields[1]
 for k in ("oom", "oom_kill", "oom_group_kill"):
     if k not in events or events[k] != "0": raise SystemExit("required zero OOM evidence missing")
 print("CORTEX_FORGE_SCOPE=" + json.dumps(o, sort_keys=True), flush=True)
@@ -57,9 +61,9 @@ def _validate(c, mem, swap):
     events = {}
     for line in str(c["memory.events"]).splitlines():
         fields = line.split()
-        if len(fields) != 2 or fields[0] in events: continue
+        if len(fields) != 2 or fields[0] in events: return "malformed or duplicate memory.events field"
         try: events[fields[0]] = int(fields[1])
-        except ValueError: continue
+        except ValueError: return f"non-numeric memory.events field {fields[0]}"
     for key in ("oom", "oom_kill", "oom_group_kill"):
         if key not in events: return f"missing memory.events field {key}"
         if events[key] != 0: return f"probe reported {key}={events[key]}"
