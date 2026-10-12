@@ -35,7 +35,7 @@ static size_t proc_io_bytes(const char * key) {
 }
 
 int main(int argc, char ** argv) {
-    if (argc != 4) return 2;
+    if (argc != 4 && argc != 5) return 2;
     const auto started = std::chrono::steady_clock::now();
     const size_t rss_before = proc_kib("/proc/self/status", "VmRSS:");
     const size_t pss_before = proc_kib("/proc/self/smaps_rollup", "Pss:");
@@ -43,6 +43,8 @@ int main(int argc, char ** argv) {
     const char * model_path = argv[1];
     const int layer = std::atoi(argv[2]);
     const int end = std::atoi(argv[3]);
+    const bool plan_only = argc == 5 && std::string(argv[4]) == "--plan";
+    if (layer < 0 || end != layer + 1 || end > 48) return 2;
     char layer_text[32], end_text[32];
     std::snprintf(layer_text, sizeof(layer_text), "%d", layer);
     std::snprintf(end_text, sizeof(end_text), "%d", end);
@@ -54,12 +56,33 @@ int main(int argc, char ** argv) {
     setenv("CORTEX_FLASHNEXT_LAYER_END", end_text, 1);
     setenv("CORTEX_QWEN35_SEGMENT_START", layer_text, 1);
     setenv("CORTEX_QWEN35_SEGMENT_END", end_text, 1);
+    if (layer > 0) {
+        setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
+        setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
+    }
+    if (plan_only) setenv("CORTEX_FLASHNEXT_PLAN_ONLY", "1", 1);
+    if (plan_only) setenv("CORTEX_FLASHNEXT_PLAN_STRICT", "1", 1);
 
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
     llama_model * model = llama_model_load_from_file(model_path, mp);
     if (!model) return 3;
+    if (plan_only) {
+        const auto finished = std::chrono::steady_clock::now();
+        const size_t rss_after = proc_kib("/proc/self/status", "VmRSS:");
+        const size_t pss_after = proc_kib("/proc/self/smaps_rollup", "Pss:");
+        const size_t read_after = proc_io_bytes("read_bytes");
+        const double elapsed_ms = std::chrono::duration<double, std::milli>(finished - started).count();
+        std::printf("CORTEX_PLAN_METRICS rss_before_kib=%zu rss_after_kib=%zu "
+                    "pss_before_kib=%zu pss_after_kib=%zu bytes_read=%zu elapsed_ms=%.3f "
+                    "model_payload_allocation=SKIPPED graph_execution=SKIPPED\n",
+                    rss_before, rss_after, pss_before, pss_after,
+                    read_after >= read_before ? read_after - read_before : 0, elapsed_ms);
+        llama_model_free(model);
+        llama_backend_free();
+        return 0;
+    }
 
     llama_context_params cp = llama_context_default_params();
     cp.n_ctx = 8;
