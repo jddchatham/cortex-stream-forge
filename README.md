@@ -20,18 +20,14 @@ Qwen3.8 cannot use the ordinary whole-model resident loader on this host. Its Fo
 
 ## Qwen3.8 low-residency status
 
-The Forge-local Qwen3.8 runtime now uses the metadata/index plus direct range
-loads, a reusable layer buffer, and one short-lived graph context per layer.
-All 64 runtime layers execute sequentially; each layer is rebound, executed,
-serialized for recurrent/KV state, and released before the next layer. A two
-step full-trunk run passed and selected tokens `13` then `220`. A bounded
-interactive run on `Hi` produced a response token (`,`). The 16.81 GB model
-payload is not made resident as one allocation: the observed layer buffer is
-252,263,296 bytes and the global/final-weight buffer is 1,758,126,080 bytes.
+The older Forge-local Qwen3.8 adapter uses metadata/index range loads and a
+reusable layer buffer for isolated experiments. Those adapter results are not
+evidence that the current Qwen4Exp canonical-manifest path provides complete
+end-to-end chat or token generation.
 
-The interactive wrapper is `bin/qwen38-chat`; it suppresses runtime diagnostics
-on stderr and uses the local Ollama blob. The Omarchy entry is
-`Qwen3.8 27B Abliterated Chat`. The existing model launchers are unchanged.
+The interactive wrapper and Omarchy entry are historical adapter artifacts;
+they are not presented as a working frontend for the current canonical
+residency-manifest development path.
 
 ### Safe low-residency milestone
 
