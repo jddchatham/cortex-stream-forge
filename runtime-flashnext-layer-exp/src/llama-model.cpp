@@ -43,7 +43,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
+#include <fstream>
 
 static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params & params) {
     switch (arch) {
@@ -358,6 +360,11 @@ static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params
     }
 
 }
+
+// Generated from the metadata-only Qwen4Exp residency plan.  This is the
+// maximum aligned graph-required set across physical layers 0..47.
+static constexpr size_t CORTEX_FLASHNEXT_FIXED_ARENA_CAPACITY = 67851136;
+static constexpr size_t CORTEX_FLASHNEXT_ARENA_BUDGET = 768ull * 1024ull * 1024ull;
 
 llama_model * llama_model_create(llm_arch arch, const llama_model_params & params) {
     llama_model * model = llama_model_mapping(arch, params);
@@ -1242,8 +1249,34 @@ struct llama_model::impl {
     // the current layer's weight payload.  It is never resized per tensor.
     void * cortex_pread_arena = nullptr;
     size_t cortex_pread_arena_capacity = 0;
+    ggml_backend_buffer_ptr cortex_pread_buffer;
     std::vector<int> cortex_pread_fds;
     std::unordered_map<std::string, std::pair<uint32_t, size_t>> cortex_offsets;
+    // GGUF metadata index and bounded resident manifest are distinct.  The
+    // offset map contains every tensor so row providers can locate data;
+    // this set contains only tensors materialized by the active selection.
+    std::unordered_set<std::string> cortex_selected_names;
+    int cortex_active_layer = -1;
+    bool cortex_residency_valid = false;
+
+    // Runtime-owned, metadata-only descriptor inventory.  This is populated
+    // before mappings, backend weight buffers, or payload reads in the
+    // descriptor-only loader mode.  Runtime tensor pointers remain valid
+    // because their descriptor contexts are moved into ctxs_bufs.
+    struct descriptor_record {
+        enum class storage_class { arena_resident, externally_streamed, global_or_separately_managed };
+        int layer = -1;
+        const ggml_tensor * tensor = nullptr;
+        uint32_t shard = 0;
+        size_t offset = 0;
+        size_t bytes = 0;
+        size_t aligned_offset = 0;
+        bool recurrent = false;
+        bool ple = false;
+        storage_class storage = storage_class::global_or_separately_managed;
+        size_t arena_offset = 0;
+    };
+    std::vector<descriptor_record> descriptor_manifest;
 };
 
 bool llama_prec_policy::apply(ggml_tensor * res) const {
@@ -1547,9 +1580,14 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     }
 
     const char * forge_layer_env = std::getenv("CORTEX_LOW_RESIDENCY_LAYER");
-    const int forge_layer = forge_layer_env ? std::atoi(forge_layer_env) : -1;
+    const char * range_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
+    const char * range_end_env = std::getenv("CORTEX_FLASHNEXT_LAYER_END");
+    const bool has_authoritative_range = range_start_env != nullptr && range_end_env != nullptr;
+    const int forge_layer = has_authoritative_range ? std::atoi(range_start_env) :
+        (forge_layer_env ? std::atoi(forge_layer_env) : -1);
     const bool forge_layer_probe = forge_layer >= 0;
-    const bool flashnext_layer_range = std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE") != nullptr;
+    const bool flashnext_layer_range = std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE") != nullptr ||
+        has_authoritative_range;
     const bool flashnext_final_head = std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr;
     if (forge_layer_probe) {
         // Allocate no complete model buffer.  The probe below binds only the
@@ -1558,6 +1596,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
         LLAMA_LOG_INFO("CORTEX low-residency layer probe=%d\n", forge_layer);
         pimpl->cortex_low_residency = true;
     }
+    const bool external_embedding = std::getenv("CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING") != nullptr;
 
     if (ml.use_mmap && params.load_mode == LLAMA_LOAD_MODE_AUTO) {
         for (const auto & dev : devices) {
@@ -1842,6 +1881,117 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     ml.done_getting_tensors(true);
     LLAMA_LOG_INFO("CORTEX_STAGE done_getting_tensors_ms=%lld\n", (long long) ((ggml_time_us() - forge_tensors_t0) / 1000));
 
+    // Descriptor-only authority seam.  Qwen4Exp (and every other model
+    // implementation) has now created its actual runtime tensor members, and
+    // done_getting_tensors() has verified their GGUF metadata.  Stop here:
+    // init_mappings(), backend buffer creation, and load_data_range() are all
+    // deliberately after this boundary.
+    const bool descriptor_only = std::getenv("CORTEX_FLASHNEXT_DESCRIPTOR_ONLY") != nullptr;
+    {
+        const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
+        pimpl->descriptor_manifest.clear();
+        std::unordered_set<const ggml_tensor *> streamed_experts;
+        for (const auto & layer : layers) {
+            if (layer.ffn_gate_exps) streamed_experts.insert(layer.ffn_gate_exps);
+            if (layer.ffn_up_exps)   streamed_experts.insert(layer.ffn_up_exps);
+            if (layer.ffn_down_exps) streamed_experts.insert(layer.ffn_down_exps);
+        }
+        size_t total = 0;
+        size_t n_layered = 0;
+        for (auto & [ctx_key, ctx_ptr] : ml.ctx_map) {
+            GGML_UNUSED(ctx_key);
+            for (ggml_tensor * tensor = ggml_get_first_tensor(ctx_ptr.get()); tensor != nullptr; tensor = ggml_get_next_tensor(ctx_ptr.get(), tensor)) {
+                const char * name = ggml_get_name(tensor);
+                const auto * weight = ml.get_weight(name);
+                if (weight == nullptr) {
+                    throw std::runtime_error(format("descriptor-only tensor '%s' has no GGUF metadata", name));
+                }
+
+                int layer = -1;
+                if (std::sscanf(name, "blk.%d.", &layer) != 1) {
+                    layer = -1;
+                }
+                const bool recurrent = layer >= 0 && layer < hparams.n_layer_all && hparams.is_recr(layer);
+                const bool ple = layer >= 0 && layer < hparams.n_layer_all && hparams.is_ple(layer);
+                const auto storage = layer < 0
+                    ? impl::descriptor_record::storage_class::global_or_separately_managed
+                    : (streamed_experts.count(tensor) != 0
+                        ? impl::descriptor_record::storage_class::externally_streamed
+                        : impl::descriptor_record::storage_class::arena_resident);
+                const size_t bytes = ggml_nbytes(tensor);
+                if (total > SIZE_MAX - bytes) {
+                    throw std::runtime_error("descriptor-only byte total overflow");
+                }
+                total += bytes;
+                n_layered += layer >= 0;
+                pimpl->descriptor_manifest.push_back({ layer, tensor, weight->idx, weight->offs, bytes, 0, recurrent, ple, storage, 0 });
+            }
+        }
+
+        std::sort(pimpl->descriptor_manifest.begin(), pimpl->descriptor_manifest.end(),
+            [](const auto & a, const auto & b) {
+                if (a.layer != b.layer) return a.layer < b.layer;
+                return std::strcmp(ggml_get_name(a.tensor), ggml_get_name(b.tensor)) < 0;
+            });
+        std::map<int, size_t> layer_offsets;
+        for (auto & record : pimpl->descriptor_manifest) {
+            if (record.storage != impl::descriptor_record::storage_class::arena_resident) continue;
+            size_t & cursor = layer_offsets[record.layer];
+            cursor = (cursor + alignment - 1) / alignment * alignment;
+            record.arena_offset = cursor;
+            if (record.bytes > SIZE_MAX - cursor) {
+                throw std::runtime_error("descriptor-only aligned offset overflow");
+            }
+            cursor += record.bytes;
+        }
+
+        const char * manifest_path = std::getenv("CORTEX_FLASHNEXT_DESCRIPTOR_MANIFEST");
+        std::ofstream manifest;
+        if (manifest_path != nullptr) {
+            manifest.open(manifest_path, std::ios::out | std::ios::trunc);
+            if (!manifest) {
+                throw std::runtime_error(format("cannot open descriptor manifest '%s'", manifest_path));
+            }
+        }
+        for (const auto & record : pimpl->descriptor_manifest) {
+            const ggml_tensor * tensor = record.tensor;
+            const char * storage = record.storage == impl::descriptor_record::storage_class::arena_resident ? "ARENA_RESIDENT" :
+                record.storage == impl::descriptor_record::storage_class::externally_streamed ? "EXTERNALLY_STREAMED" : "GLOBAL_OR_SEPARATELY_MANAGED";
+            const std::string line = format(
+                "CORTEX_DESCRIPTOR layer=%d name=%s type=%s ne=[%lld,%lld,%lld,%lld] bytes=%zu shard=%u offset=%zu alignment=%zu recurrent=%d ple=%d storage=%s identity=%s\n",
+                record.layer, ggml_get_name(tensor), ggml_type_name(tensor->type),
+                (long long) tensor->ne[0], (long long) tensor->ne[1],
+                (long long) tensor->ne[2], (long long) tensor->ne[3],
+                record.bytes, record.shard, record.offset, alignment,
+                record.recurrent ? 1 : 0, record.ple ? 1 : 0, storage, ggml_get_name(tensor));
+            LLAMA_LOG_INFO("%s", line.c_str());
+            LLAMA_LOG_INFO("CORTEX_DESCRIPTOR_RUNTIME_POINTER name=%s ptr=%p\n", ggml_get_name(tensor), (const void *) tensor);
+            if (manifest) manifest << line;
+        }
+        LLAMA_LOG_INFO("CORTEX_DESCRIPTOR_SUMMARY descriptors=%zu layered=%zu layers=%d bytes=%zu alignment=%zu payload_reads=0 backend_weight_buffers=0\n",
+            pimpl->descriptor_manifest.size(), n_layered, hparams.n_layer_all, total, alignment);
+        if (manifest) {
+            manifest << format("CORTEX_DESCRIPTOR_SUMMARY descriptors=%zu layered=%zu layers=%d bytes=%zu alignment=%zu payload_reads=0 backend_weight_buffers=0\n",
+                pimpl->descriptor_manifest.size(), n_layered, hparams.n_layer_all, total, alignment);
+            manifest.flush();
+        }
+
+        if (!descriptor_only) {
+            // Normal loading continues below; descriptor records are retained
+            // as the runtime authority for later residency validation.
+        } else {
+        // The loader owns descriptor contexts normally.  Transfer them to the
+        // model before returning so runtime tensor identities remain valid
+        // after llama_model_load_from_file_impl destroys the loader.
+        for (auto & [ctx_key, ctx_ptr] : ml.ctx_map) {
+            GGML_UNUSED(ctx_key);
+            pimpl->ctxs_bufs.emplace_back(std::move(ctx_ptr), std::vector<ggml_backend_buffer_ptr>());
+        }
+        LLAMA_LOG_INFO("CORTEX_DESCRIPTOR phase=complete payload_reads=0 mappings=0 backend_weight_buffers=0\n");
+        return true;
+        }
+    }
+
     if (per_layer_tok_embd && ml.lazy.has(per_layer_tok_embd)) {
         LLAMA_LOG_INFO("%s: enabling prefetch for '%s'\n", __func__, per_layer_tok_embd->name);
 
@@ -1942,9 +2092,10 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             ggml_backend_buffer_t buf;
             if (ml.no_alloc) {
                 buf = ggml_backend_buft_alloc_buffer(buft, /*size =*/ 0); // dummy buffer
-                for (ggml_tensor * t = ggml_get_first_tensor(ctx); t != nullptr; t = ggml_get_next_tensor(ctx, t)) {
-                    t->buffer = buf; // set dummy buffer for weights so that the backend scheduler won't try to allocate them
-                }
+                // Segment tensors receive an actual host-pointer buffer below.
+                // Do not stamp the zero-size dummy onto every tensor: doing so
+                // makes the scheduler see an already-bound weight and then
+                // attempt a second allocation for the same tensor.
             } else {
                 buf = ggml_backend_alloc_ctx_tensors_from_buft(ctx, buft); // real buffer
             }
@@ -2001,6 +2152,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
 
     if (forge_layer_probe) {
         std::vector<ggml_tensor *> selected;
+        pimpl->cortex_selected_names.clear();
         char prefix[64];
         std::snprintf(prefix, sizeof(prefix), "blk.%d.", forge_layer);
         for (auto & [ctx, _] : ctx_buf_maps) {
@@ -2019,7 +2171,9 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                 const bool global_weight = std::strncmp(name, "blk.", 4) != 0;
                 const bool flashnext_router_only = std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr;
                 const bool expert_payload = std::strstr(name, "_exps.") != nullptr;
-                const bool router_global = std::strncmp(name, "token_embd", 10) == 0;
+                const bool router_global = !external_embedding && std::strncmp(name, "token_embd", 10) == 0;
+                const bool layer0_input_global =
+                    !external_embedding && forge_layer == 0 && std::strcmp(name, "per_layer_token_embd.weight") == 0;
                 // Segment B is a pure post-MoE combine graph.  It consumes
                 // only transaction-owned F32 inputs and therefore must not
                 // retain embeddings, per-layer embeddings, or any model
@@ -2033,9 +2187,13 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     (std::strcmp(name, "output_hc_norm.weight") == 0 ||
                      std::strcmp(name, "output_hc_down.weight") == 0 ||
                      std::strcmp(name, "output_hc_up.weight") == 0);
+                // The standalone CORTEX_LOW_RESIDENCY_LAYER probe is also a
+                // segmented graph: layer 0 needs the token embedding, but it
+                // must not fall through to the complete global tensor set.
                 const bool eligible_global = final_head_tensor ||
+                    (forge_layer_probe ? (router_global || layer0_input_global) :
                     (flashnext_segment_b || flashnext_layer_range ? false :
-                        (flashnext_router_only ? router_global : global_weight));
+                        (flashnext_router_only ? router_global : global_weight)));
                 // A single segment still needs the model-global embedding,
                 // output norm, and output projection. These are independent
                 // of the reusable transformer-layer working buffer.
@@ -2053,12 +2211,15 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             else global_total += ggml_nbytes(t);
             const auto * weight = ml.get_weight(ggml_get_name(t));
             pimpl->cortex_offsets[ggml_get_name(t)] = { weight->idx, weight->offs };
+            pimpl->cortex_selected_names.insert(ggml_get_name(t));
         }
+        pimpl->cortex_active_layer = forge_layer;
+        pimpl->cortex_residency_valid = true;
         const bool flashnext_low_res = flashnext_layer_range ||
                 std::getenv("CORTEX_FLASHNEXT_SEGMENT_B") != nullptr ||
                 std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr ||
                 std::getenv("CORTEX_FLASHNEXT_SEGMENT_A") != nullptr;
-        if (flashnext_low_res && global_total > 1ull*1024ull*1024ull*1024ull) {
+        if ((flashnext_low_res || (forge_layer_probe && external_embedding)) && global_total > 1ull*1024ull*1024ull) {
             throw std::runtime_error(format("CORTEX low-residency global set unexpectedly large: %zu bytes", global_total));
         }
         LLAMA_LOG_INFO("CORTEX_GLOBAL_BYTES=%zu CORTEX_LAYER_BYTES=%zu CORTEX_SELECTED_TENSORS=%zu\n",
@@ -2073,10 +2234,11 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
         if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
             if (pimpl->cortex_pread_arena == nullptr) {
                 const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
-                if (posix_memalign(&pimpl->cortex_pread_arena, alignment, layer_total) != 0) {
+                const size_t fixed_capacity = std::max(layer_total, CORTEX_FLASHNEXT_FIXED_ARENA_CAPACITY);
+                if (fixed_capacity > CORTEX_FLASHNEXT_ARENA_BUDGET || posix_memalign(&pimpl->cortex_pread_arena, alignment, fixed_capacity) != 0) {
                     throw std::runtime_error("CORTEX pread arena allocation failed");
                 }
-                pimpl->cortex_pread_arena_capacity = layer_total;
+                pimpl->cortex_pread_arena_capacity = fixed_capacity;
             } else if (pimpl->cortex_pread_arena_capacity < layer_total) {
                 throw std::runtime_error(format("CORTEX pread arena too small: %zu < %zu",
                     pimpl->cortex_pread_arena_capacity, layer_total));
@@ -2084,6 +2246,14 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             pimpl->cortex_layer_buffer.clear();
         } else {
             pimpl->cortex_layer_buffer.resize(layer_total);
+        }
+        if (std::getenv("CORTEX_PREAD_ARENA") != nullptr && layer_total > 0) {
+            ggml_backend_dev_t cpu = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+            if (!cpu) throw std::runtime_error("CORTEX pread: CPU device unavailable");
+            ggml_backend_buffer_t host = ggml_backend_dev_buffer_from_host_ptr(
+                cpu, pimpl->cortex_pread_arena, pimpl->cortex_pread_arena_capacity, pimpl->cortex_pread_arena_capacity);
+            if (!host) throw std::runtime_error("CORTEX pread: host-pointer buffer creation failed");
+            pimpl->cortex_pread_buffer.reset(host);
         }
         size_t global_offset = 0;
         size_t layer_offset = 0;
@@ -2104,6 +2274,19 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                 t->data = destination;
             } else {
                 t->data = destination;
+            }
+            if (is_layer && pimpl->cortex_pread_buffer) {
+                t->buffer = pimpl->cortex_pread_buffer.get();
+                ggml_backend_buffer_init_tensor(t->buffer, t);
+            }
+            if (std::getenv("CORTEX_FIXTURE_MANIFEST") != nullptr) {
+                uint64_t h = 14695981039346656037ull;
+                const uint8_t * raw = static_cast<const uint8_t *>(t->data);
+                for (size_t j = 0; j < bytes; ++j) { h ^= raw[j]; h *= 1099511628211ull; }
+                LLAMA_LOG_INFO("CORTEX_WEIGHT tensor=%s layer=%d shard=%zu offset=%llu bytes=%zu type=%d ne=[%lld,%lld,%lld,%lld] bound_data=%p bound_buffer=%p hash=%016llx status=PASS\n",
+                    ggml_get_name(t), forge_layer, weight->idx, (unsigned long long) weight->offs, bytes,
+                    (int) t->type, (long long) t->ne[0], (long long) t->ne[1], (long long) t->ne[2],
+                    (long long) t->ne[3], t->data, (void *) t->buffer, (unsigned long long) h);
             }
             if (is_layer) layer_offset += bytes; else global_offset += bytes;
         }
@@ -2196,6 +2379,27 @@ bool llama_model_base::flashnext_layer_range_ple_rows(const int32_t * ids, size_
     const auto it = pimpl->cortex_offsets.find("per_layer_token_embd.weight");
     if (it == pimpl->cortex_offsets.end() || it->second.first >= pimpl->cortex_pread_fds.size()) return false;
     const int fd = pimpl->cortex_pread_fds.at(it->second.first);
+    if (std::getenv("CORTEX_FIXTURE_MANIFEST") != nullptr) {
+        for (size_t i = 0; i < count; ++i) {
+            const uint64_t row_off = it->second.second + (uint64_t) ids[i] * bytes;
+            std::vector<uint8_t> raw(bytes);
+            size_t done = 0;
+            while (done < bytes) {
+                const ssize_t n = ::pread(fd, raw.data() + done, bytes - done, (off_t) (row_off + done));
+                if (n <= 0) {
+                    LLAMA_LOG_ERROR("CORTEX_PLE_ROW index=%d shard=%zu offset=%llu bytes=%zu status=READ_FAIL errno=%d\n",
+                        ids[i], it->second.first, (unsigned long long) row_off, bytes, errno);
+                    break;
+                }
+                done += (size_t) n;
+            }
+            uint64_t h = 14695981039346656037ull;
+            for (uint8_t b : raw) { h ^= b; h *= 1099511628211ull; }
+            LLAMA_LOG_INFO("CORTEX_PLE_ROW index=%d shard=%zu offset=%llu bytes=%zu hash=%016llx status=%s\n",
+                ids[i], it->second.first, (unsigned long long) row_off, bytes,
+                (unsigned long long) h, done == bytes ? "PASS" : "FAIL");
+        }
+    }
     if (!flashnext_read_quantized_rows(fd, (uint64_t) it->second.second,
             per_layer_tok_embd->type, (int64_t) elems, per_layer_tok_embd->ne[1], ids, count, dst)) return false;
     LLAMA_LOG_INFO("FLASHNEXT_PLE_ROWS count=%zu row_elems=%zu row_bytes=%zu bytes_read=%zu\n",
@@ -2203,13 +2407,58 @@ bool llama_model_base::flashnext_layer_range_ple_rows(const int32_t * ids, size_
     return true;
 }
 
+bool llama_model_base::flashnext_external_token_rows(const int32_t * ids, size_t count, float * dst) const {
+    if (!ids || !dst || !tok_embd || count == 0 || !std::getenv("CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING")) {
+        return false;
+    }
+    const int64_t n_vocab = tok_embd->ne[1];
+    const int64_t n_embd = tok_embd->ne[0];
+    if (n_vocab <= 0 || n_embd <= 0) return false;
+    for (size_t i = 0; i < count; ++i) {
+        if (ids[i] < 0 || ids[i] >= n_vocab) {
+            LLAMA_LOG_ERROR("CORTEX_TOKEN_ROW invalid_id=%d vocab=%lld\n", ids[i], (long long) n_vocab);
+            return false;
+        }
+    }
+    const auto it = pimpl->cortex_offsets.find("token_embd.weight");
+    if (it == pimpl->cortex_offsets.end() || it->second.first >= pimpl->cortex_pread_fds.size()) return false;
+    const size_t row_bytes = ggml_row_size(tok_embd->type, (size_t) n_embd);
+    const int fd = pimpl->cortex_pread_fds.at(it->second.first);
+    if (!flashnext_read_quantized_rows(fd, (uint64_t) it->second.second,
+            tok_embd->type, n_embd, n_vocab, ids, count, dst)) return false;
+    for (size_t i = 0; i < count * (size_t) n_embd; ++i) {
+        if (!std::isfinite(dst[i])) {
+            LLAMA_LOG_ERROR("CORTEX_TOKEN_ROW nonfinite index=%zu value=%g\n", i, dst[i]);
+            return false;
+        }
+    }
+    LLAMA_LOG_INFO("CORTEX_TOKEN_ROWS count=%zu width=%lld row_bytes=%zu bytes_read=%zu\n",
+            count, (long long) n_embd, row_bytes, count * row_bytes);
+    return true;
+}
+
 bool llama_model_base::cortex_rebind_layer(int il) {
+    size_t bound = 0;
+    const auto fail = [&](const char * stage, const char * tensor, const char * reason) {
+        std::fprintf(stderr,
+            "CORTEX_REBIND result=FAIL layer=%d stage=%s tensor=%s reason=%s metadata_entries=%zu indexed_offsets=%zu loader_selected=%zu bound=%zu\n",
+            il, stage, tensor ? tensor : "none", reason,
+            tensors_by_name.size(), pimpl->cortex_offsets.size(), pimpl->cortex_selected_names.size(), bound);
+        std::fflush(stderr);
+        return false;
+    };
+    if (!pimpl->cortex_residency_valid || pimpl->cortex_active_layer != il) {
+        return fail("validate_residency", nullptr, "residency_invalid_or_layer_mismatch");
+    }
+    std::fprintf(stderr, "CORTEX_REBIND checkpoint=ENTRY layer=%d selected_count=%zu metadata_entries=%zu indexed_offsets=%zu\n",
+        il, pimpl->cortex_selected_names.size(), tensors_by_name.size(), pimpl->cortex_offsets.size());
+    std::fflush(stderr);
     // The Qwen35 MTP/NextN head is represented as the first auxiliary block
     // immediately after the main transformer layers.  This experimental
     // branch may rebind that block as well; the frozen Qwenny path remains
     // limited to the ordinary runtime layers.
     if (!pimpl->cortex_low_residency || il < 0 || il >= (int) hparams.n_layer_all) {
-        return false;
+        return fail("validate_layer", nullptr, "invalid_layer_or_low_residency");
     }
     auto & l = layers.at(il);
     std::vector<ggml_tensor *> tensors;
@@ -2219,21 +2468,105 @@ bool llama_model_base::cortex_rebind_layer(int il) {
     } else {
         tensors = { l.attn_norm, l.attn_post_norm, l.wqkv, l.wqkv_gate,
                     l.wq, l.wk, l.wv, l.wo, l.attn_q_norm, l.attn_k_norm,
+                    l.index_q_proj, l.index_k_proj, l.index_q_norm, l.index_k_norm,
                     l.ssm_conv1d, l.ssm_dt, l.ssm_a, l.ssm_beta, l.ssm_alpha,
-                    l.ssm_norm, l.ssm_out, l.ffn_gate, l.ffn_down, l.ffn_up,
+                    l.ssm_norm, l.ssm_out,
+                    l.hc_attn_norm, l.hc_attn_down, l.hc_attn_up, l.hc_attn_inject,
+                    l.hc_ffn_norm, l.hc_ffn_down, l.hc_ffn_up, l.hc_ffn_inject,
+                    l.ple_key, l.ple_value, l.ple_norm_key, l.ple_norm_query,
+                    l.ple_norm_conv, l.ple_conv1d,
+                    l.ffn_gate_inp, l.ffn_gate_exps, l.ffn_up_exps, l.ffn_down_exps,
+                    l.ffn_gate_up_exps, l.ffn_gate_inp_shexp, l.ffn_gate_shexp,
+                    l.ffn_up_shexp, l.ffn_down_shexp,
                     l.nextn.eh_proj, l.nextn.enorm, l.nextn.hnorm,
                     l.nextn.embed_tokens, l.nextn.shared_head_head,
                     l.nextn.shared_head_norm };
     }
+    // cortex_offsets is the authoritative bounded-residency manifest.  Model
+    // metadata contains tensors for every graph variant, but the active graph
+    // intentionally selects only a subset of them.
+    std::vector<ggml_tensor *> selected;
+    selected.reserve(tensors.size());
+    for (ggml_tensor * t : tensors) {
+        if (!t) continue;
+        const bool present = pimpl->cortex_selected_names.find(ggml_get_name(t)) != pimpl->cortex_selected_names.end();
+        if (!present) {
+            if (std::getenv("CORTEX_FLASHNEXT_REBIND_DIAGNOSTICS") != nullptr) {
+                LLAMA_LOG_INFO("CORTEX_REBIND tensor=%s layer=%d selected=NO graph_required=UNKNOWN offset=NO buffer=NO reason=not_in_bounded_manifest\n",
+                    ggml_get_name(t), il);
+            }
+            continue;
+        }
+        selected.push_back(t);
+    }
+    if (arch == LLM_ARCH_QWEN4EXP) {
+        std::vector<ggml_tensor *> canonical;
+        std::unordered_set<std::string> canonical_names;
+        for (const auto & record : pimpl->descriptor_manifest) {
+            if (record.layer == il && record.storage == impl::descriptor_record::storage_class::arena_resident) {
+                canonical.push_back(const_cast<ggml_tensor *>(record.tensor));
+                canonical_names.insert(ggml_get_name(record.tensor));
+                if (pimpl->cortex_selected_names.find(ggml_get_name(record.tensor)) == pimpl->cortex_selected_names.end()) {
+                    return fail("manifest", ggml_get_name(record.tensor), "canonical_resident_tensor_not_selected");
+                }
+            }
+        }
+        if (canonical.empty()) return fail("manifest", nullptr, "canonical_layer_manifest_empty");
+        for (const auto & name : pimpl->cortex_selected_names) {
+            if (name.rfind("blk." + std::to_string(il) + ".", 0) == 0 && !canonical_names.count(name)) {
+                return fail("manifest", name.c_str(), "unexpected_resident_tensor");
+            }
+        }
+        selected = std::move(canonical);
+    }
+    // These are the tensors the native Qwen4Exp graph unconditionally
+    // consumes for the active physical layer.  Expert matrix residency is
+    // handled by the selected-MoE provider and is intentionally not part of
+    // this graph-leaf contract.
+    if (arch == LLM_ARCH_QWEN4EXP) {
+        std::vector<ggml_tensor *> required = {
+            l.attn_norm,
+            l.hc_attn_norm, l.hc_attn_down, l.hc_attn_up, l.hc_attn_inject,
+            l.hc_ffn_norm, l.hc_ffn_down, l.hc_ffn_up, l.hc_ffn_inject,
+            l.ffn_gate_inp, l.ffn_gate_inp_shexp, l.ffn_gate_shexp,
+            l.ffn_up_shexp, l.ffn_down_shexp,
+        };
+        if (hparams.is_recr(il)) {
+            required.insert(required.end(), { l.wqkv, l.wqkv_gate, l.ssm_conv1d,
+                l.ssm_dt, l.ssm_a, l.ssm_beta, l.ssm_alpha, l.ssm_norm, l.ssm_out });
+        } else {
+            required.insert(required.end(), { l.wq, l.wk, l.wv, l.wo,
+                l.attn_q_norm, l.attn_k_norm, l.index_q_proj, l.index_k_proj,
+                l.index_q_norm, l.index_k_norm });
+        }
+        if (hparams.is_ple(il)) {
+            required.insert(required.end(), { l.ple_key, l.ple_value,
+                l.ple_norm_key, l.ple_norm_query, l.ple_norm_conv, l.ple_conv1d });
+        }
+        for (ggml_tensor * t : required) {
+            if (!t) continue;
+            if (pimpl->cortex_selected_names.find(ggml_get_name(t)) == pimpl->cortex_selected_names.end()) {
+                LLAMA_LOG_ERROR("CORTEX_REBIND tensor=%s layer=%d selected=NO graph_required=YES offset=NO buffer=NO reason=required_by_active_qwen4exp_graph\n",
+                    ggml_get_name(t), il);
+                return fail("required_tensor", ggml_get_name(t), "required_by_active_qwen4exp_graph_not_selected");
+            }
+        }
+    }
     size_t total = 0;
-    for (ggml_tensor * t : tensors) if (t) total += ggml_nbytes(t);
+    for (ggml_tensor * t : selected) total += ggml_nbytes(t);
     if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
         if (pimpl->cortex_pread_arena == nullptr) {
             const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
-            if (posix_memalign(&pimpl->cortex_pread_arena, alignment, total) != 0) return false;
+            if (posix_memalign(&pimpl->cortex_pread_arena, alignment, total) != 0) {
+                return fail("arena_allocate", nullptr, "posix_memalign_failed");
+            }
             pimpl->cortex_pread_arena_capacity = total;
         } else if (pimpl->cortex_pread_arena_capacity < total) {
-            return false;
+            const size_t budget = CORTEX_FLASHNEXT_ARENA_BUDGET;
+            std::fprintf(stderr, "CORTEX_ARENA layer=%d stage=plan required_bytes=%zu current_capacity=%zu budget=%zu\n", il, total, pimpl->cortex_pread_arena_capacity, budget);
+            std::fflush(stderr);
+            if (total > budget || total > SIZE_MAX - 63) return fail("arena_capacity", nullptr, "required_bytes_exceed_bounded_budget");
+            return fail("arena_capacity", nullptr, "fixed_arena_capacity_exceeded");
         }
     } else {
         pimpl->cortex_layer_buffer.resize(total);
@@ -2242,11 +2575,18 @@ bool llama_model_base::cortex_rebind_layer(int il) {
         ? static_cast<uint8_t *>(pimpl->cortex_pread_arena)
         : pimpl->cortex_layer_buffer.data();
     size_t offset = 0;
-    for (ggml_tensor * t : tensors) {
-        if (!t) continue;
+    for (ggml_tensor * t : selected) {
+        for (const auto & record : pimpl->descriptor_manifest) {
+            if (record.tensor == t) {
+                offset = record.arena_offset;
+                break;
+            }
+        }
         const auto it = pimpl->cortex_offsets.find(ggml_get_name(t));
         if (it == pimpl->cortex_offsets.end()) {
-            return false;
+            LLAMA_LOG_ERROR("CORTEX_REBIND tensor=%s layer=%d selected=YES graph_required=UNKNOWN offset=NO buffer=NO reason=manifest_changed\n",
+                ggml_get_name(t), il);
+            return fail("selected_manifest", ggml_get_name(t), "selected_tensor_missing_offset");
         }
         const size_t bytes = ggml_nbytes(t);
         if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
@@ -2254,7 +2594,9 @@ bool llama_model_base::cortex_rebind_layer(int il) {
             // absolute GGUF offset.  Use the already-open file descriptor and
             // positional reads so no model-weight mmap is needed.
             if (it->second.first >= pimpl->cortex_pread_fds.size()) {
-                return false;
+                LLAMA_LOG_ERROR("CORTEX_REBIND tensor=%s layer=%d selected=YES graph_required=UNKNOWN offset=YES buffer=NO reason=invalid_shard_fd\n",
+                    ggml_get_name(t), il);
+                return fail("read_weight", ggml_get_name(t), "invalid_shard_fd");
             }
             const int fd = pimpl->cortex_pread_fds.at(it->second.first);
             size_t done = 0;
@@ -2264,25 +2606,94 @@ bool llama_model_base::cortex_rebind_layer(int il) {
                 if (n <= 0) {
                     LLAMA_LOG_ERROR("CORTEX pread failed layer=%d tensor=%s offset=%zu: %s\n",
                         il, ggml_get_name(t), it->second.second + done, std::strerror(errno));
-                    return false;
+                    return fail("read_weight", ggml_get_name(t), "pread_failed");
                 }
                 done += (size_t) n;
             }
             t->data = arena + offset;
         } else if (std::getenv("CORTEX_DIRECT_MMAP") != nullptr) {
-            if (it->second.first >= pimpl->mappings.size()) return false;
+            if (it->second.first >= pimpl->mappings.size()) return fail("map_weight", ggml_get_name(t), "invalid_mapping_index");
             const uint8_t * source = (const uint8_t *) pimpl->mappings.at(it->second.first)->addr() + it->second.second;
             t->data = const_cast<uint8_t *>(source);
         } else {
-            if (it->second.first >= pimpl->mappings.size()) return false;
+            if (it->second.first >= pimpl->mappings.size()) return fail("map_weight", ggml_get_name(t), "invalid_mapping_index");
             const uint8_t * source = (const uint8_t *) pimpl->mappings.at(it->second.first)->addr() + it->second.second;
             std::memcpy(arena + offset, source, bytes);
             t->data = arena + offset;
+        }
+        ++bound;
+        if (std::getenv("CORTEX_FIXTURE_MANIFEST") != nullptr) {
+            uint64_t h = 14695981039346656037ull;
+            const uint8_t * raw = static_cast<const uint8_t *>(t->data);
+            for (size_t j = 0; j < bytes; ++j) { h ^= raw[j]; h *= 1099511628211ull; }
+            LLAMA_LOG_INFO("CORTEX_WEIGHT tensor=%s layer=%d shard=%zu offset=%llu bytes=%zu type=%d ne=[%lld,%lld,%lld,%lld] arena_offset=%zu hash=%016llx status=PASS\n",
+                ggml_get_name(t), il, it->second.first, (unsigned long long) it->second.second, bytes,
+                (int) t->type, (long long) t->ne[0], (long long) t->ne[1], (long long) t->ne[2],
+                (long long) t->ne[3], offset, (unsigned long long) h);
         }
         offset += bytes;
     }
     LLAMA_LOG_INFO("CORTEX rebind layer=%d bytes=%zu buffer=%p arena=%s\n", il, total, arena,
         std::getenv("CORTEX_PREAD_ARENA") ? "pread" : "vector");
+    std::fprintf(stderr, "CORTEX_REBIND checkpoint=EXIT layer=%d result=PASS selected_count=%zu bytes=%zu\n",
+        il, selected.size(), total);
+    std::fflush(stderr);
+    return true;
+}
+
+bool llama_model_base::cortex_activate_layer(int il) {
+    const auto fail = [&](const char * tensor, const char * reason, size_t bytes, size_t capacity) {
+        std::fprintf(stderr, "CORTEX_RESIDENCY result=FAIL layer=%d stage=select tensor=%s reason=%s required_bytes=%zu arena_capacity=%zu resident_count=%zu previous_layer=%d\n", il, tensor ? tensor : "none", reason, bytes, capacity, pimpl->cortex_selected_names.size(), pimpl->cortex_active_layer);
+        std::fflush(stderr);
+        return false;
+    };
+    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d stage=select\n", il);
+    std::fflush(stderr);
+    if (!pimpl->cortex_low_residency || il < 0 || il >= (int) hparams.n_layer_all) return fail(nullptr, "invalid_layer_or_low_residency", 0, pimpl->cortex_pread_arena_capacity);
+    std::vector<ggml_tensor *> required;
+    for (const auto & record : pimpl->descriptor_manifest) {
+        if (record.layer == il && record.storage == impl::descriptor_record::storage_class::arena_resident) {
+            required.push_back(const_cast<ggml_tensor *>(record.tensor));
+        }
+    }
+    if (required.empty()) return fail(nullptr, "manifest", 0, pimpl->cortex_pread_arena_capacity);
+    std::unordered_set<std::string> next;
+    size_t total = 0;
+    for (ggml_tensor * t : required) {
+        if (!t) continue;
+        const char * name = ggml_get_name(t);
+        if (!pimpl->cortex_offsets.count(name)) return fail(name, "missing_metadata_offset", total, pimpl->cortex_pread_arena_capacity);
+        next.insert(name);
+        total += ggml_nbytes(t);
+    }
+    const size_t capacity = pimpl->cortex_pread_arena_capacity;
+    if (total > CORTEX_FLASHNEXT_FIXED_ARENA_CAPACITY) return fail(nullptr, "plan", total, capacity);
+    std::fprintf(stderr, "CORTEX_PLAN result=PASS layer=%d tensor_count=%zu aligned_bytes=%zu capacity=%zu\n", il, next.size(), total, capacity);
+    std::fflush(stderr);
+    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d stage=materialize required_bytes=%zu resident_count=%zu\n", il, total, next.size());
+    std::fflush(stderr);
+    // The caller has already synchronized and destroyed the prior context.
+    // Invalidate every model tensor before reusing the fixed arena.
+    for (auto & entry : tensors_by_name) {
+        entry.second->data = nullptr;
+        entry.second->buffer = nullptr;
+    }
+    pimpl->cortex_selected_names.clear();
+    pimpl->cortex_active_layer = -1;
+    pimpl->cortex_residency_valid = false;
+    pimpl->cortex_selected_names = std::move(next);
+    pimpl->cortex_active_layer = il;
+    pimpl->cortex_residency_valid = true;
+    if (!cortex_rebind_layer(il)) {
+        for (auto & entry : tensors_by_name) { entry.second->data = nullptr; entry.second->buffer = nullptr; }
+        pimpl->cortex_selected_names.clear();
+        pimpl->cortex_active_layer = -1;
+        pimpl->cortex_residency_valid = false;
+        return fail(nullptr, "materialize", total, capacity);
+    }
+    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d stage=commit resident_count=%zu\n", il, pimpl->cortex_selected_names.size());
+    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d result=PASS\n", il);
+    std::fflush(stderr);
     return true;
 }
 
@@ -3285,6 +3696,17 @@ void llama_model_free(llama_model * model) {
 bool llama_cortex_rebind_layer(llama_model * model, int layer) {
     auto * base = dynamic_cast<llama_model_base *>(model);
     return base != nullptr && base->cortex_rebind_layer(layer);
+}
+
+bool llama_cortex_activate_layer(llama_model * model, int layer) {
+    auto * base = dynamic_cast<llama_model_base *>(model);
+    return base != nullptr && base->cortex_activate_layer(layer);
+}
+
+bool llama_cortex_external_token_rows(llama_model * model, const int32_t * token_ids,
+                                      size_t n_tokens, float * dst) {
+    auto * base = dynamic_cast<llama_model_base *>(model);
+    return base != nullptr && base->flashnext_external_token_rows(token_ids, n_tokens, dst);
 }
 
 int32_t llama_model_n_ctx_train(const llama_model * model) {

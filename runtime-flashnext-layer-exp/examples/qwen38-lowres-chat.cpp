@@ -13,28 +13,69 @@
 static llama_token process_positions(llama_model * model, std::vector<std::vector<uint8_t>> & states,
                                      const std::vector<llama_token> & tokens, llama_pos pos,
                                      std::vector<float> & hidden, llama_sampler * sampler) {
+    std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_ENTRY layer=-1 tokens=%zu result=BEGIN\n", tokens.size());
+    std::fflush(stderr);
     const int n_layer = llama_model_n_layer(model);
     const int n_embd = llama_model_n_embd(model);
     const int n_tokens = (int) tokens.size();
+    const int hc = 4;
+    std::vector<int32_t> token_ids(tokens.begin(), tokens.end());
+    std::vector<float> external_embd;
+    external_embd.resize((size_t) n_tokens * n_embd);
+    std::fprintf(stderr, "CORTEX_CHAT checkpoint=TOKEN_ROWS_BEFORE layer=-1 tokens=%zu\n", tokens.size());
+    std::fflush(stderr);
+    if (!llama_cortex_external_token_rows(model, token_ids.data(), token_ids.size(), external_embd.data())) {
+        std::fprintf(stderr, "CORTEX_CHAT checkpoint=TOKEN_ROWS_AFTER layer=-1 result=FAIL reason=row_materialization\n");
+        std::fflush(stderr);
+        return -1;
+    }
+    std::fprintf(stderr, "CORTEX_CHAT checkpoint=TOKEN_ROWS_AFTER layer=-1 result=PASS\n");
+    std::fflush(stderr);
     for (int il = 0; il < n_layer; ++il) {
         char start[32], end[32];
         std::snprintf(start, sizeof(start), "%d", il);
         std::snprintf(end, sizeof(end), "%d", il + 1);
-        setenv("CORTEX_QWEN35_SEGMENT_START", start, 1);
-        setenv("CORTEX_QWEN35_SEGMENT_END", end, 1);
-        if (!llama_cortex_rebind_layer(model, il)) return -1;
+        setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+        setenv("CORTEX_FLASHNEXT_LAYER_START", start, 1);
+        setenv("CORTEX_FLASHNEXT_LAYER_END", end, 1);
+        std::fprintf(stderr, "CORTEX_CHAT checkpoint=REBIND_BEFORE layer=%d\n", il);
+        std::fflush(stderr);
+        const bool rebound = il == 0 ? llama_cortex_rebind_layer(model, il) : llama_cortex_activate_layer(model, il);
+        std::fprintf(stderr, "CORTEX_CHAT checkpoint=REBIND_AFTER layer=%d result=%s\n", il, rebound ? "PASS" : "FAIL");
+        std::fflush(stderr);
+        if (!rebound) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=rebind\n", il);
+            std::fflush(stderr);
+            return -1;
+        }
         llama_context_params cp = llama_context_default_params();
         cp.n_ctx = 256; cp.n_batch = n_tokens;
+        std::fprintf(stderr, "CORTEX_CHAT checkpoint=CONTEXT_BEFORE layer=%d\n", il);
+        std::fflush(stderr);
         llama_context * ctx = llama_init_from_model(model, cp);
-        if (!ctx) return -1;
+        std::fprintf(stderr, "CORTEX_CHAT checkpoint=CONTEXT_AFTER layer=%d result=%s\n", il, ctx ? "PASS" : "FAIL");
+        std::fflush(stderr);
+        if (!ctx) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=context_init\n", il);
+            std::fflush(stderr);
+            return -1;
+        }
         llama_set_embeddings_layer_inp(ctx, il + 1, true);
-        if (!states[il].empty() && llama_state_set_data(ctx, states[il].data(), states[il].size()) == 0) return -1;
+        if (!states[il].empty() && llama_state_set_data(ctx, states[il].data(), states[il].size()) == 0) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_restore\n", il);
+            std::fflush(stderr);
+            return -1;
+        }
         llama_batch batch;
         if (il == 0) {
-            batch = llama_batch_init(n_tokens, 0, 1);
-            for (int i = 0; i < n_tokens; ++i) batch.token[i] = tokens[i];
-        } else {
             batch = llama_batch_init(n_tokens, n_embd, 1);
+            batch.token = (llama_token *) std::malloc(sizeof(llama_token) * n_tokens);
+            std::copy(tokens.begin(), tokens.end(), batch.token);
+            std::copy(external_embd.begin(), external_embd.end(), batch.embd);
+        } else {
+            batch = llama_batch_init(n_tokens, n_embd * hc, 1);
+            batch.token = (llama_token *) std::malloc(sizeof(llama_token) * n_tokens);
+            std::copy(tokens.begin(), tokens.end(), batch.token);
             std::copy(hidden.begin(), hidden.end(), batch.embd);
         }
         for (int i = 0; i < n_tokens; ++i) {
@@ -44,14 +85,27 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
             batch.logits[i] = (i == n_tokens - 1);
         }
         batch.n_tokens = n_tokens;
-        if (llama_decode(ctx, batch) != 0) return -1;
+        const int decode_rc = llama_decode(ctx, batch);
+        if (decode_rc != 0) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=decode return_code=%d\n", il, decode_rc);
+            std::fflush(stderr);
+            return -1;
+        }
         if (il + 1 < n_layer) {
             float * out = llama_get_embeddings_layer_inp(ctx, il + 1);
-            if (!out) return -1;
-            hidden.assign(out, out + (size_t) n_tokens * n_embd);
+            if (!out) {
+                std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=hidden_output\n", il);
+                std::fflush(stderr);
+                return -1;
+            }
+            hidden.assign(out, out + (size_t) n_tokens * n_embd * hc);
         } else {
             float * logits = llama_get_logits(ctx);
-            if (!logits) return -1;
+            if (!logits) {
+                std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=logits_output\n", il);
+                std::fflush(stderr);
+                return -1;
+            }
             const int n_vocab = llama_vocab_n_tokens(llama_model_get_vocab(model));
             if (sampler) {
                 if (std::getenv("CORTEX_LOGIT_DEBUG") != nullptr) {
@@ -74,7 +128,11 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
                 llama_batch_free(batch);
                 const size_t state_size = llama_state_get_size(ctx);
                 states[il].resize(state_size);
-                if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) return -1;
+                if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) {
+                    std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_serialize_sampler expected=%zu\n", il, state_size);
+                    std::fflush(stderr);
+                    return -1;
+                }
                 llama_free(ctx);
                 return token;
             } else {
@@ -82,7 +140,11 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
                 llama_batch_free(batch);
                 const size_t state_size = llama_state_get_size(ctx);
                 states[il].resize(state_size);
-                if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) return -1;
+                if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) {
+                    std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_serialize_greedy expected=%zu\n", il, state_size);
+                    std::fflush(stderr);
+                    return -1;
+                }
                 llama_free(ctx);
                 return token;
             }
@@ -90,20 +152,44 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
         llama_batch_free(batch);
         const size_t state_size = llama_state_get_size(ctx);
         states[il].resize(state_size);
-        if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) return -1;
+        if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_serialize_intermediate expected=%zu\n", il, state_size);
+            std::fflush(stderr);
+            return -1;
+        }
         llama_free(ctx);
+        if (il + 1 < n_layer && !llama_cortex_activate_layer(model, il + 1)) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=activate_next_layer\n", il + 1);
+            std::fflush(stderr);
+            return -1;
+        }
     }
+    std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=-1 reason=range_exhausted\n");
+    std::fflush(stderr);
     return -1;
 }
 
 int main(int argc, char ** argv) {
     if (argc < 2 || argc > 3) return 2;
     const int max_generate = argc == 3 ? std::atoi(argv[2]) : 8;
+    // Establish the authoritative bounded selector before model loading.  The
+    // loader uses this contract to exclude dense global tensors; the chat
+    // graph updates the same range for each physical-layer transaction.
+    setenv("CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING", "1", 1);
+    setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+    setenv("CORTEX_FLASHNEXT_LAYER_START", "0", 1);
+    setenv("CORTEX_FLASHNEXT_LAYER_END", "1", 1);
     setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
+    setenv("CORTEX_PREAD_ARENA", "1", 1);
     llama_backend_init();
     llama_model_params mp = llama_model_default_params(); mp.n_gpu_layers = 0;
     llama_model * model = llama_model_load_from_file(argv[1], mp);
     if (!model) return 3;
+    if (std::getenv("CORTEX_FLASHNEXT_LOADER_ONLY") != nullptr) {
+        std::fprintf(stderr, "CORTEX_LOADER_ONLY=PASS model_loaded=1 context_created=0 decode=0 graph_compute=0 ssm_conv=0\n");
+        llama_free_model(model);
+        return 0;
+    }
     const int n_embd = llama_model_n_embd(model);
     std::vector<std::vector<uint8_t>> states(llama_model_n_layer(model));
     std::vector<float> hidden(n_embd);
@@ -140,7 +226,11 @@ int main(int argc, char ** argv) {
             std::fprintf(stderr, "\n");
         }
         llama_token next = process_positions(model, states, prompt_tokens, pos, hidden, sampler);
-        if (next < 0) return 5;
+        if (next < 0) {
+            std::fprintf(stderr, "CORTEX_CHAT checkpoint=MAIN_EXIT result=FAIL exit_code=5 reason=process_positions\n");
+            std::fflush(stderr);
+            return 5;
+        }
         pos += (llama_pos) prompt_tokens.size();
         if (prompt_tokens.size() > 1) {
             hidden.erase(hidden.begin(), hidden.end() - n_embd);

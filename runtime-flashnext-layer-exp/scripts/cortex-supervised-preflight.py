@@ -70,6 +70,7 @@ def limits(path: Path) -> dict:
 def preflight(env: dict, estimated_global: int, estimated_layer: int, budget: int) -> dict:
     required = {
         'CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING': '1',
+        'CORTEX_FLASHNEXT_LAYER_RANGE': '1',
         'CORTEX_FLASHNEXT_LAYER_START': '0',
         'CORTEX_FLASHNEXT_LAYER_END': '1',
         'CORTEX_FLASHNEXT_SSM_CONV_OPERAND_DIAGNOSTICS': '1',

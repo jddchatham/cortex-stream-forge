@@ -76,7 +76,7 @@ struct llama_context {
 
     llama_memory_t get_memory() const;
 
-    size_t debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap);
+    size_t debug_copy_recurrent_state(int layer, int state_kind, void * dst, size_t cap);
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
     bool debug_copy_final_head_output(std::vector<uint8_t> & bytes, std::array<int64_t, 4> & ne,
             std::array<size_t, 4> & nb, enum ggml_type & type, std::string & name);

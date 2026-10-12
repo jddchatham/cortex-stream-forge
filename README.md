@@ -76,3 +76,28 @@ The current Forge chat path uses the verified newer `llama-simple-chat` runtime 
 ## Boundaries
 
 The existing handoffs and source trees are references and remain untouched by Forge. See `CORTEX_STREAM_FORGE_ARCHITECTURE.md` for the lifecycle, ownership model, adapter contract, and extension process.
+
+## Cortex Stream Forge development status
+
+Cortex Stream Forge's current goal is bounded-memory streaming inference for
+large GGUF models on low-memory CPUs. The Qwen4Exp work now includes a
+metadata-only descriptor phase that uses the runtime model structure rather
+than a separate tensor-family table.
+
+The verified Qwen4Exp descriptor inventory contains 1,224 runtime tensor
+descriptors across 48 physical layers: 1,074 arena-resident descriptors, 144
+externally streamed expert descriptors, and six global or separately managed
+descriptors. The fixed per-layer arena is 67,851,136 bytes with 64-byte
+alignment. A canonical runtime-derived residency manifest is generated before
+mapping or payload materialization and is consumed by the planner, activation,
+and rebind validation paths.
+
+Current non-inference regressions pass for descriptor extraction, residency
+transitions, selection-aware rebinding, HC handoff, range validation, and
+format checks. Genuine end-to-end prompt-to-token generation has **not** been
+demonstrated by this development branch.
+
+Known blockers are documented in `DEVELOPMENT_STATUS.md`: full MoE graph
+integration with external expert streaming, the final HC head, bounded
+vocabulary projection, strict residency commit ordering, and supervised
+launcher timeout/PID cleanup.

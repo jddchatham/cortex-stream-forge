@@ -92,13 +92,13 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
             }
         }
     }
-    if (ubatch->token) {
+    if (ubatch->token && tokens) {
         const int64_t n_tokens = ubatch->n_tokens;
 
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
     }
 
-    if (ubatch->embd) {
+    if (ubatch->embd && embd) {
         GGML_ASSERT(embd->type == GGML_TYPE_F32);
 
         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
@@ -397,6 +397,14 @@ void llm_graph_input_rs::set_input(const llama_ubatch * ubatch) {
         // assuming copy destinations ALWAYS happen ONLY on the cells between head and head+n
         for (uint32_t i = 0; i < n_rs; ++i) {
             data[i] = mctx->s_copy(i);
+        }
+        if (std::getenv("CORTEX_FIXTURE_MANIFEST") != nullptr) {
+            LLAMA_LOG_INFO("CORTEX_STATE_INDEX owner=recurrent sequence=0 head=%u n_rs=%lld rs_size=%u rs_zero=%d values=",
+                mctx->get_head(), (long long) n_rs, mctx->get_size(), mctx->get_rs_z());
+            for (int64_t i = 0; i < n_rs; ++i) {
+                LLAMA_LOG_INFO("%s%d", i == 0 ? "" : ",", data[i]);
+            }
+            LLAMA_LOG_INFO("\n");
         }
     }
 }
@@ -1176,6 +1184,14 @@ void llm_graph_input_mem_hybrid::set_input(const llama_ubatch * ubatch) {
         // assuming copy destinations ALWAYS happen ONLY on the cells between head and head+n
         for (uint32_t i = 0; i < n_rs; ++i) {
             data[i] = mctx->get_recr()->s_copy(i);
+        }
+        if (std::getenv("CORTEX_FIXTURE_MANIFEST") != nullptr) {
+            LLAMA_LOG_INFO("CORTEX_STATE_INDEX owner=hybrid sequence=0 head=%u n_rs=%lld rs_size=%u rs_zero=%d values=",
+                mctx->get_recr()->get_head(), (long long) n_rs, mctx->get_recr()->get_size(), mctx->get_recr()->get_rs_z());
+            for (int64_t i = 0; i < n_rs; ++i) {
+                LLAMA_LOG_INFO("%s%d", i == 0 ? "" : ",", data[i]);
+            }
+            LLAMA_LOG_INFO("\n");
         }
     }
 }
@@ -2479,12 +2495,16 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     const int64_t n_embd_inp = hparams.n_embd_inp();
     const int64_t n_embd     = hparams.n_embd;
-    const bool range_input = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
-                             std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0;
+    // External token-row materialization is only the physical layer-0 input.
+    // Later bounded layers consume the preceding layer's HC-wide output.
+    const bool external_embedding = std::getenv("CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING") != nullptr && layer_start == 0;
+    const bool range_input = external_embedding ||
+                             (std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
+                              std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0);
     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
     // boundary, not a token embedding row.  Keep this input F32 and owned by
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
-    const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
+    const int64_t n_embd_range = range_input && !external_embedding ? hparams.n_embd_out() : n_embd_inp;
 
     assert(n_embd_inp >= n_embd);
 

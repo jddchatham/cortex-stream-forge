@@ -18,6 +18,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -205,6 +206,183 @@ static bool flashnext_capture_logical_f32(const ggml_tensor * tensor, std::vecto
 void llama_context::debug_capture_post_node(const ggml_tensor * node) {
     flashnext_post_node_observer_invocations.fetch_add(1, std::memory_order_relaxed);
     if (std::getenv("CORTEX_FLASHNEXT_CPU_CONCAT_CAPTURE") == nullptr || !node) return;
+
+    if (std::getenv("CORTEX_FLASHNEXT_FINITE_TRACE") != nullptr &&
+        node->op == GGML_OP_DSV4_HC_PRE && node->src[0] && node->src[1]) {
+        auto report_src = [](const char * role, const ggml_tensor * t) {
+            if (t->type != GGML_TYPE_F32 || !t->data) {
+                LLAMA_LOG_ERROR("FLASHNEXT_HC_FUSED_SRC role=%s name=%s type=%d data=%p buffer=%p readable=NO\n",
+                    role, t->name, (int) t->type, t->data, (void *) t->buffer);
+                return;
+            }
+            const size_t count = ggml_nelements(t);
+            size_t bad = count, nonfinite = 0;
+            size_t per_stream[4] = { 0, 0, 0, 0 };
+            float min_finite = std::numeric_limits<float>::infinity();
+            float max_finite = -std::numeric_limits<float>::infinity();
+            uint64_t hash = 1469598103934665603ull;
+            for (size_t i = 0; i < count; ++i) {
+                const size_t i0 = i % t->ne[0];
+                const size_t i1 = (i / t->ne[0]) % t->ne[1];
+                const size_t i2 = (i / (t->ne[0] * t->ne[1])) % t->ne[2];
+                const size_t i3 = i / (t->ne[0] * t->ne[1] * t->ne[2]);
+                float v = 0.0f;
+                std::memcpy(&v, (const uint8_t *) t->data + i0*t->nb[0] + i1*t->nb[1] +
+                            i2*t->nb[2] + i3*t->nb[3], sizeof(v));
+                const uint8_t * raw = reinterpret_cast<const uint8_t *>(&v);
+                for (size_t j = 0; j < sizeof(v); ++j) { hash ^= raw[j]; hash *= 1099511628211ull; }
+                if (!std::isfinite(v)) { ++nonfinite; if (bad == count) bad = i; }
+                else { min_finite = std::min(min_finite, v); max_finite = std::max(max_finite, v); }
+                if (i1 < 4 && !std::isfinite(v)) ++per_stream[i1];
+            }
+            LLAMA_LOG_ERROR("FLASHNEXT_HC_FUSED_SRC role=%s name=%s tensor=%p type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu finite=%s nonfinite=%zu first_bad=%s min=%g max=%g hash=%016llx data=%p buffer=%p per_stream_bad=[%zu,%zu,%zu,%zu]\n",
+                role, t->name, (const void *) t, (int) t->type,
+                (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
+                t->nb[0], t->nb[1], t->nb[2], t->nb[3], ggml_nbytes(t), nonfinite == 0 ? "YES" : "NO",
+                nonfinite, bad == count ? "NONE" : format("%zu", bad).c_str(), min_finite, max_finite,
+                (unsigned long long) hash, t->data, (void *) t->buffer,
+                per_stream[0], per_stream[1], per_stream[2], per_stream[3]);
+        };
+        report_src("activation", node->src[0]);
+        report_src("gate", node->src[1]);
+        LLAMA_LOG_ERROR("FLASHNEXT_HC_FUSED_NODE node=%p name=%s src0=%p src1=%p\n",
+            (const void *) node, node->name, (const void *) node->src[0], (const void *) node->src[1]);
+    }
+
+    if (std::getenv("CORTEX_FLASHNEXT_FINITE_TRACE") != nullptr &&
+        node->op == GGML_OP_DSV4_HC_POST && node->src[0] && node->src[1] && node->src[2]) {
+        auto report_post = [](const char * role, const ggml_tensor * t) {
+            if (t->type != GGML_TYPE_F32 || !t->data) {
+                LLAMA_LOG_ERROR("FLASHNEXT_HC_POST_SRC role=%s name=%s type=%d data=%p buffer=%p readable=NO\n",
+                    role, t->name, (int)t->type, t->data, (void *)t->buffer);
+                return;
+            }
+            const size_t count = ggml_nelements(t);
+            size_t bad = count, nan_count = 0, inf_count = 0;
+            size_t bad_stream[4] = {0,0,0,0};
+            float max_abs = 0.0f;
+            uint64_t hash = 1469598103934665603ull;
+            for (size_t i = 0; i < count; ++i) {
+                const size_t i0 = i % t->ne[0];
+                const size_t i1 = (i / t->ne[0]) % t->ne[1];
+                const size_t i2 = (i / (t->ne[0]*t->ne[1])) % t->ne[2];
+                const size_t i3 = i / (t->ne[0]*t->ne[1]*t->ne[2]);
+                float v = 0.0f;
+                std::memcpy(&v, (const uint8_t *)t->data + i0*t->nb[0] + i1*t->nb[1] +
+                            i2*t->nb[2] + i3*t->nb[3], sizeof(v));
+                const uint8_t * raw = reinterpret_cast<const uint8_t *>(&v);
+                for (size_t j=0;j<sizeof(v);++j) { hash ^= raw[j]; hash *= 1099511628211ull; }
+                if (std::isnan(v)) { ++nan_count; if (bad == count) bad=i; if (i1 < 4) ++bad_stream[i1]; }
+                else if (std::isinf(v)) { ++inf_count; if (bad == count) bad=i; if (i1 < 4) ++bad_stream[i1]; }
+                else { max_abs = std::max(max_abs, std::fabs(v)); }
+            }
+            LLAMA_LOG_ERROR("FLASHNEXT_HC_POST_SRC role=%s name=%s tensor=%p ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu finite=%s nan=%zu inf=%zu first_bad=%s max_abs=%g hash=%016llx data=%p buffer=%p bad_stream=[%zu,%zu,%zu,%zu]\n",
+                role, t->name, (const void *)t, (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
+                t->nb[0], t->nb[1], t->nb[2], t->nb[3], ggml_nbytes(t), (nan_count+inf_count)==0 ? "YES":"NO",
+                nan_count, inf_count, bad==count?"NONE":format("%zu",bad).c_str(), max_abs, (unsigned long long)hash,
+                t->data, (void *)t->buffer, bad_stream[0],bad_stream[1],bad_stream[2],bad_stream[3]);
+        };
+        report_post("block_out", node->src[0]);
+        report_post("residual", node->src[1]);
+        report_post("weights", node->src[2]);
+        report_post("output", node);
+        LLAMA_LOG_ERROR("FLASHNEXT_HC_POST_NODE node=%p name=%s src0=%p src1=%p src2=%p\n",
+            (const void *)node, node->name, (const void *)node->src[0], (const void *)node->src[1], (const void *)node->src[2]);
+    }
+
+    if (std::getenv("CORTEX_FLASHNEXT_FINITE_TRACE") != nullptr &&
+        node->type == GGML_TYPE_F32 && node->data) {
+        const size_t count = ggml_nelements(node);
+        const bool target_operand = std::strcmp(node->name, "ffn_shexp-1") == 0 ||
+            std::strcmp(node->name, "hc_attn_input-1") == 0 ||
+            std::strcmp(node->name, "hc_rms-1") == 0 ||
+            std::strcmp(node->name, "hc_norm-1") == 0 ||
+            std::strcmp(node->name, "hc_gate-1") == 0 ||
+            std::strcmp(node->name, "hc_mixed-1") == 0 ||
+            std::strcmp(node->name, "shared_expert_gate_sigmoid-1") == 0;
+        if (target_operand) {
+            size_t nonfinite = 0, first_bad = count;
+            float min_finite = std::numeric_limits<float>::infinity();
+            float max_finite = -std::numeric_limits<float>::infinity();
+            uint64_t hash = 1469598103934665603ull;
+            float value0 = 0.0f;
+            for (size_t i = 0; i < count; ++i) {
+                const size_t i0 = i % node->ne[0];
+                const size_t i1 = (i / node->ne[0]) % node->ne[1];
+                const size_t i2 = (i / (node->ne[0] * node->ne[1])) % node->ne[2];
+                const size_t i3 = i / (node->ne[0] * node->ne[1] * node->ne[2]);
+                float v = 0.0f;
+                std::memcpy(&v, (const uint8_t *) node->data + i0*node->nb[0] + i1*node->nb[1] +
+                            i2*node->nb[2] + i3*node->nb[3], sizeof(v));
+                if (i == 0) value0 = v;
+                const uint8_t * raw = reinterpret_cast<const uint8_t *>(&v);
+                for (size_t j = 0; j < sizeof(v); ++j) { hash ^= raw[j]; hash *= 1099511628211ull; }
+                if (!std::isfinite(v)) { ++nonfinite; if (first_bad == count) first_bad = i; }
+                else { min_finite = std::min(min_finite, v); max_finite = std::max(max_finite, v); }
+            }
+            LLAMA_LOG_ERROR("FLASHNEXT_SHARED_OPERAND name=%s ne=[%lld,%lld,%lld,%lld] type=%d count=%zu finite=%s nonfinite=%zu min=%g max=%g first_bad=%s value0=%g hash=%016llx\n",
+                node->name, (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2],
+                (long long) node->ne[3], (int) node->type, count, nonfinite == 0 ? "YES" : "NO", nonfinite,
+                min_finite, max_finite, first_bad == count ? "NONE" : format("%zu", first_bad).c_str(),
+                value0, (unsigned long long) hash);
+        }
+        size_t bad = count;
+        for (size_t i = 0; i < count; ++i) {
+            float v = 0.0f;
+            const size_t linear = i;
+            const size_t i0 = linear % node->ne[0];
+            const size_t i1 = (linear / node->ne[0]) % node->ne[1];
+            const size_t i2 = (linear / (node->ne[0] * node->ne[1])) % node->ne[2];
+            const size_t i3 = linear / (node->ne[0] * node->ne[1] * node->ne[2]);
+            std::memcpy(&v, (const uint8_t *) node->data + i0*node->nb[0] + i1*node->nb[1] +
+                        i2*node->nb[2] + i3*node->nb[3], sizeof(v));
+            if (!std::isfinite(v)) { bad = i; break; }
+        }
+        if (bad != count) {
+            LLAMA_LOG_ERROR("FLASHNEXT_FIRST_NONFINITE op=%d name=%s tensor=%p bytes=%zu ne=[%lld,%lld,%lld,%lld] first_index=%zu value=%g src0=%s src1=%s\n",
+                (int) node->op, node->name, (const void *) node, ggml_nbytes(node),
+                (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2],
+                (long long) node->ne[3], bad, ((const float *) node->data)[0],
+                node->src[0] ? node->src[0]->name : "", node->src[1] ? node->src[1]->name : "");
+        }
+    }
+
+    if (std::getenv("CORTEX_FLASHNEXT_FINITE_TRACE") != nullptr &&
+        node->op == GGML_OP_MUL_MAT && node->name &&
+        std::strcmp(node->name, "shared_expert_gate-1") == 0 && node->src[0]) {
+        const size_t bytes = ggml_nbytes(node->src[0]);
+        uint64_t hash = 1469598103934665603ull;
+        size_t nonzero = 0;
+        if (node->src[0]->data) {
+            const auto * raw = reinterpret_cast<const uint8_t *>(node->src[0]->data);
+            for (size_t i = 0; i < bytes; ++i) { hash ^= raw[i]; hash *= 1099511628211ull; if (raw[i] != 0) ++nonzero; }
+        }
+        LLAMA_LOG_ERROR("FLASHNEXT_GATE_WEIGHT name=%s type=%d ne=[%lld,%lld,%lld,%lld] bytes=%zu data=%p buffer=%p nonzero_bytes=%zu hash=%016llx src1=%s\n",
+            node->src[0]->name, (int) node->src[0]->type,
+            (long long) node->src[0]->ne[0], (long long) node->src[0]->ne[1],
+            (long long) node->src[0]->ne[2], (long long) node->src[0]->ne[3], bytes,
+            node->src[0]->data, (void *) node->src[0]->buffer, nonzero,
+            (unsigned long long) hash, node->src[1] ? node->src[1]->name : "");
+        if (node->src[1] && node->src[1]->type == GGML_TYPE_F32 && node->src[1]->data) {
+            std::vector<float> values;
+            std::array<int64_t, 4> ne{};
+            if (flashnext_capture_logical_f32(node->src[1], values, ne)) {
+                size_t bad = values.size();
+                float min_finite = std::numeric_limits<float>::infinity();
+                float max_finite = -std::numeric_limits<float>::infinity();
+                for (size_t i = 0; i < values.size(); ++i) {
+                    if (!std::isfinite(values[i])) { if (bad == values.size()) bad = i; }
+                    else { min_finite = std::min(min_finite, values[i]); max_finite = std::max(max_finite, values[i]); }
+                }
+                LLAMA_LOG_ERROR("FLASHNEXT_GATE_ACTIVATION name=%s ne=[%lld,%lld,%lld,%lld] bytes=%zu finite=%s first_bad=%s min=%g max=%g value0=%g hash=%016llx data=%p buffer=%p\n",
+                    node->src[1]->name, (long long) ne[0], (long long) ne[1], (long long) ne[2], (long long) ne[3],
+                    values.size() * sizeof(float), bad == values.size() ? "YES" : "NO",
+                    bad == values.size() ? "NONE" : format("%zu", bad).c_str(), min_finite, max_finite,
+                    values.empty() ? 0.0f : values[0], (unsigned long long) flashnext_hash_f32(values),
+                    node->src[1]->data, (void *) node->src[1]->buffer);
+            }
+        }
+    }
 
     if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr &&
         (node->op == GGML_OP_RMS_NORM || node->op == GGML_OP_MUL) && node->name[0] != '\0' &&
@@ -1274,19 +1452,25 @@ llama_memory_t llama_context::get_memory() const {
     return memory.get();
 }
 
-size_t llama_context::debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap) {
-    if (!dst || layer < 0) return 0;
+size_t llama_context::debug_copy_recurrent_state(int layer, int state_kind, void * dst, size_t cap) {
+    if (layer < 0) return 0;
     auto * hybrid = dynamic_cast<llama_memory_hybrid *>(memory.get());
     if (!hybrid) return 0;
     auto * recr = hybrid->get_mem_recr();
     if (!recr) return 0;
-    ggml_tensor * t = convolution ? recr->debug_get_r_l(layer) : recr->debug_get_s_l(layer);
+    ggml_tensor * t = state_kind == 0 ? recr->debug_get_r_l(layer) :
+        state_kind == 1 ? recr->debug_get_s_l(layer) : recr->debug_get_p_l(layer);
     if (!t) return 0;
     const size_t bytes = ggml_nbytes(t);
-    if (bytes > cap) return bytes;
-    synchronize();
+    LLAMA_LOG_INFO("CORTEX_STATE_BINDING name=%s kind=%d layer=%d tensor=%p type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu data=%p buffer=%p backend=%p\n",
+        t->name, state_kind, layer, (const void *) t, (int) t->type,
+        (long long) t->ne[0], (long long) t->ne[1], (long long) t->ne[2], (long long) t->ne[3],
+        t->nb[0], t->nb[1], t->nb[2], t->nb[3], bytes, t->data, (void *) t->buffer,
+        (void *) ggml_backend_sched_get_tensor_backend(sched.get(), t));
+    if (!dst || cap < bytes) return bytes;
     ggml_backend_t backend = ggml_backend_sched_get_tensor_backend(sched.get(), t);
-    if (!backend) return 0;
+    if (!backend || t->buffer == nullptr || t->data == nullptr) return 0;
+    synchronize();
     ggml_backend_tensor_get(t, dst, 0, bytes);
     return bytes;
 }
@@ -1975,6 +2159,34 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
         res->set_inputs(&ubatch);
 
         //LLAMA_LOG_INFO("graph set inputs time: %.3f ms\n", (ggml_time_us() - t_start_us)/1000.0);
+
+        // Safe pre-compute boundary: scheduler allocation and input/state
+        // binding are complete, while graph_compute has not started.  The
+        // readback must not run from inside graph_compute itself.
+        if (const char * state_dir = std::getenv("CORTEX_EXPORT_STATE_DIR")) {
+            for (int kind = 0; kind < 3; ++kind) {
+                const char * name = kind == 0 ? "cache_r_l1" : kind == 1 ? "cache_s_l1" : "cache_p_l1";
+                const size_t need = debug_copy_recurrent_state(1, kind, nullptr, 0);
+                if (need == 0 || need > 512u * 1024u * 1024u) {
+                    LLAMA_LOG_ERROR("CORTEX_STATE_EXPORT name=%s status=UNAVAILABLE bytes=%zu boundary=post_set_inputs\n", name, need);
+                    continue;
+                }
+                std::vector<uint8_t> payload(need);
+                const size_t got = debug_copy_recurrent_state(1, kind, payload.data(), payload.size());
+                uint64_t hash = 14695981039346656037ull;
+                for (uint8_t b : payload) { hash ^= b; hash *= 1099511628211ull; }
+                const std::string path = std::string(state_dir) + "/" + name + ".bin";
+                std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                if (got != need || !out) {
+                    LLAMA_LOG_ERROR("CORTEX_STATE_EXPORT name=%s status=FAIL got=%zu expected=%zu boundary=post_set_inputs\n", name, got, need);
+                    continue;
+                }
+                out.write(reinterpret_cast<const char *>(payload.data()), static_cast<std::streamsize>(got));
+                out.flush();
+                LLAMA_LOG_INFO("CORTEX_STATE_EXPORT name=%s status=%s bytes=%zu hash=%016llx boundary=post_set_inputs\n",
+                    name, out.good() ? "PASS" : "FAIL", got, (unsigned long long) hash);
+            }
+        }
     }
 
     const auto status = graph_compute(res->get_gf(), ubatch.n_tokens > 1);
@@ -2691,9 +2903,11 @@ uint32_t llama_context::output_reserve(int32_t n_outputs) {
         embd_nextn.size = (size_t) n_embd_out * n_batch;
     }
 
+    const size_t layer_inp_width = hparams.dsv4_hc_mult > 1 ?
+        (size_t) hparams.n_embd * hparams.dsv4_hc_mult : (size_t) n_embd;
     for (bool enabled : cparams.embeddings_layer_inp) {
         if (enabled) {
-            embd_layer_inp_float_count += (size_t) n_embd * n_batch;
+            embd_layer_inp_float_count += layer_inp_width * n_batch;
         }
     }
 
@@ -2765,7 +2979,9 @@ uint32_t llama_context::output_reserve(int32_t n_outputs) {
 
     for (uint32_t il = 0; il < embd_layer_inp.size(); ++il) {
         if (cparams.embeddings_layer_inp[il]) {
-            embd_layer_inp[il] = buffer_view<float>{(float *) (base + offset), (size_t) n_embd * n_batch};
+            const size_t layer_inp_width = model.hparams.dsv4_hc_mult > 1 ?
+                (size_t) model.hparams.n_embd * model.hparams.dsv4_hc_mult : (size_t) model.hparams.n_embd;
+            embd_layer_inp[il] = buffer_view<float>{(float *) (base + offset), layer_inp_width * n_batch};
             offset += embd_layer_inp[il].size * sizeof(float);
         } else {
             embd_layer_inp[il] = buffer_view<float>{nullptr, 0};
@@ -2838,7 +3054,9 @@ bool llama_context::extract_layer_inputs(const llm_graph_result * res, size_t to
         GGML_ASSERT(nfloats % n_tokens == 0);
 
         const size_t row_floats = nfloats / n_tokens;
-        GGML_ASSERT(row_floats == model.hparams.n_embd);
+        const size_t expected_width = model.hparams.dsv4_hc_mult > 1 ?
+            (size_t) model.hparams.n_embd * model.hparams.dsv4_hc_mult : (size_t) model.hparams.n_embd;
+        GGML_ASSERT(row_floats == expected_width);
         const size_t dst_offset = token_offset * row_floats;
         GGML_ASSERT(dst_offset + nfloats <= embd_layer_inp[il].size);
 

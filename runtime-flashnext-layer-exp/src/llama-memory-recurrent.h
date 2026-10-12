@@ -58,6 +58,7 @@ public:
 
     ggml_tensor * debug_get_r_l(int32_t il) const { return r_l[il]; }
     ggml_tensor * debug_get_s_l(int32_t il) const { return s_l[il]; }
+    ggml_tensor * debug_get_p_l(int32_t il) const { return il >= 0 && il < (int32_t) p_l.size() ? p_l[il] : nullptr; }
 
     // find a contiguous slot of memory cells and emplace the ubatch there
     bool find_slot(const llama_ubatch & ubatch);
