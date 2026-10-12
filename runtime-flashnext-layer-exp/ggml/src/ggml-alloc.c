@@ -621,6 +621,16 @@ static void ggml_gallocr_free_extra_space(ggml_gallocr_t galloc, struct ggml_ten
 }
 
 static void ggml_gallocr_allocate_node(ggml_gallocr_t galloc, struct ggml_tensor * node, int buffer_id) {
+    if (buffer_id < 0 && getenv("CORTEX_FLASHNEXT_ALLOCATOR_DIAGNOSTICS") != NULL) {
+        fprintf(stderr, "CORTEX_ALLOCATOR_INVALID_BUFFER name=%s op=%d type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] data=%p buffer=%p view=%p src0=%p src1=%p src2=%p src3=%p phase=allocate_node buffer_id=%d\n",
+            node ? node->name : "<null>", node ? node->op : -1, node ? node->type : -1,
+            node ? (long long) node->ne[0] : 0, node ? (long long) node->ne[1] : 0,
+            node ? (long long) node->ne[2] : 0, node ? (long long) node->ne[3] : 0,
+            node ? node->nb[0] : 0, node ? node->nb[1] : 0, node ? node->nb[2] : 0, node ? node->nb[3] : 0,
+            node ? node->data : NULL, node ? node->buffer : NULL, node ? (void *) node->view_src : NULL,
+            node ? (void *) node->src[0] : NULL, node ? (void *) node->src[1] : NULL,
+            node ? (void *) node->src[2] : NULL, node ? (void *) node->src[3] : NULL, buffer_id);
+    }
     GGML_ASSERT(buffer_id >= 0);
     struct hash_node * hn = ggml_gallocr_hash_get(galloc, node);
 

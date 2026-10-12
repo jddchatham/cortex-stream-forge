@@ -858,7 +858,9 @@ struct llama_model_base : public llama_model {
     // separately and only the selected transformer layer uses the reusable
     // external buffer.
     bool cortex_rebind_layer(int il);
+    bool cortex_activate_layer(int il);
     bool flashnext_layer_range_ple_rows(const int32_t * ids, size_t count, float * dst) const;
+    bool flashnext_external_token_rows(const int32_t * ids, size_t count, float * dst) const;
 
     // model must define these
     void load_arch_hparams(llama_model_loader & ml) override = 0;

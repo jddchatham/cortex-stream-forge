@@ -548,6 +548,12 @@ extern "C" {
 
     // Forge-only: rebind a low-residency Qwen3.8 transformer layer.
     LLAMA_API bool llama_cortex_rebind_layer(struct llama_model * model, int layer);
+    LLAMA_API bool llama_cortex_activate_layer(struct llama_model * model, int layer);
+    // Forge-only: materialize selected token embedding rows into caller-owned F32 memory.
+    LLAMA_API bool llama_cortex_external_token_rows(struct llama_model * model,
+                                                    const int32_t * token_ids,
+                                                    size_t n_tokens,
+                                                    float * dst);
 
     LLAMA_API struct llama_context * llama_init_from_model(
                      struct llama_model * model,

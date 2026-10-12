@@ -619,11 +619,30 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     const bool pre_moe_cut = std::getenv("CORTEX_FLASHNEXT_PRE_MOE") != nullptr;
     const bool partial_prefix = route_only || segment_a;
     // A pre-MoE cut still needs positional/KV inputs when the selected range
-    // begins with full attention.  Recurrent ranges do not consume them.
-    const bool full_attention_range = layer_start < n_layer && !hparams.is_recr(layer_start);
+    // contains full attention.  Do not infer this from the first layer: a
+    // range crossing the model's recurrent/attention boundary would otherwise
+    // silently omit inputs required by a later attention layer (or register
+    // unused hybrid inputs for a recurrent range).
+    bool has_recurrent_layer = false;
+    bool has_attention_layer = false;
+    for (int il = layer_start; il < n_layer; ++il) {
+        has_recurrent_layer |= hparams.is_recr(il);
+        has_attention_layer |= !hparams.is_recr(il);
+    }
+    const bool mixed_attention_range = has_recurrent_layer && has_attention_layer;
+    if (mixed_attention_range) {
+        throw std::runtime_error(format(
+            "unsupported mixed recurrent/attention range [%lld,%lld); execute homogeneous physical-layer ranges",
+            (long long) layer_start, (long long) n_layer));
+    }
+    const bool full_attention_range = has_attention_layer;
+    // A recurrent bounded range, including physical layer 0, has no generic
+    // attention KV/index inputs.  Registering those inputs makes the hybrid
+    // binder call set_input_k_idxs() on an intentionally unallocated tensor
+    // after graph reservation.
     const bool cut_without_kv_inputs = partial_prefix ||
         (pre_moe_cut && !full_attention_range) ||
-        (layer_start > 0 && !full_attention_range);
+        !full_attention_range;
     auto * inp = build_inp_mem_hybrid();
     if (cut_without_kv_inputs) {
         // Layer 0 is recurrent in this model and the router-only graph stops

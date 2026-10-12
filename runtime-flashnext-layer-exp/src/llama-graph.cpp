@@ -92,13 +92,13 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
             }
         }
     }
-    if (ubatch->token) {
+    if (ubatch->token && tokens) {
         const int64_t n_tokens = ubatch->n_tokens;
 
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
     }
 
-    if (ubatch->embd) {
+    if (ubatch->embd && embd) {
         GGML_ASSERT(embd->type == GGML_TYPE_F32);
 
         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
@@ -2495,12 +2495,16 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     const int64_t n_embd_inp = hparams.n_embd_inp();
     const int64_t n_embd     = hparams.n_embd;
-    const bool range_input = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
-                             std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0;
+    // External token-row materialization is only the physical layer-0 input.
+    // Later bounded layers consume the preceding layer's HC-wide output.
+    const bool external_embedding = std::getenv("CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING") != nullptr && layer_start == 0;
+    const bool range_input = external_embedding ||
+                             (std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
+                              std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0);
     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
     // boundary, not a token embedding row.  Keep this input F32 and owned by
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
-    const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
+    const int64_t n_embd_range = range_input && !external_embedding ? hparams.n_embd_out() : n_embd_inp;
 
     assert(n_embd_inp >= n_embd);
 
