@@ -1801,8 +1801,36 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
         return;
     }
 
-    // extra_buffer op?
-    if (ggml_cpu_extra_compute_forward(params, tensor)) {
+    const bool cortex_trace_mmid = getenv("CORTEX_MOE_KERNEL_TRACE") != NULL &&
+        tensor->op == GGML_OP_MUL_MAT_ID && tensor->src[0] != NULL &&
+        strstr(tensor->src[0]->name, "blk.2.ffn_gate_exps.weight") != NULL;
+    if (cortex_trace_mmid && params->ith == 0) {
+        uint64_t weight_hash = 1469598103934665603ULL;
+        const unsigned char * weight_bytes = (const unsigned char *) tensor->src[0]->data;
+        if (weight_bytes != NULL) {
+            for (size_t i = 0; i < 136; ++i) {
+                weight_hash ^= weight_bytes[i];
+                weight_hash *= 1099511628211ULL;
+            }
+            FILE * wf = fopen("/tmp/cortex-iter123-runtime-gate-row0.bin", "wb");
+            if (wf != NULL) {
+                fwrite(weight_bytes, 1, 136, wf);
+                fclose(wf);
+            }
+        }
+        const float activation0 = tensor->src[1] != NULL && tensor->src[1]->data != NULL
+            ? *(const float *) tensor->src[1]->data : 0.0f;
+        fprintf(stderr, "CORTEX_MOE_DISPATCH_ENTRY tensor=%p data=%p src0_data=%p src0_buffer=%p weight_hash136=%016" PRIx64 " activation0=%g ne=[%" PRId64 ",%" PRId64 ",%" PRId64 ",%" PRId64 "]\n",
+            (void *) tensor, tensor->data, tensor->src[0]->data, (void *) tensor->src[0]->buffer,
+            weight_hash, activation0, tensor->ne[0], tensor->ne[1], tensor->ne[2], tensor->ne[3]);
+    }
+    const bool cortex_extra_handled = ggml_cpu_extra_compute_forward(params, tensor);
+    if (cortex_trace_mmid && params->ith == 0) {
+        fprintf(stderr, "CORTEX_MOE_DISPATCH_EXTRA handled=%d tensor=%p first=%g\n",
+            cortex_extra_handled ? 1 : 0, (void *) tensor,
+            tensor->data != NULL ? *(const float *) tensor->data : 0.0f);
+    }
+    if (cortex_extra_handled) {
         return;
     }
 
@@ -2226,6 +2254,14 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
             {
                 GGML_ABORT("fatal error");
             }
+    }
+    if (cortex_trace_mmid && params->ith == 0) {
+        const int32_t id0 = tensor->src[2] != NULL && tensor->src[2]->data != NULL
+            ? *(const int32_t *) tensor->src[2]->data : -1;
+        const float out0 = tensor->data != NULL ? *(const float *) tensor->data : 0.0f;
+        fprintf(stderr,
+            "CORTEX_MOE_DISPATCH_AFTER_STOCK first=%g id0=%d tensor_data=%p src1_data=%p\n",
+            out0, id0, tensor->data, tensor->src[1] != NULL ? tensor->src[1]->data : NULL);
     }
     if (cortex_profile) {
         atomic_fetch_add(&cortex_op_count[cortex_profile_op], 1);
@@ -3223,6 +3259,41 @@ static thread_ret_t ggml_graph_compute_thread(void * data) {
             // second barrier keeps other workers from advancing while the
             // observer is using the completed node.
             ggml_barrier(state->threadpool);
+            if (state->ith == 0 && getenv("CORTEX_MOE_KERNEL_CAPTURE") != NULL &&
+                    node->op == GGML_OP_MUL_MAT_ID && node->src[0] != NULL &&
+                    strstr(node->src[0]->name, "blk.2.ffn_gate_exps.weight") != NULL &&
+                    node->ne[0] == 640 && node->ne[1] == 10 && node->ne[2] == 9 &&
+                    node->ne[3] == 1 && node->type == GGML_TYPE_F32 && node->data != NULL) {
+                FILE * f = fopen("/tmp/cortex-iter122-l2-gate-kernel-output.bin", "wb");
+                size_t nonzero = 0;
+                size_t finite = 0;
+                float min_v = INFINITY;
+                float max_v = -INFINITY;
+                const size_t n = (size_t) node->ne[0] * node->ne[1] * node->ne[2];
+                for (int64_t i2 = 0; i2 < node->ne[2]; ++i2) {
+                    for (int64_t i1 = 0; i1 < node->ne[1]; ++i1) {
+                        const float * row = (const float *) ((const char *) node->data +
+                            i2 * node->nb[2] + i1 * node->nb[1]);
+                        if (f != NULL) {
+                            fwrite(row, sizeof(float), (size_t) node->ne[0], f);
+                        }
+                        for (int64_t i0 = 0; i0 < node->ne[0]; ++i0) {
+                            const float v = row[i0];
+                            if (v != 0.0f) { ++nonzero; }
+                            if (isfinite(v)) { ++finite; }
+                            if (v < min_v) { min_v = v; }
+                            if (v > max_v) { max_v = v; }
+                        }
+                    }
+                }
+                if (f != NULL) { fclose(f); }
+                fprintf(stderr,
+                    "CORTEX_MOE_KERNEL_CAPTURE node=%p data=%p type=%d ne=[%" PRId64 ",%" PRId64 ",%" PRId64 ",%" PRId64 "] nb=[%zu,%zu,%zu,%zu] bytes=%zu nonzero=%zu finite=%zu min=%g max=%g file=/tmp/cortex-iter122-l2-gate-kernel-output.bin\n",
+                    (void *) node, node->data, (int) node->type,
+                    node->ne[0], node->ne[1], node->ne[2], node->ne[3],
+                    node->nb[0], node->nb[1], node->nb[2], node->nb[3],
+                    n * sizeof(float), nonzero, finite, min_v, max_v);
+            }
             if (state->ith == 0) {
                 cplan->post_node_observer(observer_node, cplan->post_node_observer_data);
             }

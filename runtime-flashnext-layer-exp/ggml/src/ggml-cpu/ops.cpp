@@ -11,6 +11,33 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
+
+static void cortex_diag_ssm_conv_operand(const char * role, const ggml_tensor * t) {
+    if (!t) {
+        std::fprintf(stderr, "CORTEX_SSM_CONV_OPERAND role=%s tensor=NULL\n", role);
+        return;
+    }
+    const size_t n = ggml_nelements(t);
+    size_t bad = n, nan_count = 0, inf_count = 0;
+    float first = 0.0f;
+    if (t->type == GGML_TYPE_F32 && t->data) {
+        for (size_t i = 0; i < n; ++i) {
+            const float v = *reinterpret_cast<const float *>(
+                reinterpret_cast<const char *>(t->data) + i * sizeof(float));
+            if (i == 0) first = v;
+            if (std::isnan(v)) { ++nan_count; if (bad == n) bad = i; }
+            else if (std::isinf(v)) { ++inf_count; if (bad == n) bad = i; }
+        }
+    }
+    std::fprintf(stderr,
+        "CORTEX_SSM_CONV_OPERAND role=%s name=%s op=%d type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu data=%p buffer=%p nan=%zu inf=%zu first_bad_index=%lld first=%g\n",
+        role, t->name, (int) t->op, (int) t->type,
+        (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
+        t->nb[0], t->nb[1], t->nb[2], t->nb[3], ggml_nbytes(t), t->data, (void *)t->buffer,
+        nan_count, inf_count, bad == n ? -1LL : (long long) bad, first);
+}
 
 // ggml_compute_forward_dup
 
@@ -9949,6 +9976,16 @@ static void ggml_compute_forward_ssm_conv_f32(
     const int nr  = src0->ne[1]; // d_inner
     const int n_t =  dst->ne[1]; // tokens per sequence
     const int n_s =  dst->ne[2]; // number of sequences in the batch
+
+    // This is deliberately at the CPU kernel entry: src0 and src1 are the
+    // exact live operands, after their producers have completed and before
+    // this operation writes dst.  It is diagnostic-only and does not alter
+    // the convolution arithmetic.
+    if (params->ith == 0 && std::getenv("CORTEX_FLASHNEXT_SSM_CONV_OPERAND_DIAGNOSTICS")) {
+        cortex_diag_ssm_conv_operand("input", src0);
+        cortex_diag_ssm_conv_operand("weight", src1);
+        cortex_diag_ssm_conv_operand("output_before", dst);
+    }
 
     GGML_ASSERT( dst->ne[0] == nr);
     GGML_ASSERT(src0->nb[0] == sizeof(float));
