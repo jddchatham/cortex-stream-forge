@@ -3223,6 +3223,41 @@ static thread_ret_t ggml_graph_compute_thread(void * data) {
             // second barrier keeps other workers from advancing while the
             // observer is using the completed node.
             ggml_barrier(state->threadpool);
+            if (state->ith == 0 && getenv("CORTEX_MOE_KERNEL_CAPTURE") != NULL &&
+                    node->op == GGML_OP_MUL_MAT_ID && node->src[0] != NULL &&
+                    strstr(node->src[0]->name, "blk.2.ffn_gate_exps.weight") != NULL &&
+                    node->ne[0] == 640 && node->ne[1] == 10 && node->ne[2] == 9 &&
+                    node->ne[3] == 1 && node->type == GGML_TYPE_F32 && node->data != NULL) {
+                FILE * f = fopen("/tmp/cortex-iter122-l2-gate-kernel-output.bin", "wb");
+                size_t nonzero = 0;
+                size_t finite = 0;
+                float min_v = INFINITY;
+                float max_v = -INFINITY;
+                const size_t n = (size_t) node->ne[0] * node->ne[1] * node->ne[2];
+                for (int64_t i2 = 0; i2 < node->ne[2]; ++i2) {
+                    for (int64_t i1 = 0; i1 < node->ne[1]; ++i1) {
+                        const float * row = (const float *) ((const char *) node->data +
+                            i2 * node->nb[2] + i1 * node->nb[1]);
+                        if (f != NULL) {
+                            fwrite(row, sizeof(float), (size_t) node->ne[0], f);
+                        }
+                        for (int64_t i0 = 0; i0 < node->ne[0]; ++i0) {
+                            const float v = row[i0];
+                            if (v != 0.0f) { ++nonzero; }
+                            if (isfinite(v)) { ++finite; }
+                            if (v < min_v) { min_v = v; }
+                            if (v > max_v) { max_v = v; }
+                        }
+                    }
+                }
+                if (f != NULL) { fclose(f); }
+                fprintf(stderr,
+                    "CORTEX_MOE_KERNEL_CAPTURE node=%p data=%p type=%d ne=[%" PRId64 ",%" PRId64 ",%" PRId64 ",%" PRId64 "] nb=[%zu,%zu,%zu,%zu] bytes=%zu nonzero=%zu finite=%zu min=%g max=%g file=/tmp/cortex-iter122-l2-gate-kernel-output.bin\n",
+                    (void *) node, node->data, (int) node->type,
+                    node->ne[0], node->ne[1], node->ne[2], node->ne[3],
+                    node->nb[0], node->nb[1], node->nb[2], node->nb[3],
+                    n * sizeof(float), nonzero, finite, min_v, max_v);
+            }
             if (state->ith == 0) {
                 cplan->post_node_observer(observer_node, cplan->post_node_observer_data);
             }
