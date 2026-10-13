@@ -19,6 +19,17 @@ struct llama_ubatch;
 struct llama_model_loader;
 struct llama_model;
 
+struct cortex_output_weight_descriptor {
+    std::string name;
+    uint32_t shard = 0;
+    int file_descriptor = -1;
+    uint64_t absolute_offset = 0;
+    enum ggml_type type = GGML_TYPE_COUNT;
+    int64_t ne[4] = { 0, 0, 0, 0 };
+    size_t row_bytes = 0;
+    size_t bytes = 0;
+};
+
 // available models
 enum llm_type {
     LLM_TYPE_UNKNOWN,
@@ -857,10 +868,12 @@ struct llama_model_base : public llama_model {
     // loaded with CORTEX_LOW_RESIDENCY_LAYER; global tensors remain resident
     // separately and only the selected transformer layer uses the reusable
     // external buffer.
-    bool cortex_rebind_layer(int il);
+    bool cortex_rebind_layer(int il, bool internal_activation = false);
     bool cortex_activate_layer(int il);
     bool flashnext_layer_range_ple_rows(const int32_t * ids, size_t count, float * dst) const;
     bool flashnext_external_token_rows(const int32_t * ids, size_t count, float * dst) const;
+    bool get_cortex_output_weight_descriptor(cortex_output_weight_descriptor & out) const;
+    bool get_cortex_tensor_descriptor(const char * name, cortex_output_weight_descriptor & out) const;
 
     // model must define these
     void load_arch_hparams(llama_model_loader & ml) override = 0;

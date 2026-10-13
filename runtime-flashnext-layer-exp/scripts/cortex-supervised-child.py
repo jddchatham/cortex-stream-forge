@@ -3,8 +3,10 @@
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 REQUIRED = {
@@ -51,6 +53,29 @@ def telemetry(path):
             "memory.current": read("memory.current"),
             "memory.peak": read("memory.peak"), "memory.events": events}
 
+def run_workload(command, stdout, stderr, timeout=195, grace=2.0):
+    """Run one workload in its own process group and preserve its real status."""
+    proc = subprocess.Popen(command, stdin=sys.stdin.buffer, stdout=stdout, stderr=stderr,
+                            start_new_session=True)
+    timed_out = False
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            proc.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+    return (124 if timed_out else proc.returncode), timed_out, proc.pid
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--evidence", required=True)
@@ -71,17 +96,16 @@ def main():
         return 78
     (evidence / "environment.json").write_text(json.dumps({k: os.environ.get(k) for k in REQUIRED}, sort_keys=True))
     with (evidence / "stdout.log").open("wb") as out, (evidence / "stderr.log").open("wb") as err:
-        try:
-            proc = subprocess.run(args.command, stdin=sys.stdin.buffer, stdout=out, stderr=err,
-                                  timeout=195, check=False)
-            status = proc.returncode
-        except subprocess.TimeoutExpired:
-            status = 124
+        status, timed_out, workload_pid = run_workload(args.command, out, err)
     after = telemetry(cg)
     (evidence / "telemetry.json").write_text(json.dumps({"before": before, "after": after,
-        "pid": os.getpid(), "child_status": status}, sort_keys=True))
+        "wrapper_pid": os.getpid(), "workload_pid": workload_pid,
+        "process_group": workload_pid, "timed_out": timed_out,
+        "child_status": status}, sort_keys=True))
     (evidence / "launcher.json").write_text(json.dumps({"status": "PASS" if status == 0 else "FAIL",
-        "child_status": status, "pid": os.getpid(), "cgroup": after["path"]}, sort_keys=True))
+        "child_status": status, "wrapper_pid": os.getpid(), "workload_pid": workload_pid,
+        "process_group": workload_pid, "timed_out": timed_out,
+        "cgroup": after["path"]}, sort_keys=True))
     return status
 
 if __name__ == "__main__":

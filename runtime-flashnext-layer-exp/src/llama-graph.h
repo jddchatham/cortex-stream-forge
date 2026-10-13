@@ -912,6 +912,12 @@ public:
     ggml_tensor * get_embd()        const { return t_embd; }
     ggml_tensor * get_embd_pooled() const { return t_embd_pooled; }
     ggml_tensor * get_h_nextn()     const { return t_h_nextn; }
+    ggml_tensor * get_cortex_pre_moe() const { return t_cortex_pre_moe; }
+    ggml_tensor * get_cortex_router_logits() const { return t_cortex_router_logits; }
+    ggml_tensor * get_cortex_res_hc() const { return t_cortex_res_hc; }
+    ggml_tensor * get_cortex_inject() const { return t_cortex_inject; }
+    ggml_tensor * get_cortex_hc_norm() const { return t_cortex_hc_norm; }
+    ggml_tensor * get_cortex_hc_rms() const { return t_cortex_hc_rms; }
 
     ggml_tensor * get_layer_inp(int il) const { return t_layer_inp[il]; }
 
@@ -947,6 +953,36 @@ public:
     ggml_tensor * t_embd        = nullptr;
     ggml_tensor * t_embd_pooled = nullptr;
     ggml_tensor * t_h_nextn     = nullptr; // [n_embd, n_outputs] hidden state before final output norm
+
+    // Dedicated Cortex pre-MoE contract.  These are never routed through the
+    // vocabulary-logits accessor; callers must synchronize and copy them while
+    // this graph result is alive.
+    ggml_tensor * t_cortex_pre_moe = nullptr;       // [n_embd, n_tokens]
+    ggml_tensor * t_cortex_router_logits = nullptr; // [n_expert, n_tokens]
+    ggml_tensor * t_cortex_res_hc = nullptr;       // [n_embd, hc, n_tokens]
+    ggml_tensor * t_cortex_hc_norm = nullptr;      // final-head weighted RMSNorm
+    ggml_tensor * t_cortex_hc_rms = nullptr;       // final-head raw RMSNorm
+    ggml_tensor * t_cortex_hc_down = nullptr;     // final-head HC down projection
+    ggml_tensor * t_cortex_hc_down_weight = nullptr;
+    ggml_tensor * t_cortex_hc_silu = nullptr;
+    ggml_tensor * t_cortex_hc_up = nullptr;
+    ggml_tensor * t_cortex_hc_up_weight = nullptr;
+    ggml_tensor * t_cortex_hc_sigmoid = nullptr;
+    ggml_tensor * t_cortex_hc_gated = nullptr;
+    ggml_tensor * t_cortex_hc_mixed = nullptr;
+    ggml_tensor * t_cortex_gdn_q = nullptr, * t_cortex_gdn_k = nullptr, * t_cortex_gdn_v = nullptr;
+    ggml_tensor * t_cortex_gdn_g = nullptr, * t_cortex_gdn_b = nullptr, * t_cortex_gdn_s = nullptr;
+    ggml_tensor * t_cortex_gdn_result = nullptr, * t_cortex_gdn_state = nullptr;
+    ggml_tensor * t_cortex_gdn_cache = nullptr;
+    ggml_tensor * t_cortex_kv_read_k = nullptr, * t_cortex_kv_read_v = nullptr;
+    ggml_tensor * t_cortex_inject = nullptr;       // [hc, n_tokens]
+    ggml_tensor * t_cortex_moe_gate_input = nullptr;
+    ggml_tensor * t_cortex_moe_gate_ids = nullptr;
+    ggml_tensor * t_cortex_moe_gate_output = nullptr;
+    ggml_tensor * t_cortex_moe_up_output = nullptr;
+    ggml_tensor * t_cortex_moe_down_output = nullptr;
+    ggml_tensor * t_cortex_moe_weights = nullptr;
+    ggml_tensor * t_cortex_moe_out = nullptr;
 
     std::vector<ggml_tensor *> t_layer_inp;
 

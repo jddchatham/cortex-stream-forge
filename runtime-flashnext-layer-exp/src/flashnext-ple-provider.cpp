@@ -1,4 +1,5 @@
 #include "flashnext-ple-provider.h"
+#include "../ggml/src/ggml-quants.h"
 
 #include <cerrno>
 #include <limits>
@@ -24,9 +25,17 @@ bool flashnext_read_quantized_rows(int fd, uint64_t tensor_offset,
             if (got <= 0) return false;
             done += (size_t) got;
         }
-        auto * traits = ggml_get_type_traits(type);
-        if (!traits || !traits->to_float) return false;
-        traits->to_float(packed.data(), dst + i * (size_t) row_elements, row_elements);
+        if (type == GGML_TYPE_IQ4_XS) {
+            dequantize_row_iq4_xs(reinterpret_cast<const block_iq4_xs *>(packed.data()),
+                dst + i * (size_t) row_elements, row_elements);
+        } else if (type == GGML_TYPE_IQ4_NL) {
+            dequantize_row_iq4_nl(reinterpret_cast<const block_iq4_nl *>(packed.data()),
+                dst + i * (size_t) row_elements, row_elements);
+        } else {
+            auto * traits = ggml_get_type_traits(type);
+            if (!traits || !traits->to_float) return false;
+            traits->to_float(packed.data(), dst + i * (size_t) row_elements, row_elements);
+        }
     }
     return true;
 }

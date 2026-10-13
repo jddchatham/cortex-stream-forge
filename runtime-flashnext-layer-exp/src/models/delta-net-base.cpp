@@ -1,5 +1,10 @@
 #include "models.h"
 
+static bool cortex_gdn_export_layer(int il) {
+    const char * text = std::getenv("CORTEX_GDN_EXPORT_LAYER");
+    return text == nullptr ? il == 0 : std::atoi(text) == il;
+}
+
 #include "llama-impl.h"
 #include "llama-memory-recurrent.h"
 
@@ -400,6 +405,9 @@ std::pair<ggml_tensor *, ggml_tensor *> llm_build_delta_net_base::build_delta_ne
 
     // K=1: output carries the final state only. state s is 4D [S_v, S_v, H_v, n_seqs].
     ggml_tensor * result = ggml_gated_delta_net(ctx0, q, k, v, g, b, s, /*K=*/1);
+    if (cortex_gdn_export_layer(il) && std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) {
+        res->t_cortex_gdn_q=q; res->t_cortex_gdn_k=k; res->t_cortex_gdn_v=v; res->t_cortex_gdn_g=g; res->t_cortex_gdn_b=b; res->t_cortex_gdn_s=s; res->t_cortex_gdn_result=result;
+    }
     if (n_tokens == 1) {
         res->add_fused_node({LLM_FUSED_OP_GDN_AR, result, il});
     } else {
@@ -418,6 +426,7 @@ std::pair<ggml_tensor *, ggml_tensor *> llm_build_delta_net_base::build_delta_ne
             ggml_row_size(result->type, S_v * S_v),
             ggml_row_size(result->type, S_v * S_v * H_v),
             ggml_row_size(result->type, S_v * H_v * n_tokens * n_seqs));
+    if (cortex_gdn_export_layer(il) && std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) res->t_cortex_gdn_state = new_state;
 
     return {output, new_state};
 }
@@ -565,6 +574,9 @@ ggml_tensor * llm_build_delta_net_base::build_recurrent_attn(
 
     // state s is 4D [S_v, S_v, H_v, n_seqs]; K snapshot slots are written into the output.
     ggml_tensor * gdn_out = ggml_gated_delta_net(ctx0, q, k, v, g, b, s, K);
+    if (cortex_gdn_export_layer(il) && std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) {
+        res->t_cortex_gdn_q=q; res->t_cortex_gdn_k=k; res->t_cortex_gdn_v=v; res->t_cortex_gdn_g=g; res->t_cortex_gdn_b=b; res->t_cortex_gdn_s=s; res->t_cortex_gdn_result=gdn_out;
+    }
     if (n_seq_tokens > 1) {
         res->add_fused_node({LLM_FUSED_OP_GDN_CH, gdn_out, il});
     } else {
@@ -593,12 +605,14 @@ ggml_tensor * llm_build_delta_net_base::build_recurrent_attn(
         ggml_row_size(gdn_out->type, D),
         ggml_row_size(gdn_out->type, state_size_per_snap),
         ggml_row_size(gdn_out->type, attn_score_elems));
+    if (cortex_gdn_export_layer(il) && std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) res->t_cortex_gdn_state = src;
 
     ggml_tensor * dst = ggml_view_3d(ctx0, ssm_states_all,
         D, n_seqs, n_written,
         ssm_states_all->nb[1],
         (size_t) mem_size * row_size,
         (size_t) kv_head * row_size);
+    if (cortex_gdn_export_layer(il) && std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) res->t_cortex_gdn_cache = dst;
 
     ggml_build_forward_expand(gf, ggml_cpy(ctx0, src, dst));
 

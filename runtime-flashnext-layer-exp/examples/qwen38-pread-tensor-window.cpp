@@ -34,10 +34,10 @@ static float max_abs(const float * a, const float * b, size_t n, float * rel) {
 }
 
 int main(int argc, char ** argv) {
-    if (argc < 2 || argc > 3) return 2;
+    if (argc < 2 || argc > 4) return 2;
     const char * path = argv[1];
     const size_t arena_bytes = argc == 3 ? std::strtoull(argv[2], nullptr, 0) : 8*1024*1024;
-    const char * wanted = "blk.0.ffn_down.weight";
+    const char * wanted = argc == 4 ? argv[3] : "blk.0.ffn_down.weight";
 
     int fd = open(path, O_RDONLY | O_CLOEXEC);
     if (fd < 0) { std::perror("open"); return 3; }
@@ -49,7 +49,7 @@ int main(int argc, char ** argv) {
     if (tid < 0) { std::fprintf(stderr, "tensor not found: %s\n", wanted); return 5; }
     const ggml_type type = gguf_get_tensor_type(gguf, tid);
     const int64_t * ne = gguf_get_tensor_ne(gguf, tid);
-    const int64_t K = ne[0], N = ne[1];
+    const int64_t K = ne[0], N = ne[1] * ne[2] * ne[3];
     const size_t row_bytes = ggml_row_size(type, K);
     const size_t tensor_bytes = gguf_get_tensor_size(gguf, tid);
     const off_t offset = (off_t) gguf_get_data_offset(gguf) + (off_t) gguf_get_tensor_offset(gguf, tid);

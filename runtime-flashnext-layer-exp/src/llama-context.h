@@ -14,11 +14,33 @@
 
 #include <array>
 #include <atomic>
+#include <functional>
 #include <map>
 #include <vector>
 
 struct llama_model;
 class llama_batch_allocr;
+
+struct cortex_pre_moe_result {
+    struct tensor {
+        std::vector<float> values;
+        std::array<int64_t, 4> ne{};
+        std::array<size_t, 4> nb{};
+        enum ggml_type type = GGML_TYPE_COUNT;
+        size_t bytes = 0;
+    } hidden, router_logits, residual_hc, inject;
+    size_t n_tokens = 0;
+    bool valid = false;
+    void clear() { *this = {}; }
+};
+
+struct cortex_post_moe_result {
+    std::vector<float> hc_output;
+    std::array<int64_t, 4> ne{};
+    std::array<size_t, 4> nb{};
+    enum ggml_type type = GGML_TYPE_COUNT;
+    bool valid = false;
+};
 
 class llama_io_read_i;
 class llama_io_write_i;
@@ -77,7 +99,14 @@ struct llama_context {
     llama_memory_t get_memory() const;
 
     size_t debug_copy_recurrent_state(int layer, int state_kind, void * dst, size_t cap);
+    size_t debug_copy_kv_cache(int layer, int cache_kind, void * dst, size_t cap);
+    bool debug_zero_recurrent_state(int layer, int state_kind);
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
+    bool capture_cortex_pre_moe(cortex_pre_moe_result & out);
+    bool cortex_execute_post_moe_in_transaction(const llama_ubatch & source_ubatch,
+            llama_memory_context_i * mctx, const float * packed_input, size_t packed_bytes,
+            cortex_post_moe_result & out);
+    bool cortex_execute_final_head_only(const float * hidden, size_t floats, cortex_post_moe_result & out);
     bool debug_copy_final_head_output(std::vector<uint8_t> & bytes, std::array<int64_t, 4> & ne,
             std::array<size_t, 4> & nb, enum ggml_type & type, std::string & name);
     size_t debug_copy_cpu_operand(const char * name, void * dst, size_t cap) const;
@@ -157,6 +186,9 @@ struct llama_context {
 
     int encode(const llama_batch_ext & batch_inp);
     int decode(const llama_batch_ext & batch_inp);
+
+    using cortex_decode_callback = std::function<bool(const llama_ubatch &, llama_memory_context_i *, llm_graph_result *)>;
+    void set_cortex_decode_callback(cortex_decode_callback callback) { cortex_decode_callback_ = std::move(callback); }
 
     // compat version
     int encode(const llama_batch & batch_inp);
@@ -377,6 +409,7 @@ private:
     std::vector<uint8_t> flashnext_cpu_diag_activation_block;
     std::vector<float> flashnext_cpu_diag_activation_f32;
     std::vector<float> flashnext_cpu_diag_conversion_f32;
+    float flashnext_cpu_diag_dot_result = 0.0f;
     std::vector<float> flashnext_concat_source_a;
     std::vector<float> flashnext_concat_source_b;
     std::vector<float> flashnext_concat_output;
@@ -434,6 +467,7 @@ private:
 
     // env: LLAMA_GRAPH_REUSE_DISABLE
     bool graph_reuse_disable = false;
+    cortex_decode_callback cortex_decode_callback_;
 
     // perf
     mutable int64_t t_start_us  = 0;

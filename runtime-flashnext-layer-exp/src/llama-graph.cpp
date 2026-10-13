@@ -16,14 +16,129 @@
 #include "llama-memory-hybrid-iswa.h"
 #include "llama-memory-recurrent.h"
 #include "ggml-cpu.h"
+#include "flashnext-selected-moe.h"
 
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <numeric>
 #include <sstream>
 #include <string>
 #include <unordered_set>
+
+namespace {
+static bool cortex_stream_layer_enabled(int layer) {
+    const char * spec = std::getenv("CORTEX_MOE_STREAM_LAYERS");
+    if (!spec || !*spec) return layer == 2 || layer == 3;
+    const std::string needle = std::to_string(layer);
+    const char * p = spec;
+    while (*p) {
+        while (*p == ',' || *p == ' ' || *p == '\t') ++p;
+        const char * e = p;
+        while (*e >= '0' && *e <= '9') ++e;
+        if (e != p && std::string(p, e) == needle) return true;
+        p = e;
+        while (*p && *p != ',') ++p;
+    }
+    return false;
+}
+
+static int cortex_moe_capture_layer() {
+    const char * value = std::getenv("CORTEX_MOE_CAPTURE_LAYER");
+    return value && *value ? std::atoi(value) : 2;
+}
+
+struct cortex_stream_gate_config {
+    flashnext_tensor_index index;
+    std::string index_path;
+    flashnext_projection projection = flashnext_projection::gate;
+    int layer = 2;
+    bool loaded = false;
+    bool failed = false;
+};
+
+static void cortex_stream_gate_callback(
+        ggml_tensor * dst, const ggml_tensor * /*dummy*/, const ggml_tensor * ids,
+        const ggml_tensor * activation, int ith, int /*nth*/, void * userdata) {
+    auto * cfg = static_cast<cortex_stream_gate_config *>(userdata);
+    if (ith != 0 || !cfg || !ids || !activation || !dst) return;
+    if (!cfg->loaded) {
+        const char * path = std::getenv("CORTEX_FLASHNEXT_TENSOR_INDEX");
+        cfg->index_path = path ? path : "/tmp/cortex-iter120-layer2-index.json";
+        std::string error;
+        cfg->loaded = cfg->index.load(cfg->index_path, &error);
+        if (!cfg->loaded) {
+            cfg->failed = true;
+            std::fprintf(stderr, "CORTEX_MOE_STREAM result=FAIL stage=index path=%s error=%s\n", cfg->index_path.c_str(), error.c_str());
+            return;
+        }
+    }
+    const int64_t n_tokens = activation->ne[2];
+    const int64_t n_hidden = activation->ne[0];
+    const int64_t n_selected = ids->ne[0];
+    const int64_t n_ff = dst->ne[0];
+    const int64_t expected_hidden = cfg->projection == flashnext_projection::down ? 640 : 2560;
+    const int64_t expected_ff = cfg->projection == flashnext_projection::down ? 2560 : 640;
+    const bool down_layout = cfg->projection == flashnext_projection::down && activation->ne[1] == n_selected;
+    if (n_hidden != expected_hidden || n_selected != 10 || n_ff != expected_ff || ids->ne[1] != n_tokens ||
+            (cfg->projection == flashnext_projection::down && !down_layout) ||
+            activation->type != GGML_TYPE_F32 || ids->type != GGML_TYPE_I32 || dst->type != GGML_TYPE_F32) {
+        cfg->failed = true;
+        std::fprintf(stderr, "CORTEX_MOE_STREAM result=FAIL stage=shape projection=%d hidden=%lld selected=%lld tokens=%lld ff=%lld\n",
+                     (int) cfg->projection,
+                     (long long)n_hidden, (long long)n_selected, (long long)n_tokens, (long long)n_ff);
+        return;
+    }
+    std::vector<float> input((size_t)n_tokens * (size_t)n_selected * (size_t)n_hidden);
+    std::vector<int32_t> selected((size_t)n_tokens * (size_t)n_selected);
+    for (int64_t t = 0; t < n_tokens; ++t) {
+        for (int64_t i = 0; i < n_hidden; ++i) {
+            std::memcpy(&input[(size_t)t * n_selected * n_hidden + i], static_cast<const uint8_t *>(activation->data) + i * activation->nb[0] + t * activation->nb[2], sizeof(float));
+            if (down_layout) for (int64_t s = 1; s < n_selected; ++s) {
+                std::memcpy(&input[((size_t)t * n_selected + s) * n_hidden + i],
+                            static_cast<const uint8_t *>(activation->data) + i * activation->nb[0] + s * activation->nb[1] + t * activation->nb[2], sizeof(float));
+            }
+        }
+        for (int64_t s = 0; s < n_selected; ++s) {
+            std::memcpy(&selected[(size_t)t * n_selected + s], static_cast<const uint8_t *>(ids->data) + s * ids->nb[0] + t * ids->nb[1], sizeof(int32_t));
+        }
+        if (std::getenv("CORTEX_FLASHNEXT_TOKEN_Q8_CAPTURE") != nullptr && t < 2) {
+            size_t nonzero = 0; for (int64_t i = 0; i < n_hidden; ++i) nonzero += input[(size_t)t * n_selected * n_hidden + i] != 0.0f;
+            std::fprintf(stderr, "CORTEX_PROVIDER_INPUT layer=%d projection=%d token=%lld nonzero=%zu first=%g last=%g source_nb2=%zu\n",
+                         cfg->layer, (int) cfg->projection, (long long) t, nonzero,
+                         input[(size_t)t * n_selected * n_hidden],
+                         input[(size_t)t * n_selected * n_hidden + n_hidden - 1], activation->nb[2]);
+        }
+    }
+    if (std::getenv("CORTEX_MOE_DOWN_FORENSICS") != nullptr &&
+            cfg->layer == 4 && cfg->projection == flashnext_projection::down) {
+        const std::string path = "/tmp/cortex-iter168-l4-down-input.bin";
+        std::ofstream f(path, std::ios::binary | std::ios::trunc);
+        f.write(reinterpret_cast<const char *>(input.data()),
+                static_cast<std::streamsize>(input.size() * sizeof(float)));
+        size_t nonzero = 0;
+        for (float v : input) nonzero += v != 0.0f;
+        std::fprintf(stderr, "CORTEX_DOWN_INPUT_CAPTURE layer=4 tokens=%lld slots=%lld width=%lld bytes=%zu nonzero=%zu first=%g last=%g path=%s\n",
+                     (long long)n_tokens, (long long)n_selected, (long long)n_hidden,
+                     input.size() * sizeof(float), nonzero,
+                     input.empty() ? 0.0f : input.front(), input.empty() ? 0.0f : input.back(), path.c_str());
+    }
+    std::vector<float> output((size_t)n_tokens * (size_t)n_selected * (size_t)n_ff);
+    if (!flashnext_execute_selected_projection_rows_layer(cfg->index, cfg->layer, cfg->projection,
+            input.data(), selected.data(), (size_t)n_tokens, output.data(), (size_t)n_ff, (size_t)n_hidden)) {
+        cfg->failed = true;
+        std::fprintf(stderr, "CORTEX_MOE_STREAM result=FAIL stage=provider tokens=%lld\n", (long long)n_tokens);
+        return;
+    }
+    for (int64_t t = 0; t < n_tokens; ++t) for (int64_t s = 0; s < n_selected; ++s) for (int64_t f = 0; f < n_ff; ++f) {
+        std::memcpy(static_cast<uint8_t *>(dst->data) + f * dst->nb[0] + s * dst->nb[1] + t * dst->nb[2],
+                    &output[((size_t)t * n_selected + s) * n_ff + f], sizeof(float));
+    }
+    std::fprintf(stderr, "CORTEX_MOE_STREAM result=PASS layer=%d projection=%d tokens=%lld ids=%lld output_bytes=%zu\n",
+                 cfg->layer, (int) cfg->projection, (long long)n_tokens, (long long)n_selected, ggml_nbytes(dst));
+}
+}
 
 // dedup helpers
 
@@ -107,6 +222,14 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
         }
 
         const int64_t n_tokens = ubatch->n_tokens;
+
+        if (std::getenv("CORTEX_FLASHNEXT_INPUT_TRACE") != nullptr) {
+            LLAMA_LOG_INFO("CORTEX_INPUT_TRACE embd=%p n_tokens=%lld width=%lld first=%g second=%g token=%p\n",
+                    (const void *) ubatch->embd, (long long) n_tokens, (long long) embd->ne[0],
+                    ubatch->embd ? ubatch->embd[0] : 0.0f,
+                    ubatch->embd && embd->ne[0] > 1 ? ubatch->embd[1] : 0.0f,
+                    (const void *) ubatch->token);
+        }
 
         // Nonzero layer-range transactions use the HC-wide owned boundary;
         // size the upload from the actual graph input, not the ordinary
@@ -257,6 +380,14 @@ void llm_graph_input_pos_bucket_kv::set_input(const llama_ubatch * ubatch) {
 
 void llm_graph_input_out_ids::set_input(const llama_ubatch * ubatch) {
     GGML_ASSERT(out_ids);
+
+    // The graph result keeps a stable input list across topology variants.
+    // For intermediate layer-output graphs, out_ids can be present in that
+    // list without being part of the executable graph, so the scheduler does
+    // not allocate it.  It must not be treated as a live input in that case.
+    if (out_ids->buffer == nullptr) {
+        return;
+    }
 
     const int64_t n_tokens = ubatch->n_tokens;
 
@@ -1459,11 +1590,50 @@ void llm_graph_result::set_outputs(const llm_graph_params & params) {
     if (t_h_nextn != nullptr) {
         ggml_set_output(t_h_nextn);
     }
+    // Keep the final-head raw grouped RMSNorm alive for the explicit
+    // diagnostic capture.  Without marking it as a graph output, the
+    // allocator may reuse its temporary buffer before the post-graph copy.
+    if (t_cortex_hc_rms != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+        ggml_set_output(t_cortex_hc_rms);
+    }
+    if (t_cortex_hc_norm != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+        ggml_set_output(t_cortex_hc_norm);
+    }
+    if (t_cortex_hc_down != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+        ggml_set_output(t_cortex_hc_down);
+    }
+    if (t_cortex_hc_silu != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) ggml_set_output(t_cortex_hc_silu);
+    if (t_cortex_hc_up != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) ggml_set_output(t_cortex_hc_up);
+    if (t_cortex_hc_sigmoid != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) ggml_set_output(t_cortex_hc_sigmoid);
+    if (t_cortex_hc_gated != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) ggml_set_output(t_cortex_hc_gated);
+    if (t_cortex_hc_mixed != nullptr && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) ggml_set_output(t_cortex_hc_mixed);
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr) {
+        if (t_cortex_moe_gate_input)  ggml_set_output(t_cortex_moe_gate_input);
+        if (t_cortex_moe_gate_ids)    ggml_set_output(t_cortex_moe_gate_ids);
+        if (t_cortex_moe_gate_output) ggml_set_output(t_cortex_moe_gate_output);
+        if (t_cortex_moe_up_output) ggml_set_output(t_cortex_moe_up_output);
+        if (t_cortex_moe_down_output) ggml_set_output(t_cortex_moe_down_output);
+        if (t_cortex_moe_weights) ggml_set_output(t_cortex_moe_weights);
+        if (t_cortex_moe_out) ggml_set_output(t_cortex_moe_out);
+    }
+    if (std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) {
+        if (t_cortex_gdn_q) ggml_set_output(t_cortex_gdn_q); if (t_cortex_gdn_k) ggml_set_output(t_cortex_gdn_k); if (t_cortex_gdn_v) ggml_set_output(t_cortex_gdn_v);
+        if (t_cortex_gdn_g) ggml_set_output(t_cortex_gdn_g); if (t_cortex_gdn_b) ggml_set_output(t_cortex_gdn_b); if (t_cortex_gdn_s) ggml_set_output(t_cortex_gdn_s);
+        if (t_cortex_gdn_result) ggml_set_output(t_cortex_gdn_result); if (t_cortex_gdn_state) ggml_set_output(t_cortex_gdn_state);
+        if (t_cortex_gdn_cache) ggml_set_output(t_cortex_gdn_cache);
+        if ((std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr ||
+             (std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+              std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr))) {
+            if (t_cortex_kv_read_k) ggml_set_output(t_cortex_kv_read_k);
+            if (t_cortex_kv_read_v) ggml_set_output(t_cortex_kv_read_v);
+        }
+    }
     {
         const auto & embeddings_layer_inp = params.cparams.embeddings_layer_inp;
         if (const char * forge_end = std::getenv("CORTEX_LOW_RESIDENCY_LAYER")) {
             GGML_UNUSED(forge_end);
             const char * end_text = std::getenv("CORTEX_QWEN35_SEGMENT_END");
+            if (!end_text) end_text = std::getenv("CORTEX_FLASHNEXT_LAYER_END");
             const int end = end_text ? std::atoi(end_text) : -1;
             if (end >= 0 && end < (int) t_layer_inp.size() && t_layer_inp[end] != nullptr) {
                 ggml_set_output(t_layer_inp[end]);
@@ -1618,6 +1788,23 @@ ggml_tensor * llm_graph_context::build_lora_mm(
           ggml_tensor * cur,
           ggml_tensor * w_s) const {
     ggml_tensor * res = ggml_mul_mat(ctx0, w, cur);
+
+    if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr && w &&
+            std::strstr(w->name, "hc_attn_down") != nullptr) {
+        const auto * tr = ggml_get_type_traits(w->type);
+        std::vector<float> decoded;
+        if (w->data && tr->to_float && w->ne[0] > 0 && w->ne[0] <= 65536) {
+            decoded.resize((size_t) w->ne[0]);
+            tr->to_float(w->data, decoded.data(), w->ne[0]);
+        }
+        size_t nz = 0; float mn = INFINITY, mx = -INFINITY; double ss = 0.0;
+        for (float v : decoded) { if (v != 0.0f) ++nz; mn = std::min(mn, v); mx = std::max(mx, v); ss += (double) v * v; }
+        LLAMA_LOG_INFO("CORTEX_HC_DOWN_NODE weight=%s type=%d ne=[%lld,%lld] nb=[%zu,%zu] data=%p buffer=%p input=%s input_type=%d input_ne=[%lld,%lld] input_nb=[%zu,%zu] weight_row_nonzero=%zu weight_min=%g weight_max=%g weight_rms=%g\n",
+            w->name, (int) w->type, (long long) w->ne[0], (long long) w->ne[1], w->nb[0], w->nb[1],
+            w->data, (void *) w->buffer, cur->name, (int) cur->type,
+            (long long) cur->ne[0], (long long) cur->ne[1], cur->nb[0], cur->nb[1], nz, mn, mx,
+            decoded.empty() ? 0.0 : std::sqrt(ss / decoded.size()));
+    }
 
     if (diagnostic_target && w &&
         std::strcmp(w->name, "blk.1.hc_attn_down.weight") == 0) {
@@ -2152,6 +2339,15 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
     const int64_t n_tokens = cur->ne[1];
     const bool weight_before_ffn = arch == LLM_ARCH_LLAMA4; // for llama4, we apply the sigmoid-ed weights before the FFN
 
+    if (std::getenv("CORTEX_MOE_TRACE_LAYERS") != nullptr && (il == 2 || il == 3)) {
+        std::fprintf(stderr, "CORTEX_MOE_TRACE construction layer=%d ctx=%p tokens=%lld n_embd=%lld gate_inp=%p gate=%p up=%p down=%p gate_up=%p stream_gate=%d stream_up_down=%d\n",
+            il, (void *) ctx0, (long long) n_tokens, (long long) n_embd,
+            (void *) gate_inp, (void *) gate_exps, (void *) up_exps, (void *) down_exps,
+            (void *) gate_up_exps,
+            std::getenv("CORTEX_MOE_STREAM_GATE") != nullptr,
+            std::getenv("CORTEX_MOE_STREAM_UP_DOWN") != nullptr);
+    }
+
     ggml_tensor * logits = nullptr;
 
     if (probs_in == nullptr) {
@@ -2289,6 +2485,18 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 
     cur = ggml_reshape_3d(ctx0, cur, n_embd, 1, n_tokens);
 
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+        res->t_cortex_moe_gate_input = cur;
+        res->t_cortex_moe_gate_ids = selected_experts;
+        res->t_cortex_moe_weights = weights;
+        // Retain the actual graph operands through scheduler execution.  The
+        // diagnostic slots alone only retain metadata; GGML may otherwise
+        // recycle their backing storage before the synchronized read.
+        ggml_set_output(cur);
+        ggml_set_output(selected_experts);
+        ggml_set_output(weights);
+    }
+
     if (weight_before_ffn) {
         // repeat cur to [n_embd, n_expert_used, n_tokens]
         ggml_tensor * repeated = ggml_repeat_4d(ctx0, cur, n_embd, n_expert_used, n_tokens, 1);
@@ -2318,9 +2526,43 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
         cb(cur, "ffn_moe_gate", il);
         up  = ggml_view_3d(ctx0, gate_up, n_ff, gate_up->ne[1], gate_up->ne[2], gate_up->nb[1], gate_up->nb[2], n_ff * gate_up->nb[0]);
         cb(up, "ffn_moe_up", il);
+        if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+            res->t_cortex_moe_up_output = up;
+            ggml_set_output(up);
+        }
     } else {
         // separate gate and up path
-        up = build_lora_mm_id(up_exps, cur, selected_experts, up_exps_s); // [n_ff, n_expert_used, n_tokens]
+        if (std::getenv("CORTEX_MOE_STREAM_UP_DOWN") != nullptr && cortex_stream_layer_enabled(il)) {
+            static cortex_stream_gate_config stream_up_cfg;
+            stream_up_cfg.projection = flashnext_projection::up;
+            stream_up_cfg.layer = il;
+            // The streamed callback computes the projection from PREAD rows.
+            // Do not retain a canonical full expert leaf merely to query the
+            // result shape; the dimensions are determined by the model tensor
+            // metadata and selected-token tensor.
+            ggml_tensor * stream_shape = ggml_new_tensor_3d(ctx0, GGML_TYPE_F32,
+                up_exps->ne[1], selected_experts->ne[0], cur->ne[2]);
+            ggml_set_name(stream_shape, "cortex_streamed_moe_up");
+            up = ggml_map_custom3(ctx0, stream_shape, selected_experts, cur,
+                                  cortex_stream_gate_callback, 1, &stream_up_cfg);
+            if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+                res->t_cortex_moe_up_output = up;
+                ggml_set_output(up);
+            }
+        } else {
+            up = build_lora_mm_id(up_exps, cur, selected_experts, up_exps_s); // [n_ff, n_expert_used, n_tokens]
+        }
+        if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+            // Capture both conventional and streamed up projections at the
+            // same graph-construction boundary.
+            res->t_cortex_moe_up_output = up;
+            ggml_set_output(up);
+        }
+        if (std::getenv("CORTEX_TRACE_MOE_DEP") != nullptr && il == 2) {
+            std::fprintf(stderr, "CORTEX_MOE_DEP layer=2 stage=up weight=%p result=%p src0=%p src1=%p ids=%p shape=[%lld,%lld,%lld,%lld]\n",
+                (void *) up_exps, (void *) up, (void *) up->src[0], (void *) up->src[1], (void *) selected_experts,
+                (long long) up->ne[0], (long long) up->ne[1], (long long) up->ne[2], (long long) up->ne[3]);
+        }
         cb(up, "ffn_moe_up", il);
 
         if (up_exps_s) {
@@ -2333,8 +2575,34 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
         }
 
         if (gate_exps) {
-            cur = build_lora_mm_id(gate_exps, cur, selected_experts, gate_exps_s); // [n_ff, n_expert_used, n_tokens]
+            if (std::getenv("CORTEX_MOE_STREAM_GATE") != nullptr && cortex_stream_layer_enabled(il)) {
+                static cortex_stream_gate_config stream_cfg;
+                stream_cfg.projection = flashnext_projection::gate;
+                stream_cfg.layer = il;
+                // Let GGML derive the canonical result shape ([N, experts,
+                // tokens]); do not use the weight's K dimension as N.
+                ggml_tensor * stream_shape = ggml_new_tensor_3d(ctx0, GGML_TYPE_F32,
+                    gate_exps->ne[1], selected_experts->ne[0], cur->ne[2]);
+                ggml_set_name(stream_shape, "cortex_streamed_moe_gate");
+                cur = ggml_map_custom3(ctx0, stream_shape, selected_experts, cur,
+                                       cortex_stream_gate_callback, 1, &stream_cfg);
+            } else {
+                cur = build_lora_mm_id(gate_exps, cur, selected_experts, gate_exps_s); // [n_ff, n_expert_used, n_tokens]
+            }
+            if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+                res->t_cortex_moe_gate_output = cur;
+                ggml_set_output(cur);
+            }
+            if (std::getenv("CORTEX_TRACE_MOE_DEP") != nullptr && il == 2) {
+                std::fprintf(stderr, "CORTEX_MOE_DEP layer=2 stage=gate weight=%p result=%p src0=%p src1=%p ids=%p shape=[%lld,%lld,%lld,%lld]\n",
+                    (void *) gate_exps, (void *) cur, (void *) cur->src[0], (void *) cur->src[1], (void *) selected_experts,
+                    (long long) cur->ne[0], (long long) cur->ne[1], (long long) cur->ne[2], (long long) cur->ne[3]);
+            }
             cb(cur, "ffn_moe_gate", il);
+            if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+                res->t_cortex_moe_gate_output = cur;
+                ggml_set_output(cur);
+            }
         } else {
             cur = up;
         }
@@ -2434,12 +2702,36 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
             GGML_ABORT("fatal error");
     }
 
-    experts = build_lora_mm_id(down_exps, cur, selected_experts, down_exps_s); // [n_embd, n_expert_used, n_tokens]
+    if (std::getenv("CORTEX_MOE_STREAM_UP_DOWN") != nullptr && cortex_stream_layer_enabled(il)) {
+        static cortex_stream_gate_config stream_down_cfg;
+        stream_down_cfg.projection = flashnext_projection::down;
+        stream_down_cfg.layer = il;
+        ggml_tensor * stream_shape = ggml_new_tensor_3d(ctx0, GGML_TYPE_F32,
+            down_exps->ne[1], selected_experts->ne[0], cur->ne[2]);
+        ggml_set_name(stream_shape, "cortex_streamed_moe_down");
+        experts = ggml_map_custom3(ctx0, stream_shape, selected_experts, cur,
+                                   cortex_stream_gate_callback, 1, &stream_down_cfg);
+        if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+            res->t_cortex_moe_down_output = experts;
+            ggml_set_output(experts);
+        }
+    } else {
+        experts = build_lora_mm_id(down_exps, cur, selected_experts, down_exps_s); // [n_embd, n_expert_used, n_tokens]
+    }
+    if (std::getenv("CORTEX_TRACE_MOE_DEP") != nullptr && il == 2) {
+        std::fprintf(stderr, "CORTEX_MOE_DEP layer=2 stage=down weight=%p result=%p src0=%p src1=%p ids=%p shape=[%lld,%lld,%lld,%lld]\n",
+            (void *) down_exps, (void *) experts, (void *) experts->src[0], (void *) experts->src[1], (void *) selected_experts,
+            (long long) experts->ne[0], (long long) experts->ne[1], (long long) experts->ne[2], (long long) experts->ne[3]);
+    }
     if (arch == LLM_ARCH_MISTRAL4) {
         // src1 can exceed F16 range
         ggml_prec_set_src(experts, GGML_PREC_F32, 1);
     }
     cb(experts, "ffn_moe_down", il);
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+        res->t_cortex_moe_down_output = experts;
+        ggml_set_output(experts);
+    }
 
     if (down_exps_s) {
         cb(experts, "ffn_moe_down_scaled", il);
@@ -2487,6 +2779,10 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
     }
 
     cb(moe_out, "ffn_moe_out", il);
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && il == cortex_moe_capture_layer()) {
+        res->t_cortex_moe_out = moe_out;
+        ggml_set_output(moe_out);
+    }
 
     return moe_out;
 }
@@ -3060,6 +3356,11 @@ ggml_tensor * llm_graph_context::build_attn(
 
         k = mctx_cur->get_k(ctx0, il);
         v = mctx_cur->get_v(ctx0, il);
+    if (il == 47 && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+            std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr) {
+        res->t_cortex_kv_read_k = k;
+        res->t_cortex_kv_read_v = v;
+    }
     }
 
     ggml_tensor * kq_mask = inp->get_kq_mask();
@@ -3154,6 +3455,11 @@ ggml_tensor * llm_graph_context::build_attn(
     ggml_tensor * q = q_cur;
     ggml_tensor * k = mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = ggml_view_4d(ctx0, k, v_cur->ne[0], k->ne[1], k->ne[2], k->ne[3], k->nb[1], k->nb[2], k->nb[3], 0);
+    if (il == 47 && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+            std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr) {
+        res->t_cortex_kv_read_k = k;
+        res->t_cortex_kv_read_v = v;
+    }
 
     ggml_tensor * cur = build_attn_mha(q, k, v, kq_b, kq_mask, sinks, v_mla, 0, kq_scale, il);
     cb(cur, "kqv_out", il);
@@ -3239,6 +3545,11 @@ ggml_tensor * llm_graph_context::build_attn(
     ggml_tensor * q = q_cur;
     ggml_tensor * k = mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = ggml_view_4d(ctx0, k, v_cur->ne[0], k->ne[1], k->ne[2], k->ne[3], k->nb[1], k->nb[2], k->nb[3], 0);
+    if (il == 47 && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+            std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr) {
+        res->t_cortex_kv_read_k = k;
+        res->t_cortex_kv_read_v = v;
+    }
 
     ggml_tensor * cur = build_attn_mha(q, k, v, kq_b, kq_mask_top_k, sinks, v_mla, top_k->ne[0], kq_scale, il);
     cb(cur, "kqv_out", il);
@@ -3326,6 +3637,11 @@ ggml_tensor * llm_graph_context::build_attn(
     ggml_tensor * q = q_cur;
     ggml_tensor * k = use_kv_cur ? k_cur : mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = use_kv_cur ? v_cur : mctx_cur->get_v(ctx0, il);
+    if (il == 47 && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+            std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr && !use_kv_cur) {
+        res->t_cortex_kv_read_k = k;
+        res->t_cortex_kv_read_v = v;
+    }
 
     ggml_tensor * cur = build_attn_mha(q, k, v, kq_b, kq_mask, sinks, v_mla, 0, kq_scale, il);
     cb(cur, "kqv_out", il);
@@ -3397,6 +3713,11 @@ ggml_tensor * llm_graph_context::build_attn(
     ggml_tensor * q = q_cur;
     ggml_tensor * k = mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = ggml_view_4d(ctx0, k, v_cur->ne[0], k->ne[1], k->ne[2], k->ne[3], k->nb[1], k->nb[2], k->nb[3], 0);
+    if (il == 47 && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+            std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr) {
+        res->t_cortex_kv_read_k = k;
+        res->t_cortex_kv_read_v = v;
+    }
 
     ggml_tensor * cur = build_attn_mha(q, k, v, kq_b, kq_mask, sinks, v_mla, 0, kq_scale, il);
     cb(cur, "kqv_out", il);

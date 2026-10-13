@@ -14,8 +14,11 @@
 #include "llama-ext.h"
 #include "llama-sampler.h"
 #include "llama.h"
+#include "flashnext-ple-provider.h"
+#include "../ggml/src/ggml-quants.h"
 
 #include <cinttypes>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -23,6 +26,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unistd.h>
 
 //
 // llama_context
@@ -205,7 +209,157 @@ static bool flashnext_capture_logical_f32(const ggml_tensor * tensor, std::vecto
 
 void llama_context::debug_capture_post_node(const ggml_tensor * node) {
     flashnext_post_node_observer_invocations.fetch_add(1, std::memory_order_relaxed);
-    if (std::getenv("CORTEX_FLASHNEXT_CPU_CONCAT_CAPTURE") == nullptr || !node) return;
+    if ((std::getenv("CORTEX_FLASHNEXT_CPU_CONCAT_CAPTURE") == nullptr &&
+         std::getenv("CORTEX_FLASHNEXT_HC_NODE_OBSERVER") == nullptr &&
+         std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") == nullptr) || !node) return;
+
+    if (std::getenv("CORTEX_FLASHNEXT_HC_NODE_STREAM") != nullptr) {
+        static std::atomic<uint64_t> stream_count{0};
+        const uint64_t ordinal = stream_count.fetch_add(1, std::memory_order_relaxed);
+        const bool candidate = node->op == GGML_OP_MUL_MAT && node->src[0] && node->src[1] &&
+            node->ne[0] == 320 && node->ne[1] == 1 && node->src[0]->type == GGML_TYPE_IQ4_XS &&
+            node->src[0]->ne[0] == 10240 && node->src[0]->ne[1] == 320 && node->src[1]->type == GGML_TYPE_F32 &&
+            node->src[1]->ne[0] == 10240 && node->src[1]->ne[1] == 1;
+        const bool qkv_candidate = node->op == GGML_OP_MUL_MAT && node->src[0] && node->src[1] &&
+            node->ne[0] == 10240 && node->ne[1] == 1 && node->src[0]->type == GGML_TYPE_Q5_K &&
+            node->src[0]->ne[0] == 2560 && node->src[0]->ne[1] == 10240 && node->src[1]->type == GGML_TYPE_F32;
+        if (ordinal < 100 || candidate || qkv_candidate) {
+            LLAMA_LOG_INFO("CORTEX_CPU_NODE ordinal=%llu candidate=%s node=%p name=%s op=%d ne=[%lld,%lld,%lld,%lld] data=%p src0=%p:%s:type=%d:ne=[%lld,%lld] src1=%p:%s:type=%d:ne=[%lld,%lld]\n",
+                (unsigned long long) ordinal, (candidate || qkv_candidate) ? "YES" : "NO", (const void *) node, node->name, (int) node->op,
+                (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3], node->data,
+                (const void *) node->src[0], node->src[0] ? node->src[0]->name : "none", node->src[0] ? (int) node->src[0]->type : -1,
+                node->src[0] ? (long long) node->src[0]->ne[0] : 0, node->src[0] ? (long long) node->src[0]->ne[1] : 0,
+                (const void *) node->src[1], node->src[1] ? node->src[1]->name : "none", node->src[1] ? (int) node->src[1]->type : -1,
+                node->src[1] ? (long long) node->src[1]->ne[0] : 0, node->src[1] ? (long long) node->src[1]->ne[1] : 0);
+        }
+        if (qkv_candidate && node->data) {
+            const float * v = static_cast<const float *>(node->data); size_t nz = 0; float mn=INFINITY,mx=-INFINITY; long double ss=0;
+            for (size_t i=0;i<10240;++i) { nz += v[i] != 0; mn=std::min(mn,v[i]); mx=std::max(mx,v[i]); ss += (long double)v[i]*v[i]; }
+            LLAMA_LOG_INFO("CORTEX_QKV_NODE_TARGET nonzero=%zu min=%g max=%g rms=%g first=%g,%g,%g,%g input=%p\n",
+                nz,mn,mx,std::sqrt((double)ss/10240.0),v[0],v[1],v[2],v[3],node->src[1]->data);
+        }
+        if (node->op == GGML_OP_GATED_DELTA_NET || (node->op == GGML_OP_CPY && node->src[1] &&
+                std::strstr(node->src[1]->name, "cache_s_l0") != nullptr)) {
+            const ggml_tensor * t = node->op == GGML_OP_CPY ? node->src[1] : node;
+            size_t nz = 0, bad = 0; float mn = INFINITY, mx = -INFINITY; long double ss = 0;
+            if (t->data && t->type == GGML_TYPE_F32) {
+                const size_t count = ggml_nelements(t); const float * v = static_cast<const float *>(t->data);
+                for (size_t i=0;i<count;++i) { nz += v[i] != 0; bad += !std::isfinite(v[i]); if (std::isfinite(v[i])) { mn=std::min(mn,v[i]); mx=std::max(mx,v[i]); ss+=(long double)v[i]*v[i]; } }
+                LLAMA_LOG_INFO("CORTEX_S_BOUNDARY ordinal=%llu op=%d node=%p name=%s tensor=%p ne=[%lld,%lld,%lld] data=%p buffer=%p nonzero=%zu min=%g max=%g rms=%g nonfinite=%zu src0=%p src1=%p\n",
+                    (unsigned long long)ordinal,(int)node->op,(const void*)node,node->name,(const void*)t,
+                    (long long)t->ne[0],(long long)t->ne[1],(long long)t->ne[2],t->data,(void*)t->buffer,nz,mn,mx,
+                    std::sqrt((double)ss/std::max<size_t>(1,ggml_nelements(t))),bad,(const void*)node->src[0],(const void*)node->src[1]);
+                if (node->op == GGML_OP_GATED_DELTA_NET) {
+                    const float * v = static_cast<const float *>(t->data);
+                    LLAMA_LOG_INFO("CORTEX_S_BOUNDARY_VALUES ordinal=%llu first=[%g,%g,%g,%g]\n",
+                        (unsigned long long) ordinal, v[0], v[1], v[2], v[3]);
+                    if (const char * dump = std::getenv("CORTEX_GDN_DUMP")) {
+                        std::ofstream out(dump, std::ios::binary | std::ios::trunc);
+                        out.write(reinterpret_cast<const char *>(v), (std::streamsize) ggml_nbytes(t));
+                        if (node->src[5] && node->src[5]->type == GGML_TYPE_F32 && node->src[5]->data) {
+                            std::ofstream state(std::string(dump) + ".state", std::ios::binary | std::ios::trunc);
+                            state.write(reinterpret_cast<const char *>(node->src[5]->data),
+                                (std::streamsize) ggml_nbytes(node->src[5]));
+                        }
+                    }
+                }
+            }
+            if (node->op == GGML_OP_GATED_DELTA_NET && std::getenv("CORTEX_FLASHNEXT_GDN_TRACE") != nullptr) {
+                for (int si = 0; si < GGML_MAX_SRC; ++si) {
+                    const ggml_tensor * s = node->src[si];
+                    if (!s || s->type != GGML_TYPE_F32 || !s->data) continue;
+                    const size_t n = ggml_nelements(s); const float * v = static_cast<const float *>(s->data);
+                    size_t nz = 0, bad = 0; float mn = INFINITY, mx = -INFINITY; long double ss = 0;
+                    for (size_t i = 0; i < n; ++i) { nz += v[i] != 0; bad += !std::isfinite(v[i]); if (std::isfinite(v[i])) { mn = std::min(mn,v[i]); mx = std::max(mx,v[i]); ss += (long double)v[i]*v[i]; } }
+                    LLAMA_LOG_INFO("CORTEX_GDN_SRC ordinal=%llu slot=%d tensor=%p name=%s op=%d ne=[%lld,%lld,%lld,%lld] data=%p buffer=%p nonzero=%zu min=%g max=%g rms=%g nonfinite=%zu first=%g,%g,%g,%g,%g,%g,%g,%g\n",
+                        (unsigned long long)ordinal, si, (const void *)s, s->name, (int)s->op,
+                        (long long)s->ne[0],(long long)s->ne[1],(long long)s->ne[2],(long long)s->ne[3],s->data,(void *)s->buffer,
+                        nz,mn,mx,std::sqrt((double)ss/std::max<size_t>(1,n)),bad,
+                        v[0],v[std::min<size_t>(1,n-1)],v[std::min<size_t>(2,n-1)],v[std::min<size_t>(3,n-1)],
+                        v[std::min<size_t>(4,n-1)],v[std::min<size_t>(5,n-1)],v[std::min<size_t>(6,n-1)],v[std::min<size_t>(7,n-1)]);
+                }
+            }
+        }
+        if (candidate && node->data) {
+            const float * values = static_cast<const float *>(node->data);
+            size_t nonzero = 0, nan = 0, inf = 0; float minv = INFINITY, maxv = -INFINITY; long double ss = 0;
+            for (size_t i = 0; i < 320; ++i) { const float v = values[i]; if (v != 0) ++nonzero; if (std::isnan(v)) ++nan; else if (std::isinf(v)) ++inf; else { minv = std::min(minv, v); maxv = std::max(maxv, v); ss += (long double) v*v; } }
+            float x_min = INFINITY, x_max = -INFINITY; long double x_ss = 0.0L; size_t x_nz = 0;
+            if (node->src[1] && node->src[1]->data) {
+                const float * x = static_cast<const float *>(node->src[1]->data);
+                for (size_t i = 0; i < 10240; ++i) { if (x[i] != 0) ++x_nz; x_min = std::min(x_min, x[i]); x_max = std::max(x_max, x[i]); x_ss += (long double) x[i] * x[i]; }
+            }
+            LLAMA_LOG_INFO("CORTEX_CPU_NODE_TARGET nonzero=%zu min=%g max=%g rms=%g nan=%zu inf=%zu first=%g,%g,%g,%g,%g,%g,%g,%g input_nonzero=%zu input_min=%g input_max=%g input_rms=%g data=%p input_data=%p\n",
+                nonzero, minv, maxv, std::sqrt((double) ss/320.0), nan, inf,
+                values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], x_nz, x_min, x_max,
+                std::sqrt((double) x_ss/10240.0), node->data, node->src[1] ? node->src[1]->data : nullptr);
+            std::function<void(const ggml_tensor *, int)> trace = [&](const ggml_tensor * t, int depth) {
+                if (!t || depth > 8) return;
+                LLAMA_LOG_INFO("CORTEX_HC_DEP depth=%d tensor=%p name=%s op=%d type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] data=%p buffer=%p src0=%p src1=%p\n",
+                    depth, (const void *) t, t->name, (int) t->op, (int) t->type,
+                    (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
+                    t->nb[0], t->nb[1], t->nb[2], t->nb[3], t->data, (void *) t->buffer,
+                    (const void *) t->src[0], (const void *) t->src[1]);
+                trace(t->src[0], depth + 1);
+                trace(t->src[1], depth + 1);
+            };
+            trace(node, 0);
+        }
+        if (node->name[0] != '\0' && (std::strstr(node->name, "hc_norm-0") != nullptr ||
+                std::strstr(node->name, "hc_down_xn-0") != nullptr ||
+                std::strstr(node->name, "hc_attn_norm-0") != nullptr)) {
+            const size_t count = ggml_nelements(node);
+            size_t nz = 0, bad = 0; float mn = INFINITY, mx = -INFINITY; long double ss = 0.0L;
+            if (node->data && node->type == GGML_TYPE_F32) {
+                const float * v = static_cast<const float *>(node->data);
+                for (size_t i = 0; i < count; ++i) { if (v[i] != 0) ++nz; if (!std::isfinite(v[i])) ++bad; else { mn = std::min(mn, v[i]); mx = std::max(mx, v[i]); ss += (long double) v[i]*v[i]; } }
+            }
+            LLAMA_LOG_INFO("CORTEX_HC_PRODUCER ordinal=%llu name=%s node=%p op=%d type=%d ne=[%lld,%lld,%lld,%lld] data=%p buffer=%p nonzero=%zu min=%g max=%g rms=%g nonfinite=%zu\n",
+                (unsigned long long) ordinal, node->name, (const void *) node, (int) node->op, (int) node->type,
+                (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3],
+                node->data, (void *) node->buffer, nz, mn, mx, std::sqrt((double) ss / std::max<size_t>(1, count)), bad);
+        }
+        const bool hc_init_node = std::strcmp(node->name, "hc_init") == 0 && node->ne[0] == 2560 && node->ne[1] == 4;
+        const bool hc_rms_node = node->op == GGML_OP_RMS_NORM && node->ne[0] == 2560 && node->ne[1] == 4;
+        const bool hc_norm_mul = node->op == GGML_OP_MUL && node->ne[0] == 2560 && node->ne[1] == 4 &&
+            node->src[0] && node->src[0]->op == GGML_OP_RMS_NORM;
+        if (hc_init_node || hc_rms_node || hc_norm_mul) {
+            auto report = [](const char * role, const ggml_tensor * t) {
+                if (!t || t->type != GGML_TYPE_F32 || !t->data) return;
+                const size_t count = ggml_nelements(t); const float * v = static_cast<const float *>(t->data);
+                size_t nz = 0, bad = 0; float mn = INFINITY, mx = -INFINITY; long double ss = 0;
+                for (size_t i = 0; i < count; ++i) { if (v[i] != 0) ++nz; if (!std::isfinite(v[i])) ++bad; else { mn = std::min(mn, v[i]); mx = std::max(mx, v[i]); ss += (long double)v[i]*v[i]; } }
+                LLAMA_LOG_INFO("CORTEX_HC_PRODUCER_OPERAND role=%s tensor=%p name=%s op=%d ne=[%lld,%lld] data=%p buffer=%p nonzero=%zu min=%g max=%g rms=%g nonfinite=%zu first=%g,%g,%g,%g,%g,%g,%g,%g\n",
+                    role, (const void *)t, t->name, (int)t->op, (long long)t->ne[0], (long long)t->ne[1], t->data, (void *)t->buffer,
+                    nz, mn, mx, std::sqrt((double)ss/std::max<size_t>(1,count)), bad,
+                    v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7]);
+            };
+            report(hc_init_node ? "hc_init_output" : (hc_rms_node ? "node_2_output" : "node_3_output"), node);
+            if (hc_rms_node) report("hc_init_input", node->src[0]);
+            if (hc_norm_mul) { report("node_2_input", node->src[0]); report("hc_attn_norm_weight", node->src[1]); }
+        }
+    }
+
+    if (std::getenv("CORTEX_FLASHNEXT_HC_NODE_OBSERVER") != nullptr &&
+            node->op == GGML_OP_MUL_MAT && node->src[0] &&
+            node->src[0]->type == GGML_TYPE_IQ4_XS &&
+            std::strstr(node->name, "hc_attn_down") != nullptr && node->data) {
+        const size_t count = ggml_nelements(node);
+        const float * values = static_cast<const float *>(node->data);
+        size_t nonzero = 0, nan = 0, inf = 0;
+        float minv = INFINITY, maxv = -INFINITY; long double ss = 0.0L;
+        for (size_t i = 0; i < count; ++i) {
+            const float v = values[i];
+            if (v != 0.0f) ++nonzero;
+            if (std::isnan(v)) ++nan;
+            else if (std::isinf(v)) ++inf;
+            else { minv = std::min(minv, v); maxv = std::max(maxv, v); ss += (long double) v * v; }
+        }
+        LLAMA_LOG_INFO("CORTEX_HC_DOWN_POST_NODE name=%s node=%p op=%d backend=CPU ne=[%lld,%lld,%lld,%lld] data=%p nonzero=%zu min=%g max=%g rms=%g nan=%zu inf=%zu\n",
+            node->name, (const void *) node, (int) node->op, node->data,
+            (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3],
+            nonzero, minv, maxv, std::sqrt((double) ss / std::max<size_t>(1, count)), nan, inf);
+    }
 
     if (std::getenv("CORTEX_FLASHNEXT_FINITE_TRACE") != nullptr &&
         node->op == GGML_OP_DSV4_HC_PRE && node->src[0] && node->src[1]) {
@@ -381,6 +535,55 @@ void llama_context::debug_capture_post_node(const ggml_tensor * node) {
                     values.empty() ? 0.0f : values[0], (unsigned long long) flashnext_hash_f32(values),
                     node->src[1]->data, (void *) node->src[1]->buffer);
             }
+        }
+    }
+
+    // Test-only export of the real layer-2 MoE gate boundary.  This runs at
+    // the worker post-node barrier, so the graph operands are synchronized
+    // before their bounded copies are retained.  It intentionally exports
+    // only the selected projection inputs/output, never the full expert leaf.
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && node->src[0] && node->src[1] &&
+        node->src[0]->name[0] != '\0' &&
+        std::strstr(node->src[0]->name, "blk.2.ffn_gate_exps.weight") != nullptr) {
+        LLAMA_LOG_INFO("CORTEX_MOE_BOUNDARY observed op=%d node=%p weight=%p src1=%p src2=%p name=%s src1_type=%d src2_type=%d\n",
+            (int) node->op, (void *) node, (void *) node->src[0], (void *) node->src[1], (void *) node->src[2],
+            node->name, (int) node->src[1]->type, node->src[2] ? (int) node->src[2]->type : -1);
+    }
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr &&
+        node->op == GGML_OP_MUL_MAT_ID && node->src[0] && node->src[1] && node->src[2] &&
+        node->src[0]->name[0] != '\0' &&
+        std::strstr(node->src[0]->name, "blk.2.ffn_gate_exps.weight") != nullptr) {
+        std::vector<float> activation;
+        std::array<int64_t, 4> ane{};
+        if (!flashnext_capture_logical_f32(node->src[1], activation, ane)) {
+            LLAMA_LOG_ERROR("CORTEX_MOE_BOUNDARY result=FAIL stage=activation_capture\n");
+        } else if (node->src[2]->type != GGML_TYPE_I32 || node->src[2]->buffer == nullptr) {
+            LLAMA_LOG_ERROR("CORTEX_MOE_BOUNDARY result=FAIL stage=ids_capture type=%d buffer=%p\n",
+                (int) node->src[2]->type, (void *) node->src[2]->buffer);
+        } else {
+            const size_t ids_bytes = (size_t) node->src[2]->ne[0] * (size_t) node->src[2]->ne[1] * sizeof(int32_t);
+            const size_t output_elements = (size_t) 640 * 10 * 9;
+            const size_t output_bytes = output_elements * sizeof(float);
+            std::vector<uint8_t> ids(ids_bytes), output(output_bytes);
+            ggml_backend_tensor_get(node->src[2], ids.data(), 0, ids.size());
+            ggml_backend_tensor_get(node, output.data(), 0, output.size());
+            flashnext_diag_owned["moe_l2_gate_activation"] = std::vector<uint8_t>(activation.size() * sizeof(float));
+            std::memcpy(flashnext_diag_owned["moe_l2_gate_activation"].data(), activation.data(), activation.size() * sizeof(float));
+            flashnext_diag_owned["moe_l2_gate_ids"] = std::move(ids);
+            flashnext_diag_owned["moe_l2_gate_output"] = std::move(output);
+            std::ofstream("/tmp/cortex-iter120-l2-gate-activation.bin", std::ios::binary).write(
+                reinterpret_cast<const char *>(activation.data()), activation.size() * sizeof(float));
+            std::ofstream("/tmp/cortex-iter120-l2-gate-ids.bin", std::ios::binary).write(
+                reinterpret_cast<const char *>(flashnext_diag_owned["moe_l2_gate_ids"].data()), ids_bytes);
+            std::ofstream("/tmp/cortex-iter120-l2-gate-output.bin", std::ios::binary).write(
+                reinterpret_cast<const char *>(flashnext_diag_owned["moe_l2_gate_output"].data()), output.size());
+            LLAMA_LOG_INFO("CORTEX_MOE_BOUNDARY result=PASS layer=2 op=MUL_MAT_ID weight=%p activation=%p ids=%p output=%p activation_ne=[%lld,%lld,%lld,%lld] activation_nb=[%zu,%zu,%zu,%zu] ids_ne=[%lld,%lld,%lld,%lld] output_ne=[%lld,%lld,%lld,%lld] activation_bytes=%zu ids_bytes=%zu output_bytes=%zu\n",
+                (void *) node->src[0], (void *) node->src[1], (void *) node->src[2], (void *) node,
+                (long long) ane[0], (long long) ane[1], (long long) ane[2], (long long) ane[3],
+                node->src[1]->nb[0], node->src[1]->nb[1], node->src[1]->nb[2], node->src[1]->nb[3],
+                (long long) node->src[2]->ne[0], (long long) node->src[2]->ne[1], (long long) node->src[2]->ne[2], (long long) node->src[2]->ne[3],
+                (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3],
+                activation.size() * sizeof(float), ids_bytes, output.size());
         }
     }
 
@@ -608,6 +811,10 @@ llama_context::llama_context(
     // TODO warning when creating llama_context with awkward ctx size that is not a power of 2,
     //     may need to be backend-dependent
     LLAMA_LOG_INFO("%s: constructing llama_context\n", __func__);
+    if (std::getenv("CORTEX_TRACE_EXPERT_TIMELINE") != nullptr) {
+        LLAMA_LOG_INFO("CORTEX_EXPERT_TIMELINE event=context_construct ctx=%p model=%p n_ctx=%u n_batch=%u active_layer=%d\n",
+            (void *) this, (const void *) &model, params.n_ctx, params.n_batch);
+    }
 
     t_start_us = model.t_start_us;
     t_load_us  = model.t_load_us;
@@ -1294,6 +1501,46 @@ void llama_context::synchronize() {
 
     ggml_backend_sched_synchronize(sched.get());
 
+    if (std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr && gf_res_prev_active != nullptr) {
+        const int capture_layer = []() { const char * v = std::getenv("CORTEX_MOE_CAPTURE_LAYER"); return v && *v ? std::atoi(v) : 2; }();
+        ggml_tensor * in = gf_res_prev_active->t_cortex_moe_gate_input;
+        ggml_tensor * ids = gf_res_prev_active->t_cortex_moe_gate_ids;
+        ggml_tensor * out = gf_res_prev_active->t_cortex_moe_gate_output;
+        if (in && ids && out && in->buffer && ids->buffer && out->buffer && ids->type == GGML_TYPE_I32) {
+            std::vector<uint8_t> ib(ggml_nbytes(in)), idb((size_t) ids->ne[0] * (size_t) ids->ne[1] * sizeof(int32_t)), ob(ggml_nbytes(out));
+            ggml_backend_tensor_get(in, ib.data(), 0, ib.size());
+            for (int64_t row = 0; row < ids->ne[1]; ++row) {
+                ggml_backend_tensor_get(ids, idb.data() + (size_t) row * (size_t) ids->ne[0] * sizeof(int32_t),
+                    (size_t) row * ids->nb[1], (size_t) ids->ne[0] * sizeof(int32_t));
+            }
+            ggml_backend_tensor_get(out, ob.data(), 0, ob.size());
+            const std::string prefix = "/tmp/cortex-iter156-l" + std::to_string(capture_layer);
+            std::ofstream(prefix + "-gate-activation.bin", std::ios::binary).write((const char *) ib.data(), ib.size());
+            std::ofstream(prefix + "-gate-ids.bin", std::ios::binary).write((const char *) idb.data(), idb.size());
+            std::ofstream(prefix + "-gate-output.bin", std::ios::binary).write((const char *) ob.data(), ob.size());
+            auto dump_extra = [](const char * path, ggml_tensor * t) {
+                if (!t || !t->buffer) return;
+                std::vector<uint8_t> b(ggml_nbytes(t));
+                ggml_backend_tensor_get(t, b.data(), 0, b.size());
+                std::ofstream(path, std::ios::binary | std::ios::trunc).write((const char *) b.data(), b.size());
+                LLAMA_LOG_INFO("CORTEX_MOE_CAPTURE path=%s bytes=%zu ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu]\n",
+                    path, b.size(), (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
+                    t->nb[0], t->nb[1], t->nb[2], t->nb[3]);
+            };
+            dump_extra((prefix + "-up-output.bin").c_str(), gf_res_prev_active->t_cortex_moe_up_output);
+            dump_extra((prefix + "-down-output.bin").c_str(), gf_res_prev_active->t_cortex_moe_down_output);
+            dump_extra((prefix + "-weights.bin").c_str(), gf_res_prev_active->t_cortex_moe_weights);
+            dump_extra((prefix + "-out.bin").c_str(), gf_res_prev_active->t_cortex_moe_out);
+            LLAMA_LOG_INFO("CORTEX_MOE_BOUNDARY result=PASS layer=%d op=MUL_MAT_ID input=%p ids=%p output=%p input_ne=[%lld,%lld,%lld,%lld] ids_ne=[%lld,%lld,%lld,%lld] output_ne=[%lld,%lld,%lld,%lld] bytes=%zu,%zu,%zu\n",
+                capture_layer,
+                (void *) in, (void *) ids, (void *) out,
+                (long long) in->ne[0], (long long) in->ne[1], (long long) in->ne[2], (long long) in->ne[3],
+                (long long) ids->ne[0], (long long) ids->ne[1], (long long) ids->ne[2], (long long) ids->ne[3],
+                (long long) out->ne[0], (long long) out->ne[1], (long long) out->ne[2], (long long) out->ne[3],
+                ib.size(), idb.size(), ob.size());
+        }
+    }
+
     if (flashnext_post_node_observer_active && backend_cpu != nullptr) {
         ggml_backend_cpu_set_post_node_observer(backend_cpu, nullptr, nullptr);
         flashnext_post_node_observer_active = false;
@@ -1377,6 +1624,47 @@ void llama_context::synchronize() {
                 (long long)t->ne[2], (long long)t->ne[3], (int)t->type,
                 elements, bytes, nan, inf, minv, maxv,
                 (unsigned long long) hash, t->data, (void *) t->buffer);
+
+            if (std::strcmp(it.first.c_str(), "hc_attn_down-0") == 0 &&
+                    t->op == GGML_OP_MUL_MAT && t->src[0] && t->src[1]) {
+                ggml_tensor * w = t->src[0];
+                ggml_tensor * x = t->src[1];
+                const auto * tr = ggml_get_type_traits(w->type);
+                const size_t k = (size_t) w->ne[0];
+                const size_t no = (size_t) w->ne[1];
+                if (tr->to_float && w->buffer && x->buffer && x->type == GGML_TYPE_F32 &&
+                        k && no && no <= 4096 && k <= 65536) {
+                    std::vector<uint8_t> wb(ggml_nbytes(w));
+                    std::vector<float> xv(k), ref(no);
+                    ggml_backend_tensor_get(w, wb.data(), 0, wb.size());
+                    ggml_backend_tensor_get(x, xv.data(), 0, k * sizeof(float));
+                    if (const char * dump_dir = std::getenv("CORTEX_FLASHNEXT_HC_DOWN_DUMP_DIR")) {
+                        std::ofstream wf(std::string(dump_dir) + "/hc_down_weight.bin", std::ios::binary | std::ios::trunc);
+                        std::ofstream xf(std::string(dump_dir) + "/hc_down_input.bin", std::ios::binary | std::ios::trunc);
+                        if (wf && xf) {
+                            wf.write(reinterpret_cast<const char *>(wb.data()), (std::streamsize) wb.size());
+                            xf.write(reinterpret_cast<const char *>(xv.data()), (std::streamsize) (xv.size() * sizeof(float)));
+                            LLAMA_LOG_INFO("CORTEX_HC_DOWN_DUMP weight_bytes=%zu input_bytes=%zu dir=%s\n", wb.size(), xv.size()*sizeof(float), dump_dir);
+                        } else {
+                            LLAMA_LOG_ERROR("CORTEX_HC_DOWN_DUMP failed dir=%s\n", dump_dir);
+                        }
+                    }
+                    std::vector<float> row(k);
+                    for (size_t j = 0; j < no; ++j) {
+                        tr->to_float(wb.data() + j * ggml_row_size(w->type, k), row.data(), (int64_t) k);
+                        double sum = 0.0;
+                        for (size_t i = 0; i < k; ++i) sum += (double) row[i] * xv[i];
+                        ref[j] = (float) sum;
+                    }
+                    size_t rnz = 0, rnan = 0, rinf = 0; float rmin = INFINITY, rmax = -INFINITY; double rss = 0.0;
+                    for (float v : ref) { if (v != 0.0f) ++rnz; if (std::isnan(v)) ++rnan; else if (std::isinf(v)) ++rinf; else { rmin = std::min(rmin, v); rmax = std::max(rmax, v); rss += (double) v * v; } }
+                    LLAMA_LOG_INFO("CORTEX_HC_DOWN_REFERENCE k=%zu outputs=%zu weight_type=%d weight_bytes=%zu input_bytes=%zu nonzero=%zu min=%g max=%g rms=%g nan=%zu inf=%zu first=%g,%g,%g,%g\n",
+                        k, no, (int) w->type, wb.size(), k * sizeof(float), rnz, rmin, rmax,
+                        std::sqrt(rss / (double) std::max<size_t>(1, no)), rnan, rinf,
+                        ref.size() > 0 ? ref[0] : 0.0f, ref.size() > 1 ? ref[1] : 0.0f,
+                        ref.size() > 2 ? ref[2] : 0.0f, ref.size() > 3 ? ref[3] : 0.0f);
+                }
+            }
         }
         flashnext_diag_tensors.clear();
     }
@@ -1469,10 +1757,52 @@ size_t llama_context::debug_copy_recurrent_state(int layer, int state_kind, void
         (void *) ggml_backend_sched_get_tensor_backend(sched.get(), t));
     if (!dst || cap < bytes) return bytes;
     ggml_backend_t backend = ggml_backend_sched_get_tensor_backend(sched.get(), t);
-    if (!backend || t->buffer == nullptr || t->data == nullptr) return 0;
+    // Fresh recurrent state is allocated in host memory before the first
+    // graph reservation assigns it to a scheduler backend.  It is still a
+    // valid state snapshot; do not report it as unavailable merely because
+    // backend ownership has not yet been attached.
+    if (!t->buffer || t->data == nullptr) return 0;
+    if (!backend) {
+        std::memcpy(dst, t->data, bytes);
+        return bytes;
+    }
     synchronize();
     ggml_backend_tensor_get(t, dst, 0, bytes);
     return bytes;
+}
+
+size_t llama_context::debug_copy_kv_cache(int layer, int cache_kind, void * dst, size_t cap) {
+    auto * hybrid = dynamic_cast<llama_memory_hybrid *>(memory.get());
+    if (!hybrid || !hybrid->get_mem_attn() || layer < 0 || cache_kind < 0 || cache_kind > 1) return 0;
+    ggml_tensor * t = cache_kind == 0 ? hybrid->get_mem_attn()->get_k_storage(layer) : hybrid->get_mem_attn()->get_v_storage(layer);
+    if (!t || !t->buffer || !t->data) return 0;
+    const size_t bytes = ggml_nbytes(t);
+    if (!dst || cap < bytes) return bytes;
+    synchronize();
+    ggml_backend_tensor_get(t, dst, 0, bytes);
+    LLAMA_LOG_INFO("CORTEX_KV_OWNER layer=%d kind=%d name=%s type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu data=%p buffer=%p\n",
+        layer, cache_kind, t->name, (int)t->type, (long long)t->ne[0], (long long)t->ne[1],
+        (long long)t->ne[2], (long long)t->ne[3], t->nb[0], t->nb[1], t->nb[2], t->nb[3], bytes, t->data, (void *) t->buffer);
+    return bytes;
+}
+
+bool llama_context::debug_zero_recurrent_state(int layer, int state_kind) {
+    if (layer < 0 || state_kind != 1) return false;
+    auto * hybrid = dynamic_cast<llama_memory_hybrid *>(memory.get());
+    if (!hybrid || !hybrid->get_mem_recr()) return false;
+    ggml_tensor * t = hybrid->get_mem_recr()->debug_get_s_l(layer);
+    if (!t || !t->buffer || !t->data) return false;
+    const size_t bytes = ggml_nbytes(t);
+    std::vector<uint8_t> zeros(bytes, 0);
+    ggml_backend_t backend = sched ? ggml_backend_sched_get_tensor_backend(sched.get(), t) : nullptr;
+    if (backend) {
+        synchronize();
+        ggml_backend_tensor_set(t, zeros.data(), 0, bytes);
+        ggml_backend_synchronize(backend);
+    } else {
+        std::memset(t->data, 0, bytes);
+    }
+    return true;
 }
 
 size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const {
@@ -1482,6 +1812,305 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
     if (cap < it->second.size()) return it->second.size();
     if (dst && !it->second.empty()) std::memcpy(dst, it->second.data(), it->second.size());
     return it->second.size();
+}
+
+bool llama_context::capture_cortex_pre_moe(cortex_pre_moe_result & out) {
+    out.clear();
+    if (gf_res_prev_active == nullptr) return false;
+    auto * res = gf_res_prev_active;
+    ggml_tensor * tensors[4] = {
+        res->get_cortex_pre_moe(), res->get_cortex_router_logits(),
+        res->get_cortex_res_hc(), res->get_cortex_inject(),
+    };
+    for (ggml_tensor * t : tensors) {
+        if (t == nullptr || t->type != GGML_TYPE_F32 || t->buffer == nullptr || t->data == nullptr) return false;
+        if (t->ne[0] <= 0 || t->ne[1] <= 0 || t->ne[2] <= 0 || t->ne[3] <= 0) return false;
+        if (ggml_nbytes(t) > 256u * 1024u * 1024u) return false;
+    }
+    const size_t nt = static_cast<size_t>(tensors[0]->ne[1]);
+    if (nt == 0 || tensors[1]->ne[1] != (int64_t) nt ||
+            tensors[2]->ne[2] != (int64_t) nt || tensors[3]->ne[1] != (int64_t) nt ||
+            tensors[0]->ne[2] != 1 || tensors[1]->ne[2] != 1 || tensors[3]->ne[2] != 1) return false;
+    synchronize();
+    cortex_pre_moe_result::tensor * dsts[4] = {
+        &out.hidden, &out.router_logits, &out.residual_hc, &out.inject,
+    };
+    for (int i = 0; i < 4; ++i) {
+        ggml_tensor * t = tensors[i];
+        ggml_backend_t backend = ggml_backend_sched_get_tensor_backend(sched.get(), t);
+        const size_t bytes = ggml_nbytes(t);
+        if (backend == nullptr || bytes != ggml_nbytes(t) || bytes / sizeof(float) > SIZE_MAX / sizeof(float)) {
+            out.clear(); return false;
+        }
+        auto * d = dsts[i];
+        d->values.resize(bytes / sizeof(float));
+        ggml_backend_tensor_get(t, d->values.data(), 0, bytes);
+        d->bytes = bytes;
+        d->type = t->type;
+        for (int j = 0; j < 4; ++j) { d->ne[j] = t->ne[j]; d->nb[j] = t->nb[j]; }
+        for (float v : d->values) if (!std::isfinite(v)) { out.clear(); return false; }
+    }
+    out.n_tokens = nt;
+    out.valid = true;
+    return true;
+}
+
+bool llama_context::cortex_execute_post_moe_in_transaction(
+        const llama_ubatch & source_ubatch, llama_memory_context_i * mctx,
+        const float * packed_input, size_t packed_bytes, cortex_post_moe_result & out) {
+    out = {};
+    if (!packed_input || !mctx || source_ubatch.n_tokens == 0) return false;
+
+    const size_t nt = source_ubatch.n_tokens;
+    const size_t n_embd = model.hparams.n_embd;
+    const size_t hc = model.hparams.dsv4_hc_mult;
+    if (!n_embd || !hc || n_embd > SIZE_MAX / nt) return false;
+    const size_t mat = n_embd * nt;
+    if (mat > SIZE_MAX / hc) return false;
+    const size_t expected_floats = 2 * mat + mat * hc + hc * nt;
+    if (expected_floats > SIZE_MAX / sizeof(float) || packed_bytes != expected_floats * sizeof(float)) return false;
+
+    // The pre-MoE result has already been synchronized and copied by the
+    // caller.  Use the reserved result slot so the active pre-MoE result is
+    // not reset through get_gf_res_prev().  A separate scheduler is required:
+    // resetting the decode scheduler would detach the logits/state backends
+    // that decode() still consumes after this callback returns.
+    auto * res = get_gf_res_reserve();
+    if (!res) return false;
+    llama_ubatch ubatch = source_ubatch;
+    ubatch.embd = const_cast<float *>(packed_input);
+
+    ggml_backend_sched_ptr saved_sched = std::move(sched);
+    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(),
+            backend_ptrs.size(), graph_max_nodes(ubatch.n_tokens), false, cparams.op_offload));
+    if (!sched) {
+        sched = std::move(saved_sched);
+        return false;
+    }
+
+    auto restore_sched = [&]() { sched.reset(); sched = std::move(saved_sched); };
+    try {
+        res->reset();
+        ggml_backend_sched_reset(sched.get());
+        const auto gparams = graph_params(res, ubatch, nullptr, ctx_type_to_graph_type(cparams.ctx_type));
+        auto * gf = model.build_graph(gparams);
+        if (!gf || !ggml_backend_sched_alloc_graph(sched.get(), gf)) { restore_sched(); return false; }
+        res->set_inputs(&ubatch);
+        if (graph_compute(gf, ubatch.n_tokens > 1) != GGML_STATUS_SUCCESS) { restore_sched(); return false; }
+        synchronize();
+
+        ggml_tensor * t = res->get_embd();
+        if (!t || t->type != GGML_TYPE_F32 || !t->buffer || !t->data) { restore_sched(); return false; }
+        const size_t bytes = ggml_nbytes(t);
+        if (!bytes || bytes > 256u * 1024u * 1024u || bytes % sizeof(float) != 0) { restore_sched(); return false; }
+        out.hc_output.resize(bytes / sizeof(float));
+        ggml_backend_tensor_get(t, out.hc_output.data(), 0, bytes);
+        for (float v : out.hc_output) if (!std::isfinite(v)) { out = {}; restore_sched(); return false; }
+        for (int i = 0; i < 4; ++i) { out.ne[i] = t->ne[i]; out.nb[i] = t->nb[i]; }
+        out.type = t->type;
+        out.valid = true;
+        restore_sched();
+        return true;
+    } catch (const std::exception & e) {
+        LLAMA_LOG_ERROR("%s: %s\n", __func__, e.what());
+        restore_sched();
+        return false;
+    }
+}
+
+bool llama_context::cortex_execute_final_head_only(const float * hidden, size_t floats, cortex_post_moe_result & out) {
+    out = {};
+    const size_t hc = model.hparams.dsv4_hc_mult;
+    const size_t n_embd = model.hparams.n_embd;
+    if (!hidden || !hc || !n_embd || floats != n_embd * hc) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=input floats=%zu expected=%zu\n", floats, n_embd * hc); return false; }
+    llama_ubatch ub{}; ub.embd = const_cast<float *>(hidden); ub.n_tokens = 1; ub.n_seqs_unq = 1; ub.pos = nullptr;
+    auto * res = get_gf_res_reserve(); if (!res) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=no_result\n"); return false; }
+    ggml_backend_sched_ptr saved = std::move(sched);
+    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), graph_max_nodes(1), false, cparams.op_offload));
+    if (!sched) { sched = std::move(saved); LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=no_scheduler\n"); return false; }
+    auto restore = [&]() { sched.reset(); sched = std::move(saved); };
+    try {
+        res->reset(); ggml_backend_sched_reset(sched.get());
+        auto gp = graph_params(res, ub, nullptr, ctx_type_to_graph_type(cparams.ctx_type));
+        auto * gf = model.build_graph(gp);
+        if (!gf || !ggml_backend_sched_alloc_graph(sched.get(), gf)) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=alloc_graph\n"); restore(); return false; }
+        res->set_inputs(&ub);
+        const auto status = graph_compute(gf, false);
+        if (status != GGML_STATUS_SUCCESS) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=graph_compute status=%d\n", int(status)); restore(); return false; }
+        synchronize();
+        ggml_tensor * t = res->get_embd();
+        if (!t || t->type != GGML_TYPE_F32 || !t->buffer) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=output tensor=%p type=%d buffer=%p\n", (void *) t, t ? int(t->type) : -1, t ? (void *) t->buffer : nullptr); restore(); return false; }
+        const size_t bytes = ggml_nbytes(t); if (!bytes || bytes % sizeof(float)) { restore(); return false; }
+        out.hc_output.resize(bytes / sizeof(float)); ggml_backend_tensor_get(t, out.hc_output.data(), 0, bytes);
+        if (std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+            ggml_tensor * hn = res->get_cortex_hc_norm();
+            if (hn && hn->type == GGML_TYPE_F32 && hn->buffer) {
+                std::vector<float> capture(ggml_nelements(hn));
+                ggml_backend_tensor_get(hn, capture.data(), 0, ggml_nbytes(hn));
+                if (std::getenv("CORTEX_FINAL_HEAD_HC_DOWN_BINDING_CHECK") != nullptr) {
+                    std::ofstream af("/tmp/cortex-iter93-hc-down-activation.bin", std::ios::binary);
+                    af.write(reinterpret_cast<const char *>(capture.data()), (std::streamsize) (capture.size() * sizeof(float)));
+                }
+                if (std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+                    ggml_tensor * ts = res->t_cortex_hc_silu;
+                    ggml_tensor * tu = res->t_cortex_hc_up;
+                    if (ts && tu && ts->type == GGML_TYPE_F32 && tu->type == GGML_TYPE_F32 && ts->buffer && tu->buffer) {
+                        ggml_tensor * hd2 = res->t_cortex_hc_down;
+                        if (!hd2 || !hd2->buffer) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD_HC_SILU missing_down_capture\n"); return false; }
+                        std::vector<float> silu(ggml_nelements(ts)), up(ggml_nelements(tu));
+                        ggml_backend_tensor_get(ts, silu.data(), 0, ggml_nbytes(ts));
+                        ggml_backend_tensor_get(tu, up.data(), 0, ggml_nbytes(tu));
+                        { std::ofstream af("/tmp/cortex-iter96-silu.bin", std::ios::binary); af.write((const char *) silu.data(), (std::streamsize) (silu.size()*sizeof(float))); }
+                        double sa=0, ss=0; size_t so=0; std::vector<float> down(ggml_nelements(hd2)); ggml_backend_tensor_get(hd2, down.data(), 0, ggml_nbytes(hd2));
+                        for (size_t i=0;i<silu.size();++i) { const double z=0.25*(double)down[i]; const double ref=z/(1.0+std::exp(-z)); const double e=std::fabs((double)silu[i]-ref); sa=std::max(sa,e);ss+=e*e;if(e>1e-5)++so; }
+                        const auto * mb=dynamic_cast<const llama_model_base *>(&model); cortex_output_weight_descriptor d; bool ok=mb && mb->get_cortex_tensor_descriptor("output_hc_up.weight",d);
+                        const size_t rows=up.size(), k=silu.size(); std::vector<int32_t> ids(rows);for(size_t i=0;i<rows;++i)ids[i]=(int32_t)i;std::vector<float>w(rows*k),q8s(k);std::vector<uint8_t>q8(ggml_row_size(GGML_TYPE_Q8_K,k)); quantize_row_q8_K_ref(silu.data(),reinterpret_cast<block_q8_K *>(q8.data()),k);dequantize_row_q8_K(reinterpret_cast<const block_q8_K *>(q8.data()),q8s.data(),k);
+                        if(ok)ok=flashnext_read_quantized_rows(d.file_descriptor,d.absolute_offset,d.type,(int64_t)k,(int64_t)rows,ids.data(),rows,w.data()); double ua=0,uss=0,umr=0;size_t uo=0;
+                        if (ok && res->t_cortex_hc_up_weight && res->t_cortex_hc_up_weight->buffer) {
+                            std::vector<uint8_t> runtime(ggml_nbytes(res->t_cortex_hc_up_weight)), file(d.bytes); ggml_backend_tensor_get(res->t_cortex_hc_up_weight, runtime.data(), 0, runtime.size()); size_t done=0; while(done<file.size()){ssize_t n=pread(d.file_descriptor,file.data()+done,file.size()-done,(off_t)(d.absolute_offset+done));if(n<=0){ok=false;break;}done+=(size_t)n;} size_t diff=0;if(ok)for(size_t z=0;z<file.size()&&z<runtime.size();++z)diff+=file[z]!=runtime[z]; LLAMA_LOG_INFO("CORTEX_HC_UP_BINDING runtime_bytes=%zu descriptor_bytes=%zu differing=%zu status=%s\n",runtime.size(),file.size(),diff,diff==0?"PASS":"FAIL"); std::ofstream("/tmp/cortex-iter96-up-weight.bin",std::ios::binary).write((const char*)file.data(),file.size());
+                        }
+                        if(ok)for(size_t i=0;i<rows;++i){double ref=0;for(size_t j=0;j<k;++j)ref+=(double)w[i*k+j]*q8s[j];double e=std::fabs((double)up[i]-ref);ua=std::max(ua,e);uss+=e*e;if(std::fabs(ref)>1e-12)umr=std::max(umr,e/std::fabs(ref));if(e>1e-4)++uo;}
+                        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_SILU hc=%lld scale=%g n=%zu max_abs=%g rms=%g over_1e-5=%zu first=%g,%g,%g,%g\n",(long long)model.hparams.dsv4_hc_mult,1.0/(double)model.hparams.dsv4_hc_mult,silu.size(),sa,std::sqrt(ss/std::max<size_t>(1,silu.size())),so,silu[0],silu[1],silu[2],silu[3]);
+                        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_UP_REF ok=%s type=%d ne=[%lld,%lld] row_bytes=%zu offset=%llu bytes=%zu n=%zu max_abs=%g rms=%g max_rel=%g over_1e-4=%zu got=%g,%g,%g,%g\n",ok?"YES":"NO",ok?(int)d.type:-1,ok?(long long)d.ne[0]:0,ok?(long long)d.ne[1]:0,ok?d.row_bytes:0,ok?(unsigned long long)d.absolute_offset:0,ok?d.bytes:0,up.size(),ua,ok?std::sqrt(uss/std::max<size_t>(1,rows)):0,umr,uo,up[0],up[1],up[2],up[3]);
+                        ggml_tensor * tg = res->t_cortex_hc_sigmoid, * tm = res->t_cortex_hc_mixed;
+                        if (tg && tm && tg->buffer && tm->buffer && tg->type == GGML_TYPE_F32 && tm->type == GGML_TYPE_F32) {
+                            std::vector<float> sig(ggml_nelements(tg)), mix(ggml_nelements(tm)); ggml_backend_tensor_get(tg,sig.data(),0,ggml_nbytes(tg)); ggml_backend_tensor_get(tm,mix.data(),0,ggml_nbytes(tm));
+                            double sa=0,ss=0;size_t so=0;for(size_t i=0;i<sig.size();++i){double z=up[i],r=1.0/(1.0+std::exp(-z)),e=std::fabs((double)sig[i]-r);sa=std::max(sa,e);ss+=e*e;if(e>1e-5)++so;}
+                            double ma=0,ms=0;size_t mo=0;for(size_t j=0;j<n_embd;++j){double r=0;for(size_t c=0;c<hc;++c)r+=capture[c*n_embd+j]*sig[c*n_embd+j];r/=hc;double e=std::fabs((double)mix[j]-r);ma=std::max(ma,e);ms+=e*e;if(e>1e-5)++mo;}
+                            LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_SIGMOID n=%zu max_abs=%g rms=%g over_1e-5=%zu finite=%zu first=%g,%g,%g,%g\n",sig.size(),sa,std::sqrt(ss/std::max<size_t>(1,sig.size())),so,std::count_if(sig.begin(),sig.end(),[](float v){return std::isfinite(v);}),sig[0],sig[1],sig[2],sig[3]);
+                            LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_MIXED n=%zu max_abs=%g rms=%g over_1e-5=%zu finite=%zu first=%g,%g,%g,%g\n",mix.size(),ma,std::sqrt(ms/std::max<size_t>(1,mix.size())),mo,std::count_if(mix.begin(),mix.end(),[](float v){return std::isfinite(v);}),mix[0],mix[1],mix[2],mix[3]);
+                        }
+                    }
+                }
+                ggml_tensor * hr = res->get_cortex_hc_rms();
+                std::vector<float> raw_rms(hr && hr->type == GGML_TYPE_F32 ? ggml_nelements(hr) : 0);
+                if (hr && hr->buffer) ggml_backend_tensor_get(hr, raw_rms.data(), 0, ggml_nbytes(hr));
+                size_t finite = 0; for (float v : capture) finite += std::isfinite(v);
+                LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE shape=[%lld,%lld,%lld] type=%d bytes=%zu finite=%zu first=%g,%g,%g,%g\n",
+                    (long long) hn->ne[0], (long long) hn->ne[1], (long long) hn->ne[2], (int) hn->type,
+                    ggml_nbytes(hn), finite, capture.size() > 0 ? capture[0] : 0, capture.size() > 1 ? capture[1] : 0,
+                    capture.size() > 2 ? capture[2] : 0, capture.size() > 3 ? capture[3] : 0);
+                if (hr && hr->buffer) {
+                    LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_RMS_CAPTURE shape=[%lld,%lld,%lld] type=%d nb=[%zu,%zu,%zu,%zu] bytes=%zu finite=%zu stream0=%g,%g,%g,%g stream1=%g,%g,%g,%g stream2=%g,%g,%g,%g stream3=%g,%g,%g,%g\n",
+                        (long long) hr->ne[0], (long long) hr->ne[1], (long long) hr->ne[2], (int) hr->type,
+                        hr->nb[0], hr->nb[1], hr->nb[2], hr->nb[3], ggml_nbytes(hr),
+                        std::count_if(raw_rms.begin(), raw_rms.end(), [](float v){ return std::isfinite(v); }),
+                        raw_rms[0],raw_rms[1],raw_rms[2],raw_rms[3], raw_rms[2560],raw_rms[2561],raw_rms[2562],raw_rms[2563],
+                        raw_rms[5120],raw_rms[5121],raw_rms[5122],raw_rms[5123], raw_rms[7680],raw_rms[7681],raw_rms[7682],raw_rms[7683]);
+                }
+                ggml_tensor * wt = model.hc_head_norm;
+                if (wt && wt->buffer && wt->ne[0] == (int64_t) n_embd && wt->ne[1] == (int64_t) hc) {
+                    std::vector<uint8_t> raw(ggml_nbytes(wt));
+                    ggml_backend_tensor_get(wt, raw.data(), 0, raw.size());
+                    std::vector<float> wf((size_t) n_embd * hc);
+                    if (wt->type == GGML_TYPE_F32) std::memcpy(wf.data(), raw.data(), raw.size());
+                    else if (wt->type == GGML_TYPE_F16) {
+                        const ggml_fp16_t * p = (const ggml_fp16_t *) raw.data();
+                        for (size_t i = 0; i < wf.size(); ++i) wf[i] = ggml_fp16_to_fp32(p[i]);
+                    }
+                    if (wt->type == GGML_TYPE_F32 || wt->type == GGML_TYPE_F16) {
+                        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_NORM_WEIGHT type=%d ne=[%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu first_streams=%g,%g,%g,%g | %g,%g,%g,%g | %g,%g,%g,%g | %g,%g,%g,%g\n",
+                            (int) wt->type, (long long) wt->ne[0], (long long) wt->ne[1], wt->nb[0],wt->nb[1],wt->nb[2],wt->nb[3],
+                            ggml_nbytes(wt), wf[0],wf[1],wf[2],wf[3], wf[2560],wf[2561],wf[2562],wf[2563],
+                            wf[5120],wf[5121],wf[5122],wf[5123], wf[7680],wf[7681],wf[7682],wf[7683]);
+                        const double eps = model.hparams.f_norm_rms_eps;
+                        double max_abs = 0, sum_sq = 0, max_rel = 0, rms_abs = 0; size_t over = 0, first = capture.size();
+                        double rms_max_abs = 0, rms_sum_sq = 0; size_t rms_over = 0, rms_first = capture.size();
+                        size_t rms_over_stream[4] = {}, prod_over_stream[4] = {};
+                        double rms_max_stream[4] = {}, prod_max_stream[4] = {};
+                        for (size_t c = 0; c < hc; ++c) {
+                            double ss = 0;
+                            for (size_t j = 0; j < n_embd; ++j) { double v = hidden[c*n_embd + j]; ss += v*v; }
+                            const double inv = 1.0 / std::sqrt(ss / n_embd + eps);
+                            for (size_t j = 0; j < n_embd; ++j) {
+                                const size_t k = c*n_embd + j;
+                                const float ref = (float) (hidden[k] * inv * wf[k]);
+                                if (hr && !raw_rms.empty()) { const float rr = (float) (hidden[k] * inv); const double rd = std::fabs((double) raw_rms[k] - rr); rms_max_abs=std::max(rms_max_abs,rd); rms_max_stream[c]=std::max(rms_max_stream[c],rd); rms_sum_sq+=rd*rd; if(rd>1e-4){++rms_over; ++rms_over_stream[c];if(rms_first==capture.size())rms_first=k;} }
+                                const double ad = std::fabs((double) capture[k] - ref);
+                                max_abs = std::max(max_abs, ad); sum_sq += ad*ad;
+                                if (std::fabs(ref) > 1e-12) max_rel = std::max(max_rel, ad/std::fabs(ref));
+                                if (ad > 1e-4) { ++over; ++prod_over_stream[c]; prod_max_stream[c]=std::max(prod_max_stream[c],ad); if (first == capture.size()) first = k; }
+                            }
+                        }
+                        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_NORM_REF type=%d ne=[%lld,%lld] bytes=%zu eps=%g rms_max_abs=%g rms_rms=%g rms_over=%zu rms_first=%zu max_abs=%g rms=%g max_rel=%g over_1e-4=%zu first=%zu\n",
+                            (int) wt->type, (long long) wt->ne[0], (long long) wt->ne[1], ggml_nbytes(wt), eps,
+                            rms_max_abs, std::sqrt(rms_sum_sq / capture.size()), rms_over, rms_first,
+                            max_abs, std::sqrt(sum_sq / capture.size()), max_rel, over, first);
+                        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_NORM_STREAM_ERRORS rms_count=[%zu,%zu,%zu,%zu] rms_max=[%g,%g,%g,%g] prod_count=[%zu,%zu,%zu,%zu] prod_max=[%g,%g,%g,%g]\n",
+                            rms_over_stream[0],rms_over_stream[1],rms_over_stream[2],rms_over_stream[3],
+                            rms_max_stream[0],rms_max_stream[1],rms_max_stream[2],rms_max_stream[3],
+                            prod_over_stream[0],prod_over_stream[1],prod_over_stream[2],prod_over_stream[3],
+                            prod_max_stream[0],prod_max_stream[1],prod_max_stream[2],prod_max_stream[3]);
+                    }
+                }
+                ggml_tensor * hd = res->t_cortex_hc_down;
+                if (hd && hd->type == GGML_TYPE_F32 && hd->buffer && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+                    std::vector<float> got(ggml_nelements(hd));
+                    ggml_backend_tensor_get(hd, got.data(), 0, ggml_nbytes(hd));
+                    cortex_output_weight_descriptor d;
+                    const auto * model_base = dynamic_cast<const llama_model_base *>(&model);
+                    bool ok = model_base != nullptr && model_base->get_cortex_tensor_descriptor("output_hc_down.weight", d);
+                    const size_t rows = (size_t) hd->ne[0];
+                    std::vector<int32_t> ids(rows); for (size_t i = 0; i < rows; ++i) ids[i] = (int32_t) i;
+                    std::vector<float> w(rows * n_embd);
+                    if (ok) ok = flashnext_read_quantized_rows(d.file_descriptor, d.absolute_offset, d.type,
+                        (int64_t) n_embd, (int64_t) rows, ids.data(), rows, w.data());
+                    const ggml_tensor * runtime_down = model.get_tensor("output_hc_down.weight");
+                    if (ok && runtime_down && runtime_down->buffer) {
+                        std::vector<uint8_t> runtime_bytes(ggml_nbytes(runtime_down));
+                        std::vector<uint8_t> file_bytes(d.bytes);
+                        ggml_backend_tensor_get(runtime_down, runtime_bytes.data(), 0, runtime_bytes.size());
+                        size_t done = 0; while (done < file_bytes.size()) { const ssize_t n = pread(d.file_descriptor, file_bytes.data() + done, file_bytes.size() - done, (off_t)(d.absolute_offset + done)); if (n <= 0) { ok = false; break; } done += (size_t)n; }
+                        size_t diff = 0; if (ok && runtime_bytes.size() == file_bytes.size()) for (size_t i = 0; i < file_bytes.size(); ++i) diff += runtime_bytes[i] != file_bytes[i];
+                        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_DOWN_BYTES runtime=%zu descriptor=%zu differing=%zu\n", runtime_bytes.size(), file_bytes.size(), diff);
+                    }
+                    double ma = 0, ss = 0, mr = 0, ma_q8 = 0, ss_q8 = 0, mr_q8 = 0; size_t over = 0, over_q8 = 0; float ref_first[4] = {}, ref_q8_first[4] = {};
+                    const size_t q8_bytes = ggml_row_size(GGML_TYPE_Q8_K, n_embd);
+                    std::vector<uint8_t> q8(q8_bytes); std::vector<float> q8f(n_embd);
+                    quantize_row_q8_K_ref(capture.data(), reinterpret_cast<block_q8_K *>(q8.data()), n_embd); dequantize_row_q8_K(reinterpret_cast<const block_q8_K *>(q8.data()), q8f.data(), n_embd);
+                    if (ok) {
+                        for (size_t i = 0; i < rows; ++i) {
+                            double sum = 0, sum_q8 = 0; for (size_t j = 0; j < n_embd; ++j) { sum += (double) w[i*n_embd+j] * capture[j]; sum_q8 += (double) w[i*n_embd+j] * q8f[j]; } if (i < 4) { ref_first[i] = (float) sum; ref_q8_first[i] = (float) sum_q8; }
+                            const double e = std::fabs((double) got[i] - sum); ma = std::max(ma,e); ss += e*e;
+                            if (std::fabs(sum) > 1e-12) mr = std::max(mr,e/std::fabs(sum)); if (e > 1e-4) ++over;
+                            const double eq = std::fabs((double) got[i] - sum_q8); ma_q8=std::max(ma_q8,eq); ss_q8+=eq*eq; if (std::fabs(sum_q8)>1e-12) mr_q8=std::max(mr_q8,eq/std::fabs(sum_q8)); if(eq>1e-4)++over_q8;
+                        }
+                    }
+                    LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_DOWN_REF ok=%s type=%d ne=[%lld,%lld] row_bytes=%zu offset=%llu bytes=%zu output_ne=[%lld,%lld] finite=%zu f32_max_abs=%g f32_rms=%g f32_max_rel=%g f32_over=%zu q8_max_abs=%g q8_rms=%g q8_max_rel=%g q8_over=%zu first=%g\n",
+                        ok ? "YES" : "NO", ok ? (int)d.type : -1, ok ? (long long)d.ne[0] : 0, ok ? (long long)d.ne[1] : 0,
+                        ok ? d.row_bytes : 0, ok ? (unsigned long long)d.absolute_offset : 0, ok ? d.bytes : 0,
+                        (long long)hd->ne[0], (long long)hd->ne[1], std::count_if(got.begin(), got.end(), [](float v){return std::isfinite(v);}),
+                        ma, ok ? std::sqrt(ss/std::max<size_t>(1,rows)) : 0, mr, over, ma_q8, ok ? std::sqrt(ss_q8/std::max<size_t>(1,rows)) : 0, mr_q8, over_q8, got.empty() ? 0.0f : got[0]);
+                    if (ok) LLAMA_LOG_INFO("CORTEX_FINAL_HEAD_HC_DOWN_VALUES got=%g,%g,%g,%g f32=%g,%g,%g,%g q8=%g,%g,%g,%g\n",
+                        got[0],got[1],got[2],got[3],ref_first[0],ref_first[1],ref_first[2],ref_first[3],ref_q8_first[0],ref_q8_first[1],ref_q8_first[2],ref_q8_first[3]);
+                }
+                if (std::getenv("CORTEX_FINAL_HEAD_HC_DOWN_BINDING_CHECK") != nullptr) {
+                    ggml_tensor * rw = res->t_cortex_hc_down_weight;
+                    cortex_output_weight_descriptor bd;
+                    const auto * mb = dynamic_cast<const llama_model_base *>(&model);
+                    bool pass = mb != nullptr && mb->get_cortex_tensor_descriptor("output_hc_down.weight", bd) && rw && rw->buffer && rw->type == bd.type;
+                    std::vector<uint8_t> runtime, file;
+                    if (pass) {
+                        runtime.resize(ggml_nbytes(rw)); file.resize(bd.bytes);
+                        ggml_backend_tensor_get(rw, runtime.data(), 0, runtime.size());
+                        size_t done = 0; while (done < file.size()) { const ssize_t n = pread(bd.file_descriptor, file.data() + done, file.size() - done, (off_t)(bd.absolute_offset + done)); if (n <= 0) { pass = false; break; } done += (size_t)n; }
+                        size_t diff = 0, first = file.size(); if (pass && runtime.size() == file.size()) for (size_t i = 0; i < file.size(); ++i) { if (runtime[i] != file[i]) { ++diff; if (first == file.size()) first = i; } }
+                        auto hash = [](const std::vector<uint8_t> & v) { uint64_t h=14695981039346656037ull; for (uint8_t b:v){h^=b;h*=1099511628211ull;} return h; };
+                        std::ofstream("/tmp/cortex-iter92-runtime-output-hc-down.bin", std::ios::binary).write((const char *)runtime.data(), runtime.size());
+                        std::ofstream("/tmp/cortex-iter92-descriptor-output-hc-down.bin", std::ios::binary).write((const char *)file.data(), file.size());
+                        LLAMA_LOG_INFO("CORTEX_HC_DOWN_BINDING tensor=%p name=%s type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] data=%p buffer=%p buft=%p runtime_bytes=%zu descriptor_bytes=%zu shard=%u offset=%llu runtime_fnv=%016llx descriptor_fnv=%016llx differing=%zu first_diff=%zu status=%s\n",
+                            (void *)rw, rw->name, (int)rw->type, (long long)rw->ne[0],(long long)rw->ne[1],(long long)rw->ne[2],(long long)rw->ne[3], rw->nb[0],rw->nb[1],rw->nb[2],rw->nb[3], rw->data,(void *)rw->buffer,(void *)ggml_backend_buffer_get_type(rw->buffer), runtime.size(),file.size(),bd.shard,(unsigned long long)bd.absolute_offset,(unsigned long long)hash(runtime),(unsigned long long)hash(file),diff,first,diff==0?"PASS":"FAIL");
+                        const size_t row_bytes = bd.row_bytes; const int rows[] = {0,1,2,159,319};
+                        for (int row: rows) { const size_t off=(size_t)row*row_bytes; uint64_t a=0xcbf29ce484222325ull,b=a; for(size_t j=0;j<row_bytes;++j){a^=runtime[off+j];a*=1099511628211ull;b^=file[off+j];b*=1099511628211ull;} LLAMA_LOG_INFO("CORTEX_HC_DOWN_ROW row=%d runtime_fnv=%016llx descriptor_fnv=%016llx first32=%02x%02x%02x%02x%02x%02x%02x%02x\n",row,(unsigned long long)a,(unsigned long long)b,runtime[off],runtime[off+1],runtime[off+2],runtime[off+3],runtime[off+4],runtime[off+5],runtime[off+6],runtime[off+7]); }
+                    }
+                }
+            }
+        }
+        for (float v : out.hc_output) if (!std::isfinite(v)) { out = {}; restore(); return false; }
+        for (int i=0;i<4;++i) { out.ne[i]=t->ne[i]; out.nb[i]=t->nb[i]; } out.type=t->type; out.valid=true;
+        LLAMA_LOG_INFO("CORTEX_FINAL_HEAD success shape=[%lld,%lld,%lld] bytes=%zu\n", (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], bytes);
+        restore(); return true;
+    } catch (...) { LLAMA_LOG_ERROR("CORTEX_FINAL_HEAD fail=exception\n"); restore(); return false; }
 }
 
 bool llama_context::debug_copy_final_head_output(std::vector<uint8_t> & bytes,
@@ -1518,6 +2147,9 @@ size_t llama_context::debug_copy_cpu_operand(const char * name, void * dst, size
     } else if (std::strcmp(name, "conversion_f32") == 0) {
         src = flashnext_cpu_diag_conversion_f32.data();
         bytes = flashnext_cpu_diag_conversion_f32.size() * sizeof(float);
+    } else if (std::strcmp(name, "dot_result") == 0) {
+        src = &flashnext_cpu_diag_dot_result;
+        bytes = sizeof(float);
     } else if (std::strcmp(name, "capture_count") == 0) {
         const uint32_t count = __atomic_load_n(&flashnext_cpu_diagnostic_target.capture_once, __ATOMIC_ACQUIRE);
         return sizeof(uint32_t) <= cap && dst ? (std::memcpy(dst, &count, sizeof(count)), sizeof(count)) : sizeof(count);
@@ -2194,6 +2826,18 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
         LLAMA_LOG_ERROR("%s: failed to compute graph, compute status: %d\n", __func__, status);
         ret = status;
         return nullptr;
+    }
+
+    if (cortex_decode_callback_ && std::getenv("CORTEX_FLASHNEXT_TRANSACTION_CALLBACK") != nullptr) {
+        const bool ok = cortex_decode_callback_(ubatch, mctx, res);
+        if (!ok) {
+            LLAMA_LOG_ERROR("CORTEX_TRANSACTION_CALLBACK result=FAIL position=%d\n",
+                    ubatch.n_tokens ? ubatch.pos[0] : -1);
+            ret = GGML_STATUS_FAILED;
+            return nullptr;
+        }
+        LLAMA_LOG_INFO("CORTEX_TRANSACTION_CALLBACK result=PASS position=%d\n",
+                ubatch.n_tokens ? ubatch.pos[0] : -1);
     }
 
     ret = GGML_STATUS_SUCCESS;
@@ -3284,6 +3928,12 @@ static void ubatch_prepare_reserve(
 
 ggml_cgraph * llama_context::graph_reserve(
         uint32_t n_tokens, uint32_t n_seqs, uint32_t n_outputs, const llama_memory_context_i * mctx, bool split_only, size_t * sizes) {
+    static std::atomic<uint64_t> cortex_reserve_id { 0 };
+    const uint64_t reserve_id = cortex_reserve_id.fetch_add(1, std::memory_order_relaxed);
+    if (std::getenv("CORTEX_ALLOC_PROFILE") != nullptr) {
+        LLAMA_LOG_INFO("CORTEX_RESERVE_BEGIN id=%llu ctx=%p tokens=%u seqs=%u outputs=%u split_only=%d\n",
+            (unsigned long long) reserve_id, (void *) this, n_tokens, n_seqs, n_outputs, (int) split_only);
+    }
     LLAMA_LOG_DEBUG("%s: reserving a graph for ubatch with n_tokens = %4u, n_seqs = %2u, n_outputs = %4u\n", __func__, n_tokens, n_seqs, n_outputs);
     GGML_ASSERT(n_outputs >= 1);
 
@@ -3337,6 +3987,12 @@ ggml_cgraph * llama_context::graph_reserve(
         return nullptr;
     }
 
+    if (std::getenv("CORTEX_ALLOC_PROFILE") != nullptr) {
+        LLAMA_LOG_INFO("CORTEX_RESERVE_END id=%llu graph=%p nodes=%d splits=%d cpu_bytes=%zu\n",
+            (unsigned long long) reserve_id, (void *) gf, ggml_graph_n_nodes(gf),
+            ggml_backend_sched_get_n_splits(sched.get()), ggml_backend_sched_get_buffer_size(sched.get(), backend_cpu));
+    }
+
     return gf;
 }
 
@@ -3380,8 +4036,45 @@ llm_graph_params llama_context::graph_params(
 ggml_status llama_context::graph_compute(
             ggml_cgraph * gf,
                    bool   batched) {
+    if (std::getenv("CORTEX_ALLOC_PROFILE") != nullptr) {
+        LLAMA_LOG_INFO("CORTEX_GRAPH_EXEC graph=%p nodes=%d batched=%d ctx=%p\n",
+            (void *) gf, ggml_graph_n_nodes(gf), (int) batched, (void *) this);
+    }
     int n_threads        = batched ? cparams.n_threads_batch : cparams.n_threads;
     ggml_threadpool_t tp = batched ? threadpool_batch        : threadpool;
+
+    if (std::getenv("CORTEX_FLASHNEXT_TRACE_HC_DOWN") != nullptr) {
+        for (int i = 0; i < ggml_graph_n_nodes(gf); ++i) {
+            ggml_tensor * n = ggml_graph_node(gf, i);
+            if (!n || !std::strstr(n->name, "hc_attn_down") &&
+                    !(n->op == GGML_OP_MUL_MAT && n->src[0] && std::strstr(n->src[0]->name, "hc_attn_down"))) continue;
+            LLAMA_LOG_INFO("CORTEX_HC_DOWN_GRAPH phase=before index=%d node=%p name=%s op=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] data=%p buffer=%p backend=%p src0=%p:%s src1=%p:%s\n",
+                i, (void *) n, n->name, (int) n->op,
+                (long long)n->ne[0], (long long)n->ne[1], (long long)n->ne[2], (long long)n->ne[3],
+                n->nb[0], n->nb[1], n->nb[2], n->nb[3], n->data, (void *) n->buffer,
+                (void *) ggml_backend_sched_get_tensor_backend(sched.get(), n),
+                (void *) n->src[0], n->src[0] ? n->src[0]->name : "none",
+                (void *) n->src[1], n->src[1] ? n->src[1]->name : "none");
+            if (n->op == GGML_OP_MUL_MAT && n->src[0] && n->src[1] &&
+                    n->src[0]->type == GGML_TYPE_IQ4_XS && n->src[1]->type == GGML_TYPE_F32) {
+                if (const char * dump_dir = std::getenv("CORTEX_FLASHNEXT_HC_DOWN_DUMP_DIR")) {
+                    const size_t wb_size = ggml_nbytes(n->src[0]);
+                    const size_t xb_size = ggml_nelements(n->src[1]) * sizeof(float);
+                    std::vector<uint8_t> wb(wb_size);
+                    std::vector<float> xb(xb_size / sizeof(float));
+                    ggml_backend_tensor_get(n->src[0], wb.data(), 0, wb.size());
+                    ggml_backend_tensor_get(n->src[1], xb.data(), 0, xb.size() * sizeof(float));
+                    std::ofstream wf(std::string(dump_dir) + "/hc_down_weight.bin", std::ios::binary | std::ios::trunc);
+                    std::ofstream xf(std::string(dump_dir) + "/hc_down_input.bin", std::ios::binary | std::ios::trunc);
+                    if (wf && xf) {
+                        wf.write(reinterpret_cast<const char *>(wb.data()), (std::streamsize) wb.size());
+                        xf.write(reinterpret_cast<const char *>(xb.data()), (std::streamsize) (xb.size() * sizeof(float)));
+                        LLAMA_LOG_INFO("CORTEX_HC_DOWN_DUMP weight_bytes=%zu input_bytes=%zu dir=%s\n", wb.size(), xb.size()*sizeof(float), dump_dir);
+                    }
+                }
+            }
+        }
+    }
 
     if (std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr) {
         for (int i = 0; i < ggml_graph_n_nodes(gf); ++i) {
@@ -3423,13 +4116,17 @@ ggml_status llama_context::graph_compute(
             flashnext_cpu_diagnostic_target.conversion_f32 = flashnext_cpu_diag_conversion_f32.data();
             flashnext_cpu_diagnostic_target.conversion_f32_count = flashnext_cpu_diag_conversion_f32.size();
             flashnext_cpu_diagnostic_target.conversion_capture_once = 0;
+            flashnext_cpu_diag_dot_result = 0.0f;
+            flashnext_cpu_diagnostic_target.dot_result = &flashnext_cpu_diag_dot_result;
+            flashnext_cpu_diagnostic_target.dot_capture_once = 0;
             ggml_backend_cpu_set_diagnostic_target(backend_cpu, &flashnext_cpu_diagnostic_target);
         } else {
             flashnext_cpu_diagnostic_target.enabled = false;
             ggml_backend_cpu_set_diagnostic_target(backend_cpu, nullptr);
         }
 
-        if (std::getenv("CORTEX_FLASHNEXT_CPU_OBSERVER") != nullptr) {
+        if (std::getenv("CORTEX_FLASHNEXT_CPU_OBSERVER") != nullptr ||
+            std::getenv("CORTEX_MOE_BOUNDARY_CAPTURE") != nullptr) {
             flashnext_post_node_observer_invocations.store(0, std::memory_order_relaxed);
             flashnext_concat_capture_found = false;
             flashnext_concat_source_a.resize(4 * 10240 * 1);
@@ -3457,8 +4154,75 @@ ggml_status llama_context::graph_compute(
     }
 
     auto status = ggml_backend_sched_graph_compute_async(sched.get(), gf);
+    if (status == GGML_STATUS_SUCCESS && std::getenv("CORTEX_GDN_BOUNDARY_EXPORT") != nullptr) {
+        ggml_backend_sched_synchronize(sched.get());
+        auto * r = gf_res_prev_active != nullptr ? gf_res_prev_active : gf_res_reserve.get();
+        static std::atomic<uint32_t> gdn_export_ordinal { 0 };
+        const uint32_t ordinal = gdn_export_ordinal.fetch_add(1, std::memory_order_relaxed);
+        const std::string suffix = ordinal == 0 ? "" : ("-" + std::to_string(ordinal));
+        const std::string prefix = std::getenv("CORTEX_GDN_EXPORT_PREFIX") ? std::getenv("CORTEX_GDN_EXPORT_PREFIX") : "/tmp/cortex-iter102-gdn";
+        std::ofstream manifest(prefix + "-manifest.txt", ordinal == 0 ? std::ios::trunc : std::ios::app);
+        auto dump = [&](const char * role, ggml_tensor * t) {
+            if (!t || !t->buffer) return;
+            const size_t bytes = ggml_nbytes(t); std::vector<uint8_t> data(bytes);
+            ggml_backend_tensor_get(t, data.data(), 0, bytes);
+            std::string path = prefix + "-" + role + suffix + ".bin";
+            std::ofstream f(path, std::ios::binary | std::ios::trunc); f.write((const char *) data.data(), (std::streamsize) data.size());
+            uint64_t h=14695981039346656037ull; for (uint8_t b:data){h^=b;h*=1099511628211ull;}
+            if (manifest) manifest << role << " " << t->name << " " << (int)t->type << " "
+                << t->ne[0] << " " << t->ne[1] << " " << t->ne[2] << " " << t->ne[3] << " "
+                << t->nb[0] << " " << t->nb[1] << " " << t->nb[2] << " " << t->nb[3] << " "
+                << bytes << " " << std::hex << h << std::dec << "\n";
+            LLAMA_LOG_INFO("CORTEX_GDN_EXPORT role=%s name=%s type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu fnv=%016llx path=%s\n",role,t->name,(int)t->type,(long long)t->ne[0],(long long)t->ne[1],(long long)t->ne[2],(long long)t->ne[3],t->nb[0],t->nb[1],t->nb[2],t->nb[3],bytes,(unsigned long long)h,path.c_str());
+        };
+        if (r) { dump("q",r->t_cortex_gdn_q); dump("k",r->t_cortex_gdn_k); dump("v",r->t_cortex_gdn_v); dump("g",r->t_cortex_gdn_g); dump("b",r->t_cortex_gdn_b); dump("s_before",r->t_cortex_gdn_s); dump("result",r->t_cortex_gdn_result); dump("state_after",r->t_cortex_gdn_state); dump("cache_after",r->t_cortex_gdn_cache); }
+        // The ggml_cpy destination is a view into the owning recurrent cache and
+        // is not necessarily readable as a standalone graph tensor.  Read the
+        // owner through the existing synchronized recurrent-state API instead.
+        if (r && r->t_cortex_gdn_state) {
+            std::vector<uint8_t> persistent(ggml_nbytes(r->t_cortex_gdn_state));
+            const int export_layer = std::getenv("CORTEX_GDN_EXPORT_LAYER") ? std::atoi(std::getenv("CORTEX_GDN_EXPORT_LAYER")) : 0;
+            const size_t got = debug_copy_recurrent_state(export_layer, 1, persistent.data(), persistent.size());
+            if (got == persistent.size()) {
+                const std::string path = prefix + "-persistent_s" + suffix + ".bin";
+                std::ofstream f(path, std::ios::binary | std::ios::trunc);
+                f.write((const char *) persistent.data(), (std::streamsize) persistent.size());
+                uint64_t h=14695981039346656037ull; for (uint8_t b:persistent){h^=b;h*=1099511628211ull;}
+                LLAMA_LOG_INFO("CORTEX_GDN_EXPORT ordinal=%u role=persistent_s bytes=%zu fnv=%016llx path=%s\n", ordinal, persistent.size(), (unsigned long long) h, path.c_str());
+            }
+        }
+    }
+    if (status == GGML_STATUS_SUCCESS && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr) {
+        ggml_backend_sched_synchronize(sched.get());
+        auto * r = gf_res_prev_active != nullptr ? gf_res_prev_active : gf_res_reserve.get();
+        const std::string prefix = std::getenv("CORTEX_KV_READ_PREFIX") ? std::getenv("CORTEX_KV_READ_PREFIX") : "/tmp/cortex-kv-read";
+        const char * pos = std::getenv("CORTEX_KV_READ_POSITION");
+        auto dump_read = [&](const char * role, ggml_tensor * t) {
+            if (!t || !t->buffer) return;
+            std::vector<uint8_t> bytes(ggml_nbytes(t));
+            ggml_backend_tensor_get(t, bytes.data(), 0, bytes.size());
+            const std::string path = prefix + "-pos" + (pos ? pos : "unknown") + "-" + role + ".bin";
+            std::ofstream f(path, std::ios::binary | std::ios::trunc); f.write((const char *) bytes.data(), (std::streamsize) bytes.size());
+            uint64_t h=14695981039346656037ull; for (uint8_t b:bytes){h^=b;h*=1099511628211ull;}
+            LLAMA_LOG_INFO("CORTEX_KV_READ layer=47 position=%s role=%s name=%s type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] bytes=%zu fnv=%016llx path=%s\n",
+                pos ? pos : "unknown", role, t->name, (int)t->type, (long long)t->ne[0], (long long)t->ne[1], (long long)t->ne[2], (long long)t->ne[3],
+                t->nb[0], t->nb[1], t->nb[2], t->nb[3], bytes.size(), (unsigned long long)h, path.c_str());
+        };
+        if (r) { dump_read("k", r->t_cortex_kv_read_k); dump_read("v", r->t_cortex_kv_read_v); }
+    }
     if (status != GGML_STATUS_SUCCESS) {
         LLAMA_LOG_ERROR("%s: ggml_backend_sched_graph_compute_async failed with error %d\n", __func__, status);
+    }
+    if (std::getenv("CORTEX_FLASHNEXT_TRACE_HC_DOWN") != nullptr) {
+        ggml_backend_sched_synchronize(sched.get());
+        for (int i = 0; i < ggml_graph_n_nodes(gf); ++i) {
+            ggml_tensor * n = ggml_graph_node(gf, i);
+            if (!n || (!std::strstr(n->name, "hc_attn_down") &&
+                    !(n->op == GGML_OP_MUL_MAT && n->src[0] && std::strstr(n->src[0]->name, "hc_attn_down")))) continue;
+            LLAMA_LOG_INFO("CORTEX_HC_DOWN_GRAPH phase=after index=%d node=%p name=%s op=%d data=%p buffer=%p backend=%p status=%d\n",
+                i, (void *) n, n->name, (int) n->op, n->data, (void *) n->buffer,
+                (void *) ggml_backend_sched_get_tensor_backend(sched.get(), n), (int) status);
+        }
     }
 
     // fprintf(stderr, "splits: %d\n", ggml_backend_sched_get_n_splits(sched));
@@ -3474,11 +4238,14 @@ llm_graph_cb llama_context::graph_get_cb() const {
             ggml_set_name(cur, name);
         }
 
-        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0 &&
+        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr &&
+            ((il >= 0 &&
             (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
              strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "conv_", 5) == 0 ||
              strncmp(name, "hc_", 3) == 0 ||
-             strcmp(name, "linear_attn_qkv_mixed") == 0)) {
+             strcmp(name, "linear_attn_qkv_mixed") == 0 ||
+             strcmp(name, "qkv_input") == 0)) ||
+             strcmp(name, "inp_embd") == 0)) {
             flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
             ++flashnext_diag_generation;
         }

@@ -1190,6 +1190,23 @@ static void ggml_compute_forward_mul_mat_one_chunk(
             for (size_t i = 0; i < n; ++i) if (sf[i] != 0.0f) ++nz;
             params->diagnostic_target->source_nonzero_count = nz;
         }
+        if (getenv("CORTEX_FLASHNEXT_TRANSFER_TRACE")) {
+            uint32_t nz = 0, finite = 0;
+            float first = 0.0f, last = 0.0f;
+            if (src1->data && src1->type == GGML_TYPE_F32) {
+                const float * sf = (const float *) src1->data;
+                const size_t n = (size_t) src1->ne[0] * (size_t) src1->ne[1];
+                if (n) { first = sf[0]; last = sf[n - 1]; }
+                for (size_t i = 0; i < n; ++i) {
+                    if (isfinite(sf[i])) ++finite;
+                    if (sf[i] != 0.0f) ++nz;
+                }
+            }
+            fprintf(stderr, "CORTEX_CPU_TRANSFER tensor=%s src1=%p data=%p src0=%p ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] src_nz=%u finite=%u first=%g last=%g ith=%d\n",
+                    ggml_get_name(src1), (void *) src1, src1->data, (void *) src0,
+                    (long long) src1->ne[0], (long long) src1->ne[1], (long long) src1->ne[2], (long long) src1->ne[3],
+                    src1->nb[0], src1->nb[1], src1->nb[2], src1->nb[3], nz, finite, first, last, params->ith);
+        }
     }
 
     if (params->diagnostic_target && params->diagnostic_target->enabled &&
@@ -1237,14 +1254,22 @@ static void ggml_compute_forward_mul_mat_one_chunk(
         if (src1->type == GGML_TYPE_F32) {
             const float * sf = (const float *) src1->data;
             for (int64_t i = 0; i < ne10 && !row_nonzero; ++i) row_nonzero = sf[i] != 0.0f;
+        } else {
+            // For non-F32 source activations, the source buffer itself is the
+            // only valid nonzero predicate. Weight nonzero-ness must not make
+            // a zero activation row look like a valid capture.
+            for (size_t i = 0; i < ggml_row_size(vec_dot_type, ne10) && !row_nonzero; ++i) {
+                row_nonzero = ((const uint8_t *) wdata)[i] != 0;
+            }
         }
-        for (size_t i = 0; i < ggml_row_size(type, ne00) && !row_nonzero; ++i) {
-            row_nonzero = ((const uint8_t *) src0->data)[i] != 0;
-        }
-        uint32_t expected = 0;
-        if (row_nonzero && __atomic_compare_exchange_n(&params->diagnostic_target->row_capture_once,
-                                                       &expected, 1u, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
-            memcpy(params->diagnostic_target->weight_row, src0->data, ggml_row_size(type, ne00));
+        // Each provider matmul installs a fresh diagnostic target. Capture
+        // the worker-0 row for every such target; the provider supplies the
+        // bounded token/expert/projection key and rejects duplicate files.
+        if (row_nonzero && params->ith == 0 && params->diagnostic_target->requested_row < 0) {
+            params->diagnostic_target->row_capture_once = 1;
+            // wdata is the exact row pointer consumed by vec_dot.  src0->data
+            // may include backend/tile padding before the logical row.
+            memcpy(params->diagnostic_target->weight_row, wdata, ggml_row_size(type, ne00));
             memcpy(params->diagnostic_target->activation_row, wdata, ggml_row_size(vec_dot_type, ne10));
             if (params->diagnostic_target->activation_row_f32 &&
                 params->diagnostic_target->activation_row_f32_count >= (size_t) ne10 &&
@@ -1303,6 +1328,16 @@ static void ggml_compute_forward_mul_mat_one_chunk(
     float tmp[32];
 
     for (int64_t iir1 = ir1_start; iir1 < ir1_end; iir1 += blck_1) {
+        if (params->diagnostic_target && params->diagnostic_target->enabled &&
+            params->diagnostic_target->requested_row >= 0 && params->ith == 0 &&
+            getenv("CORTEX_FLASHNEXT_REQUESTED_ROW_TRACE")) {
+            fprintf(stderr, "CORTEX_REQUESTED_ROW_TRACE requested=%lld iir1=%lld ir1_start=%lld ir1_end=%lld iir0_start=%lld iir0_end=%lld ir0_end=%lld ne0=%lld ne1=%lld ne12=%lld ne11=%lld\n",
+                    (long long) params->diagnostic_target->requested_row, (long long) iir1,
+                    (long long) ir1_start, (long long) ir1_end, (long long) ir0_start,
+                    (long long) ir0_end, (long long) ir0_end, (long long) ne00,
+                    (long long) ne1,
+                    (long long) ne12, (long long) ne11);
+        }
         for (int64_t iir0 = ir0_start; iir0 < ir0_end; iir0 += blck_0) {
             for (int64_t ir1 = iir1; ir1 < iir1 + blck_1 && ir1 < ir1_end; ir1 += num_rows_per_vec_dot) {
                 const int64_t i13 = (ir1 / (ne12 * ne1));
@@ -1339,6 +1374,32 @@ static void ggml_compute_forward_mul_mat_one_chunk(
                         __atomic_fetch_add(&params->diagnostic_target->vec_dot_count, 1u, __ATOMIC_RELAXED);
                     }
                     vec_dot(ne00, &tmp[ir0 - iir0], (num_rows_per_vec_dot > 1 ? 16 : 0), src0_row + ir0 * nb01, (num_rows_per_vec_dot > 1 ? nb01 : 0), src1_col, (num_rows_per_vec_dot > 1 ? src1_col_stride : 0), num_rows_per_vec_dot);
+                    if (params->diagnostic_target && params->diagnostic_target->requested_row >= 0 &&
+                        llabs((long long) ir0 - (long long) params->diagnostic_target->requested_row) < 2 &&
+                        getenv("CORTEX_FLASHNEXT_REQUESTED_ROW_TRACE")) {
+                        fprintf(stderr, "CORTEX_REQUESTED_DOT requested=%lld ir0=%lld iir0=%lld ith=%d nr=%d\n",
+                                (long long) params->diagnostic_target->requested_row, (long long) ir0,
+                                (long long) iir0, params->ith, num_rows_per_vec_dot);
+                    }
+                    if (params->diagnostic_target && params->diagnostic_target->enabled &&
+                        params->diagnostic_target->provider_local_match &&
+                        params->diagnostic_target->requested_row >= 0 &&
+                        params->diagnostic_target->requested_row == ir0 &&
+                        params->diagnostic_target->weight_row && params->diagnostic_target->activation_row &&
+                        __atomic_load_n(&params->diagnostic_target->row_capture_once, __ATOMIC_ACQUIRE) == 0) {
+                        const size_t wr = ggml_row_size(src0->type, ne00);
+                        const size_t ar = ggml_row_size(vec_dot_type, ne10);
+                        memcpy(params->diagnostic_target->weight_row, src0_row + ir0*nb01, wr);
+                        memcpy(params->diagnostic_target->activation_row, src1_col, ar);
+                        if (params->diagnostic_target->activation_row_f32 && src1->type == GGML_TYPE_F32 &&
+                            params->diagnostic_target->activation_row_f32_count >= (size_t) ne10) {
+                            memcpy(params->diagnostic_target->activation_row_f32, src1->data, (size_t) ne10*sizeof(float));
+                        }
+                        if (params->diagnostic_target->dot_result) *params->diagnostic_target->dot_result = tmp[ir0 - iir0];
+                        params->diagnostic_target->captured_dest_offset = (uint64_t) ((char *) (dst_col + ir0*nb1/nb0) - (char *) dst->data);
+                        params->diagnostic_target->captured_output = tmp[ir0 - iir0];
+                        __atomic_store_n(&params->diagnostic_target->row_capture_once, 1u, __ATOMIC_RELEASE);
+                    }
                     if (params->diagnostic_target && params->diagnostic_target->enabled &&
                         (params->diagnostic_target->target == dst || params->diagnostic_target->provider_local_match) && params->diagnostic_target->dot_result &&
                         params->ith == 0 && ir0 == 0 && ir1 == 0) {
@@ -1689,6 +1750,27 @@ static void ggml_compute_forward_mul_mat_id(
 
     enum ggml_type    const vec_dot_type    = type_traits_cpu[type].vec_dot_type;
     ggml_from_float_t const from_float      = type_traits_cpu[vec_dot_type].from_float;
+    if (getenv("CORTEX_CONVENTIONAL_WEIGHT_TRACE") != NULL &&
+        src0->name != NULL && strstr(src0->name, "ffn_") != NULL && params->ith == 0) {
+        fprintf(stderr, "CORTEX_CONVENTIONAL_WEIGHT op=MUL_MAT_ID name=%s tensor=%p data=%p buffer=%p type=%d vec_dot_type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] ids=%p\n",
+            src0->name, (void *) src0, src0->data, (void *) src0->buffer,
+            (int) src0->type, (int) vec_dot_type,
+            (long long) src0->ne[0], (long long) src0->ne[1],
+            (long long) src0->ne[2], (long long) src0->ne[3],
+            src0->nb[0], src0->nb[1], src0->nb[2], src0->nb[3], (void *) ids);
+        if (src0->data != NULL && ids->data != NULL) {
+            for (int id = 0; id < ids->ne[0]; ++id) {
+                const int32_t expert = *(const int32_t *) ((const char *) ids->data + id * ids->nb[0]);
+                const unsigned char * row = (const unsigned char *) src0->data + (size_t) expert * src0->nb[2];
+                size_t nonzero = 0;
+                unsigned long long hash = 1469598103934665603ULL;
+                const size_t sample = src0->nb[2] < 64 ? src0->nb[2] : 64;
+                for (size_t j = 0; j < sample; ++j) { nonzero += row[j] != 0; hash = (hash ^ row[j]) * 1099511628211ULL; }
+                fprintf(stderr, "CORTEX_CONVENTIONAL_WEIGHT_ROW name=%s expert=%d row_offset=%zu sample_bytes=%zu sample_nonzero=%zu fnv1a=%016llx\n",
+                    src0->name, expert, (size_t) expert * src0->nb[2], sample, nonzero, hash);
+            }
+        }
+    }
 
     // we don't support permuted src0 or src1
     GGML_ASSERT(nb00 == ggml_type_size(type));

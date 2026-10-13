@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cstdlib>
+#include <fstream>
 
 static_assert(flashnext_layer_transaction::hidden == 2560);
 static_assert(flashnext_layer_transaction::experts_used == 10);
@@ -335,6 +336,11 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
     const int64_t hc     = hparams.dsv4_hc_mult;
     const int64_t hc_dim = hc * n_embd;
     const int64_t nt     = x->ne[2];
+    const bool internal_diag = std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr;
+    if (internal_diag && il >= 0) {
+        cb(x, "hc_attn_input", il);
+        ggml_build_forward_expand(gf, x);
+    }
     const bool hc_attn_capture = std::getenv("CORTEX_FLASHNEXT_HC_CAPTURE") != nullptr && il >= 0 &&
         std::strstr(w_norm->name, "hc_attn_norm") != nullptr;
     if (hc_attn_capture) {
@@ -344,6 +350,9 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
     // grouped RMSNorm: reduce over one stream, then scale all streams with the [n_embd, hc] gamma
     // the converter folded each gamma to (1 + w)
     ggml_tensor * rms = ggml_rms_norm(ctx0, x, hparams.f_norm_rms_eps);
+    if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+        res->t_cortex_hc_rms = rms;
+    }
     if (hc_attn_capture) cb(rms, "hc_attn_rms", il);
     ggml_tensor * xn = ggml_mul(ctx0, rms, w_norm);
     if (hc_attn_capture) {
@@ -353,6 +362,9 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
             (long long) rms->ne[0], (long long) rms->ne[1], (long long) xn->ne[0], (long long) xn->ne[1]);
     }
     xn = ggml_reshape_2d(ctx0, xn, hc_dim, nt);
+    if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) {
+        res->t_cortex_hc_norm = xn;
+    }
     cb(xn, hc_attn_capture ? "hc_attn_norm" : "hc_norm", il);
     if (hc_attn_capture) {
         // Graph-builder provenance marker for the exact operand passed to the
@@ -366,9 +378,13 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
     }
 
     ggml_tensor * lo = build_lora_mm(w_down, xn);
+    if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) { res->t_cortex_hc_down = lo; res->t_cortex_hc_down_weight = w_down; }
     if (hc_attn_capture) cb(lo, "hc_attn_down", il);
-    lo = ggml_silu(ctx0, ggml_scale(ctx0, lo, 1.0f / (float) hc));
+    lo = ggml_scale(ctx0, lo, 1.0f / (float) hc);
+    lo = ggml_silu(ctx0, lo);
+    if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) res->t_cortex_hc_silu = lo;
     ggml_tensor * gate = build_lora_mm(w_up, lo);
+    if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) { res->t_cortex_hc_up = gate; res->t_cortex_hc_up_weight = w_up; }
     cb(gate, hc_attn_capture ? "hc_attn_gate" : "hc_gate", il);
 
     ggml_tensor * mixed = nullptr;
@@ -379,8 +395,11 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
                 ggml_reshape_3d(ctx0, gate, n_embd, hc, nt), 1.0f / (float) hc);
         res->add_fused_node({LLM_FUSED_OP_DSV4_HC_PRE, mixed, il});
     } else {
-        ggml_tensor * gated = ggml_mul(ctx0, xn, ggml_sigmoid(ctx0, gate));
+        ggml_tensor * sig = ggml_sigmoid(ctx0, gate);
+        if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) res->t_cortex_hc_sigmoid = sig;
+        ggml_tensor * gated = ggml_mul(ctx0, xn, sig);
         gated = ggml_reshape_3d(ctx0, gated, n_embd, hc, nt);
+        if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) res->t_cortex_hc_gated = gated;
 
         // collapse the streams by their mean
         mixed = ggml_view_2d(ctx0, gated, n_embd, nt,
@@ -394,6 +413,7 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
         }
         mixed = ggml_scale(ctx0, mixed, 1.0f / (float) hc);
     }
+    if (il < 0 && std::getenv("CORTEX_FINAL_HEAD_HC_NORM_CAPTURE") != nullptr) res->t_cortex_hc_mixed = mixed;
     cb(mixed, hc_attn_capture ? "hc_attn_mixed" : "hc_mixed", il);
 
     if (inject) {
@@ -507,9 +527,104 @@ public:
     int64_t hc = 0;
 };
 
+// Boundary for the real Qwen4Exp post-MoE graph.  All members are owned by
+// GGML as graph inputs, while the caller owns the contiguous ubatch payload
+// until graph execution completes.  No model weight is copied here.
+class qwen4exp_post_moe_input final : public llm_graph_input_i {
+public:
+    qwen4exp_post_moe_input(ggml_context * ctx, int64_t n_embd, int64_t hc, int64_t nt) {
+        this->n_embd = n_embd;
+        this->hc = hc;
+        pre_moe = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, n_embd, nt);
+        selected_moe = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, n_embd, nt);
+        residual = ggml_new_tensor_3d(ctx, GGML_TYPE_F32, n_embd, hc, nt);
+        inject = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, hc, nt);
+        ggml_set_name(pre_moe, "post_moe_pre_moe");
+        ggml_set_name(selected_moe, "post_moe_selected_moe");
+        ggml_set_name(residual, "post_moe_res_hc");
+        ggml_set_name(inject, "post_moe_inject");
+        ggml_set_input(pre_moe);
+        ggml_set_input(selected_moe);
+        ggml_set_input(residual);
+        ggml_set_input(inject);
+        width = 2*n_embd*nt + n_embd*hc*nt + hc*nt;
+    }
+
+    void set_input(const llama_ubatch * ubatch) override {
+        if (ubatch == nullptr || ubatch->embd == nullptr) {
+            throw std::runtime_error("Qwen4Exp post-MoE input requires an owned F32 boundary payload");
+        }
+        size_t off = 0;
+        auto bind = [&](ggml_tensor * t) {
+            const size_t bytes = ggml_nbytes(t);
+            if (t->buffer == nullptr || bytes > SIZE_MAX - off) {
+                throw std::runtime_error("Qwen4Exp post-MoE input has invalid GGML buffer or byte range");
+            }
+            ggml_backend_tensor_set(t, ubatch->embd + off/sizeof(float), 0, bytes);
+            off += bytes;
+        };
+        bind(pre_moe);
+        bind(selected_moe);
+        bind(residual);
+        bind(inject);
+    }
+
+    bool can_reuse(const llm_graph_params &) override { return false; }
+
+    ggml_tensor * pre_moe = nullptr;
+    ggml_tensor * selected_moe = nullptr;
+    ggml_tensor * residual = nullptr;
+    ggml_tensor * inject = nullptr;
+    int64_t width = 0;
+    int64_t n_embd = 0;
+    int64_t hc = 0;
+};
+
+class qwen4exp_final_head_input final : public llm_graph_input_i {
+public:
+    qwen4exp_final_head_input(ggml_context * ctx, int64_t n_embd, int64_t hc, int64_t nt) {
+        hidden = ggml_new_tensor_3d(ctx, GGML_TYPE_F32, n_embd, hc, nt);
+        ggml_set_name(hidden, "qwen4exp_final_head_input");
+        ggml_set_input(hidden);
+    }
+    void set_input(const llama_ubatch * ubatch) override {
+        if (!ubatch || !ubatch->embd || !hidden->buffer) throw std::runtime_error("final-head input unavailable");
+        ggml_backend_tensor_set(hidden, ubatch->embd, 0, ggml_nbytes(hidden));
+    }
+    bool can_reuse(const llm_graph_params &) override { return false; }
+    ggml_tensor * hidden = nullptr;
+};
+
 llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_params & params) :
     llm_build_delta_net_base(params), model(model) {
     const int64_t hc = hparams.dsv4_hc_mult;
+
+    if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD_ONLY") != nullptr) {
+        auto inp = std::make_unique<qwen4exp_final_head_input>(ctx0, n_embd, hc, ubatch.n_tokens);
+        res->t_inp_embd = inp->hidden;
+        res->t_embd = build_hc_mix(inp->hidden, model.hc_head_norm, model.hc_head_down,
+                model.hc_head_up, nullptr, nullptr, -1);
+        ggml_build_forward_expand(gf, res->t_embd);
+        res->add_input(std::move(inp));
+        return;
+    }
+
+    // Opt-in real post-MoE continuation.  This branch deliberately does not
+    // alter the ordinary unsplit build_moe_ffn path or the legacy synthetic
+    // Segment-B path.  The caller supplies the selected-expert contribution;
+    // the graph owns the model-defined shared expert and HC combine.
+    if (std::getenv("CORTEX_FLASHNEXT_POST_MOE") != nullptr) {
+        if (layer_start < 0 || layer_start >= n_layer || n_layer != layer_start + 1) {
+            throw std::runtime_error("Qwen4Exp post-MoE requires exactly one physical layer");
+        }
+        auto inp = std::make_unique<qwen4exp_post_moe_input>(ctx0, n_embd, hc, ubatch.n_tokens);
+        ggml_tensor * ffn = build_layer_ffn_post_moe(inp->pre_moe, inp->selected_moe, layer_start);
+        ggml_tensor * output = build_hc_combine(inp->residual, ffn, inp->inject, layer_start);
+        res->t_embd = output;
+        ggml_build_forward_expand(gf, output);
+        res->add_input(std::move(inp));
+        return;
+    }
 
     // Cortex-owned Segment B.  The input is a transaction artifact produced
     // by Segment A plus the externally computed MoE output:
@@ -725,6 +840,18 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     // make sure hc_init is in the same graph split as the first layer (-sm tensor)
     ggml_build_forward_expand(gf, res_hc);
 
+    if (std::getenv("CORTEX_LAYER_TOPOLOGY_EXPORT") != nullptr && layer_start == 0) {
+        std::ofstream topo("/tmp/cortex-layer-topology.tsv", std::ios::trunc);
+        topo << "layer\timplementation\tgdn\tstate\tgraph_evidence\n";
+        for (int i = 0; i < (int) model.hparams.n_layer_all; ++i) {
+            const bool recurrent = model.hparams.is_recr(i);
+            topo << i << '\t' << (recurrent ? "linear_recurrent" : "full_attention") << '\t'
+                 << (recurrent ? "yes" : "no") << '\t'
+                 << (recurrent ? "R,S,PLE_if_configured" : "KV_cache") << '\t'
+                 << (recurrent ? "build_layer_attn_linear->ggml_gated_delta_net" : "build_layer_attn") << '\n';
+        }
+    }
+
     for (int il = layer_start; il < n_layer; ++il) {
         res->t_layer_inp[il] = res_hc;
 
@@ -839,6 +966,9 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
                     res_hc->ne[0] * res_hc->ne[1], res_hc->ne[2]);
             ggml_tensor * inj_flat = ggml_reshape_2d(ctx0, inject,
                     inject->ne[0], inject->ne[1] * inject->ne[2]);
+            res->t_cortex_pre_moe = pre_moe;
+            res->t_cortex_res_hc = res_hc;
+            res->t_cortex_inject = inject;
             ggml_tensor * boundary = ggml_concat(ctx0, pre_moe, res_flat, 0);
             boundary = ggml_concat(ctx0, boundary, inj_flat, 0);
             const int64_t boundary_width = boundary->ne[0];
@@ -858,6 +988,7 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
                 // is an artifact bridge only; expert execution remains
                 // outside this graph.
                 ggml_tensor * router = build_lora_mm(model.layers[il].ffn_gate_inp, cur);
+                res->t_cortex_router_logits = router;
                 if (internal_diag && il >= 0) {
                     cb(router, "diag_router_logits", il);
                     ggml_build_forward_expand(gf, router);
@@ -1072,6 +1203,10 @@ std::pair<ggml_tensor *, ggml_tensor *> llama_model_qwen4exp::graph::build_qkvz(
     const int64_t n_seqs       = ubatch.n_seqs;
     const int64_t n_seq_tokens = ubatch.n_seq_tokens;
 
+    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+        cb(input, "qkv_input", il);
+        ggml_build_forward_expand(gf, input);
+    }
     ggml_tensor * qkv_mixed = build_lora_mm(model.layers[il].wqkv, input, model.layers[il].wqkv_s);
     qkv_mixed = ggml_reshape_3d(ctx0, qkv_mixed, qkv_mixed->ne[0], n_seq_tokens, n_seqs);
     cb(qkv_mixed, "linear_attn_qkv_mixed", il);
@@ -1378,6 +1513,15 @@ ggml_tensor * llama_model_qwen4exp::graph::build_attn_qsa(
     ggml_tensor * q = q_cur;
     ggml_tensor * k = mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = mctx_cur->get_v(ctx0, il);
+    if (il == 47 && std::getenv("CORTEX_KV_READ_CAPTURE") != nullptr &&
+            std::getenv("CORTEX_KV_READ_NO_RETENTION") == nullptr) {
+        res->t_cortex_kv_read_k = k;
+        res->t_cortex_kv_read_v = v;
+        LLAMA_LOG_INFO("CORTEX_KV_READ_BUILD layer=47 res=%p k=%p v=%p kshape=[%lld,%lld,%lld,%lld] vshape=[%lld,%lld,%lld,%lld]\n",
+            (void *) res, (void *) k, (void *) v,
+            (long long) k->ne[0], (long long) k->ne[1], (long long) k->ne[2], (long long) k->ne[3],
+            (long long) v->ne[0], (long long) v->ne[1], (long long) v->ne[2], (long long) v->ne[3]);
+    }
 
     ggml_tensor * cur = build_attn_mha(q, k, v, nullptr, mask, nullptr, nullptr, n_sel, kq_scale, il);
     cb(cur, "kqv_out", il);
@@ -1614,6 +1758,13 @@ ggml_tensor * llama_model_qwen4exp::graph::build_layer_attn_linear(
 ggml_tensor * llama_model_qwen4exp::graph::build_layer_ffn(ggml_tensor * cur, const int il) {
     GGML_ASSERT(model.layers[il].ffn_gate_inp != nullptr);
 
+    if (std::getenv("CORTEX_MOE_TRACE_LAYERS") != nullptr && (il == 2 || il == 3)) {
+        std::fprintf(stderr, "CORTEX_MOE_TRACE qwen4exp_build_layer_ffn layer=%d cur=%p gate_inp=%p gate=%p up=%p down=%p gate_up=%p\n",
+            il, (void *) cur, (void *) model.layers[il].ffn_gate_inp,
+            (void *) model.layers[il].ffn_gate_exps, (void *) model.layers[il].ffn_up_exps,
+            (void *) model.layers[il].ffn_down_exps, (void *) model.layers[il].ffn_gate_up_exps);
+    }
+
     ggml_tensor * moe_out =
         build_moe_ffn(cur,
             model.layers[il].ffn_gate_inp,
@@ -1673,6 +1824,33 @@ ggml_tensor * llama_model_qwen4exp::graph::build_layer_ffn(ggml_tensor * cur, co
     }
 
     return cur;
+}
+
+ggml_tensor * llama_model_qwen4exp::graph::build_layer_ffn_post_moe(
+        ggml_tensor * pre_moe, ggml_tensor * selected_moe, const int il) {
+    GGML_ASSERT(pre_moe != nullptr);
+    GGML_ASSERT(selected_moe != nullptr);
+    GGML_ASSERT(model.layers[il].ffn_up_shexp != nullptr);
+    GGML_ASSERT(model.layers[il].ffn_gate_inp_shexp != nullptr);
+
+    // This is intentionally the same shared-expert spelling and ordering as
+    // build_layer_ffn().  Only the selected-expert sum is supplied externally.
+    ggml_tensor * shared = build_ffn(pre_moe,
+        model.layers[il].ffn_up_shexp, nullptr, model.layers[il].ffn_up_shexp_s,
+        model.layers[il].ffn_gate_shexp, nullptr, model.layers[il].ffn_gate_shexp_s,
+        model.layers[il].ffn_down_shexp, nullptr, model.layers[il].ffn_down_shexp_s,
+        nullptr, LLM_FFN_SILU, LLM_FFN_PAR, il);
+    cb(shared, "post_moe_shared_expert", il);
+
+    ggml_tensor * gate = build_lora_mm(model.layers[il].ffn_gate_inp_shexp, pre_moe);
+    gate = ggml_sigmoid(ctx0, gate);
+    cb(gate, "post_moe_shared_gate", il);
+    shared = ggml_mul(ctx0, shared, gate);
+    cb(shared, "post_moe_shared_expert_gated", il);
+
+    ggml_tensor * combined = ggml_add(ctx0, selected_moe, shared);
+    cb(combined, "post_moe_ffn_out", il);
+    return combined;
 }
 
 // PLE n-gram hash embedding: each token gathers ple_n_heads rows of a shared table.

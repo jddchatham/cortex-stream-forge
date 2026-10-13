@@ -59,6 +59,14 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
         ggml_tensor * w = ggml_new_tensor_2d(ctx, type, width, nr);
         ggml_tensor * x = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, width, 1);
         ggml_tensor * y = ggml_mul_mat(ctx, w, x);
+        char x_name[128];
+        char y_name[128];
+        std::snprintf(x_name, sizeof(x_name), "cortex_moe_l%d_p%d_t%d_e%d_r%d_x",
+                      layer, projection, token, expert, row_base + (int) row);
+        std::snprintf(y_name, sizeof(y_name), "cortex_moe_l%d_p%d_t%d_e%d_r%d_y",
+                      layer, projection, token, expert, row_base + (int) row);
+        ggml_set_name(x, x_name);
+        ggml_set_name(y, y_name);
         if (trace) std::fprintf(stderr, "CORTEX_DISPATCH graph_construct op=%d name=%s ne=[%lld,%lld,%lld,%lld]\n",
                                 (int) y->op, ggml_get_name(y), (long long) y->ne[0], (long long) y->ne[1],
                                 (long long) y->ne[2], (long long) y->ne[3]);
@@ -67,8 +75,31 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
         ggml_backend_buffer_t buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);
         if (!buffer) { ggml_free(ctx); return false; }
         w->data = arena;
+        const bool transfer_trace = std::getenv("CORTEX_FLASHNEXT_TRANSFER_TRACE") != nullptr;
+        auto report_transfer = [&](const char * phase, const float * values, size_t count) {
+            if (!transfer_trace) return;
+            uint32_t nonzero = 0, finite = 0;
+            for (size_t i = 0; i < count; ++i) {
+                if (std::isfinite(values[i])) ++finite;
+                if (values[i] != 0.0f) ++nonzero;
+            }
+            std::fprintf(stderr,
+                         "CORTEX_PROVIDER_TRANSFER id=l%d-p%d-t%d-e%d-r%d phase=%s tensor=%s data=%p buffer=%p ne0=%lld ne1=%lld nb0=%zu nb1=%zu bytes=%zu nonzero=%u finite=%u first=%g last=%g\n",
+                         layer, projection, token, expert, row_base + (int) row, phase,
+                         ggml_get_name(x), x->data, (void *) x->buffer,
+                         (long long) x->ne[0], (long long) x->ne[1], x->nb[0], x->nb[1],
+                         count * sizeof(float), nonzero, finite, count ? values[0] : 0.0f,
+                         count ? values[count - 1] : 0.0f);
+        };
+        report_transfer("staging", input, (size_t) width);
         ggml_backend_tensor_set(x, input, 0, static_cast<size_t>(width) * sizeof(float));
+        if (transfer_trace) {
+            std::vector<float> readback((size_t) width, 0.0f);
+            ggml_backend_tensor_get(x, readback.data(), 0, readback.size() * sizeof(float));
+            report_transfer("after_tensor_set", readback.data(), readback.size());
+        }
         ggml_cpu_diagnostic_target diag{};
+        diag.requested_row = -1;
         std::vector<uint8_t> diag_weight(136), diag_activation(type == GATE_UP_TYPE ? ggml_row_size(GGML_TYPE_Q8_K, 256) : ggml_row_size(GGML_TYPE_Q8_0, 32));
         std::vector<float> diag_f32(type == GATE_UP_TYPE ? 256 : 32);
         const size_t row_weight_bytes = ggml_row_size(type, width);
@@ -77,6 +108,12 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
         std::vector<uint8_t> diag_weight_row(row_weight_bytes), diag_activation_row(row_activation_bytes);
         std::vector<float> diag_activation_row_f32(static_cast<size_t>(width));
         float diag_dot = 0.0f;
+        std::vector<int> requested_rows;
+        if (std::getenv("CORTEX_FLASHNEXT_REQUESTED_ROW_CAPTURE") &&
+            layer == 4 && projection == 2 && expert == 252) {
+            if (token == 4) requested_rows = {1026, 2208, 1298, 2146, 2060};
+            if (token == 7) requested_rows = {675, 537};
+        }
         if (std::getenv("CORTEX_FLASHNEXT_CPU_OPERAND_CAPTURE") != nullptr) {
             diag.enabled = true;
             diag.target = nullptr;
@@ -96,7 +133,30 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
             diag.activation_row_f32_count = diag_activation_row_f32.size();
             ggml_backend_cpu_set_diagnostic_target(backend, &diag);
         }
-        const bool ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
+        if (transfer_trace) {
+            std::vector<float> readback((size_t) width, 0.0f);
+            ggml_backend_tensor_get(x, readback.data(), 0, readback.size() * sizeof(float));
+            report_transfer("before_graph", readback.data(), readback.size());
+        }
+        bool ok = true;
+        if (!requested_rows.empty()) {
+            for (int requested : requested_rows) {
+                diag.requested_row = requested;
+                diag.row_capture_once = 0;
+                diag.dot_capture_once = 0;
+                ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS && ok;
+                if (diag.row_capture_once) {
+                    std::fprintf(stderr, "CORTEX_REQUESTED_ROW_CAPTURE layer=%d token=%d expert=%d row=%d dot=%.17g dest_offset=%llu stored=%.17g status=PASS\n",
+                                 layer, token, expert, requested, double(diag_dot),
+                                 (unsigned long long) diag.captured_dest_offset, double(diag.captured_output));
+                } else {
+                    std::fprintf(stderr, "CORTEX_REQUESTED_ROW_CAPTURE layer=%d token=%d expert=%d row=%d status=MISSING\n",
+                                 layer, token, expert, requested);
+                }
+            }
+        } else {
+            ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
+        }
         if (trace) std::fprintf(stderr, "CORTEX_DISPATCH graph_complete type=%d status=%s\n", (int) type, ok ? "PASS" : "FAIL");
         if (diag.enabled) {
             static std::atomic<bool> accepted[3]{};
@@ -114,6 +174,24 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
                      (uint64_t) diag_activation_row_f32.size(), diag_dot,
                      invocation_id.fetch_add(1, std::memory_order_relaxed), layer, token, expert,
                      (int32_t) (row_base + row), (int32_t) (row / rows_per_tile)};
+            if (std::getenv("CORTEX_FLASHNEXT_CPU_OPERAND_CAPTURE") != nullptr &&
+                    layer == 4 && projection == 2 && token == 1 && expert == 257 &&
+                    row_base + row == 0 && diag.row_capture_once) {
+                const char * path = "/tmp/cortex-iter170-l4-p2-t1-e257-r0.bin";
+                if (access(path, F_OK) != 0) {
+                    FILE * f = std::fopen(path, "wb");
+                    if (f) {
+                        std::fwrite(&header, sizeof(header), 1, f);
+                        std::fwrite(diag_weight_row.data(), 1, diag_weight_row.size(), f);
+                        std::fwrite(diag_activation_row.data(), 1, diag_activation_row.size(), f);
+                        std::fwrite(diag_activation_row_f32.data(), sizeof(float), diag_activation_row_f32.size(), f);
+                        std::fclose(f);
+                        std::fprintf(stderr, "CORTEX_EXACT_DOT_CAPTURE path=%s projection=%d layer=%d token=%d expert=%d row=%d weight_bytes=%zu activation_bytes=%zu dot=%g status=PASS\n",
+                                     path, projection, layer, token, expert, row_base + row,
+                                     diag_weight_row.size(), diag_activation_row.size(), diag_dot);
+                    }
+                }
+            }
             if (accept_record) {
                 char path[128];
                 std::snprintf(path, sizeof(path), "/tmp/cortex-iter140-projection-%d.bin", projection);
@@ -143,6 +221,20 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
                 if (f) { std::fwrite(diag_activation_row.data(), 1, diag_activation_row.size(), f); std::fclose(f); }
                 f = std::fopen(type == GATE_UP_TYPE ? "/tmp/cortex-iter139-f32-xs-row.bin" : "/tmp/cortex-iter139-f32-nl-row.bin", "wb");
                 if (f) { std::fwrite(diag_activation_row_f32.data(), sizeof(float), diag_activation_row_f32.size(), f); std::fclose(f); }
+            }
+            if (std::getenv("CORTEX_FLASHNEXT_TOKEN_Q8_CAPTURE") != nullptr &&
+                layer == 4 && token >= 0 && token < 2 && expert >= 0 && diag.row_capture_once) {
+                char path[160];
+                std::snprintf(path, sizeof(path), "/tmp/cortex-iter162-p%d-l%d-t%d-e%d-q.bin",
+                              projection, layer, token, expert);
+                FILE * f = access(path, F_OK) == 0 ? nullptr : std::fopen(path, "wb");
+                if (f) { std::fwrite(diag_activation_row.data(), 1, diag_activation_row.size(), f); std::fclose(f); }
+                std::snprintf(path, sizeof(path), "/tmp/cortex-iter162-p%d-l%d-t%d-e%d-f32.bin",
+                              projection, layer, token, expert);
+                f = access(path, F_OK) == 0 ? nullptr : std::fopen(path, "wb");
+                if (f) { std::fwrite(diag_activation_row_f32.data(), sizeof(float), diag_activation_row_f32.size(), f); std::fclose(f); }
+                std::fprintf(stderr, "CORTEX_TOKEN_Q8_CAPTURE projection=%d layer=%d token=%d expert=%d qbytes=%zu f32=%zu status=PASS\n",
+                             projection, layer, token, expert, diag_activation_row.size(), diag_activation_row_f32.size());
             }
             std::fprintf(stderr, "CORTEX_CPU_OPERAND_CAPTURE type=%d count=%u row_count=%u weight_bytes=%zu activation_bytes=%zu row_weight_bytes=%zu row_activation_bytes=%zu dot=%g plan=%u mul_mat=%u tiled=%u one_chunk=%u vec_dot=%u last_type=%d src_data=%u wt_data=%u src_ne=[%lld,%lld] src_nonzero=%u\n",
                          (int) type, (unsigned) diag.capture_once, (unsigned) diag.row_capture_once,
@@ -440,10 +532,17 @@ bool flashnext_execute_selected_projection_rows_layer(
                 const ggml_type type = projection == flashnext_projection::down ? DOWN_TYPE : GATE_UP_TYPE;
                 const size_t activation_offset = projection == flashnext_projection::down
                     ? (t*KSEL+s)*input_width : t*input_width;
+                // Gate/up inputs are stored as token-major blocks with one
+                // hidden vector per selected-expert slot.  The callback
+                // populates slot 0 for each token; selecting t*input_width
+                // here points at token 0's unused slot tail for t > 0.
+                // Keep the provider bound to the verified token block.
+                const size_t corrected_activation_offset = projection == flashnext_projection::down
+                    ? activation_offset : t*KSEL*input_width;
                 const int projection_id = projection == flashnext_projection::gate ? 0 :
                                           projection == flashnext_projection::up ? 1 : 2;
                 ok = tiled_matvec(backend, projection_id, fd, type, (int64_t)n_rows, d.offset,
-                    activation + activation_offset, output + (t*KSEL+s)*n_rows,
+                    activation + corrected_activation_offset, output + (t*KSEL+s)*n_rows,
                     arena, arena_bytes, bytes_read, pread_calls, layer, (int) t,
                     selected_expert_ids[t*KSEL+s], 0);
             }

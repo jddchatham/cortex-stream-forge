@@ -2369,6 +2369,9 @@ struct llama_model_qwen35 : public llama_model_base {
                     ggml_tensor * cur,
                             int   il);
 
+        // Opt-in continuation for a layer whose selected-expert contribution
+        // was computed outside GGML.  This contains only the model's original
+        // shared-expert path; routing and selected experts remain external.
         ggml_tensor * build_norm_gated(
                     ggml_tensor * input,
                     ggml_tensor * weights,
@@ -2556,6 +2559,11 @@ struct llama_model_qwen4exp : public llama_model_base {
 
         ggml_tensor * build_layer_ffn(
                     ggml_tensor * cur,
+                            int   il);
+
+        ggml_tensor * build_layer_ffn_post_moe(
+                    ggml_tensor * pre_moe,
+                    ggml_tensor * selected_moe,
                             int   il);
 
         ggml_tensor * build_norm_gated(

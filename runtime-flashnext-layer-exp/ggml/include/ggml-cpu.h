@@ -46,6 +46,9 @@ extern "C" {
         float * activation_row_f32;
         size_t activation_row_f32_count;
         volatile uint32_t row_capture_once;
+        int64_t requested_row;
+        volatile uint64_t captured_dest_offset;
+        volatile float captured_output;
     } ggml_cpu_diagnostic_target;
 
     // the compute plan that needs to be prepared for ggml_graph_compute()

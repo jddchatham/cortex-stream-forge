@@ -1034,7 +1034,32 @@ static int ggml_backend_sched_backend_id(ggml_backend_sched_t sched, ggml_backen
 static int ggml_backend_sched_backend_from_buffer(ggml_backend_sched_t sched, const struct ggml_tensor * tensor, const struct ggml_tensor * op) {
     ggml_backend_buffer_t buffer = tensor->view_src ? tensor->view_src->buffer : tensor->buffer;
     if (buffer == NULL) {
+        if (std::getenv("CORTEX_TRACE_EXPERT_LEAVES") != nullptr &&
+                (strstr(tensor->name, "blk.2.ffn_down_exps.weight") != nullptr ||
+                 strstr(tensor->name, "blk.2.ffn_gate_exps.weight") != nullptr ||
+                 strstr(tensor->name, "blk.2.ffn_up_exps.weight") != nullptr)) {
+            fprintf(stderr, "CORTEX_EXPERT_CLASSIFY tensor=%p name=%s buffer=NULL data=%p view_src=%p\n",
+                    (const void *) tensor, tensor->name, tensor->data, (const void *) tensor->view_src);
+        }
         return -1;
+    }
+
+    if (std::getenv("CORTEX_TRACE_SCHED_BUFFERS") != nullptr) {
+        fprintf(stderr, "CORTEX_SCHED_BUFFER tensor=%p name=%s op=%s ne=[%lld,%lld,%lld,%lld] data=%p buffer=%p buft=%p view_src=%p\n",
+                (const void *) tensor, tensor->name, ggml_op_name(tensor->op),
+                (long long) tensor->ne[0], (long long) tensor->ne[1],
+                (long long) tensor->ne[2], (long long) tensor->ne[3],
+                tensor->data, (void *) buffer, (void *) buffer->buft,
+                (const void *) tensor->view_src);
+    }
+    if (std::getenv("CORTEX_TRACE_EXPERT_LEAVES") != nullptr &&
+            (strstr(tensor->name, "blk.2.ffn_down_exps.weight") != nullptr ||
+             strstr(tensor->name, "blk.2.ffn_gate_exps.weight") != nullptr ||
+             strstr(tensor->name, "blk.2.ffn_up_exps.weight") != nullptr)) {
+        fprintf(stderr, "CORTEX_EXPERT_CLASSIFY tensor=%p name=%s op=%s buffer=%p buft=%p data=%p view_src=%p\n",
+                (const void *) tensor, tensor->name, ggml_op_name(tensor->op),
+                (void *) buffer, (void *) buffer->buft, tensor->data,
+                (const void *) tensor->view_src);
     }
 
     // find highest prio backend that supports the buffer type and the op

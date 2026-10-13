@@ -15,8 +15,11 @@
 
 //#define GGML_ALLOCATOR_DEBUG
 
-//#define AT_PRINTF(...) GGML_LOG_DEBUG(__VA_ARGS__)
-#define AT_PRINTF(...)
+#define AT_PRINTF(...) do { \
+    if (getenv("CORTEX_ALLOC_PROFILE") != NULL) { \
+        fprintf(stderr, "CORTEX_ALLOC " __VA_ARGS__); \
+    } \
+} while (0)
 
 // ops that return true for this function must not use restrict pointers for their backend implementations
 bool ggml_op_can_inplace(enum ggml_op op) {
@@ -269,6 +272,13 @@ static struct buffer_address ggml_dyn_tallocr_alloc(struct ggml_dyn_tallocr * al
     }
 
     AT_PRINTF("block %d, offset %zu, chunk %d\n", best_fit_block, addr.offset, addr.chunk);
+    if (getenv("CORTEX_ALLOC_PROFILE") != NULL) {
+        fprintf(stderr, "CORTEX_ALLOC_EVENT alloc tensor=%s type=%d ne=[%lld,%lld,%lld,%lld] bytes=%zu chunk=%d offset=%zu\n",
+            tensor->name, (int) tensor->type,
+            (long long) tensor->ne[0], (long long) tensor->ne[1],
+            (long long) tensor->ne[2], (long long) tensor->ne[3],
+            size, addr.chunk, addr.offset);
+    }
 
 #ifdef GGML_ALLOCATOR_DEBUG
     add_allocated_tensor(alloc, addr, tensor);
@@ -621,6 +631,17 @@ static void ggml_gallocr_free_extra_space(ggml_gallocr_t galloc, struct ggml_ten
 }
 
 static void ggml_gallocr_allocate_node(ggml_gallocr_t galloc, struct ggml_tensor * node, int buffer_id) {
+    const bool cortex_expert_trace = getenv("CORTEX_TRACE_EXPERT_ALLOC") != NULL && node != NULL &&
+        (strstr(node->name, "blk.2.ffn_down_exps.weight") != NULL ||
+         strstr(node->name, "blk.2.ffn_gate_exps.weight") != NULL ||
+         strstr(node->name, "blk.2.ffn_up_exps.weight") != NULL);
+    if (cortex_expert_trace) {
+        fprintf(stderr, "CORTEX_EXPERT_ALLOC phase=enter tensor=%p name=%s type=%d ne=[%lld,%lld,%lld,%lld] nbytes=%zu data=%p buffer=%p view_src=%p op=%d galloc=%p buffer_id=%d\n",
+            (void *) node, node->name, (int) node->type,
+            (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3],
+            ggml_nbytes(node), node->data, (void *) node->buffer, (void *) node->view_src, (int) node->op,
+            (void *) galloc, buffer_id);
+    }
     if (buffer_id < 0 && getenv("CORTEX_FLASHNEXT_ALLOCATOR_DIAGNOSTICS") != NULL) {
         fprintf(stderr, "CORTEX_ALLOCATOR_INVALID_BUFFER name=%s op=%d type=%d ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] data=%p buffer=%p view=%p src0=%p src1=%p src2=%p src3=%p phase=allocate_node buffer_id=%d\n",
             node ? node->name : "<null>", node ? node->op : -1, node ? node->type : -1,
@@ -695,6 +716,11 @@ static void ggml_gallocr_allocate_node(ggml_gallocr_t galloc, struct ggml_tensor
         size_t size = ggml_backend_buft_get_alloc_size(buft, node);
         hn->buffer_id = buffer_id;
         hn->addr = ggml_dyn_tallocr_alloc(alloc, size, node);
+        if (cortex_expert_trace) {
+            fprintf(stderr, "CORTEX_EXPERT_ALLOC phase=assigned tensor=%p name=%s size=%zu chunk=%d offset=%zu buffer_id=%d buft=%p data=%p buffer=%p\n",
+                (void *) node, node->name, size, hn->addr.chunk, hn->addr.offset, buffer_id,
+                (void *) buft, node->data, (void *) node->buffer);
+        }
     }
 }
 
@@ -710,6 +736,10 @@ static void ggml_gallocr_free_node(ggml_gallocr_t galloc, struct ggml_tensor * n
     struct ggml_dyn_tallocr * alloc = galloc->buf_tallocs[buffer_id];
     ggml_backend_buffer_type_t buft = galloc->bufts[buffer_id];
     size_t size = ggml_backend_buft_get_alloc_size(buft, node);
+    if (getenv("CORTEX_ALLOC_PROFILE") != NULL) {
+        fprintf(stderr, "CORTEX_ALLOC_EVENT free tensor=%s bytes=%zu chunk=%d offset=%zu\n",
+            node->name, size, hn->addr.chunk, hn->addr.offset);
+    }
 
     AT_PRINTF("%s: freeing %s at {chunk=%d, offset=%zu} (%zu bytes) - n_free_blocks = %d\n",
         __func__, node->name, hn->addr.chunk, hn->addr.offset, size, alloc->chunks[hn->addr.chunk]->n_free_blocks);

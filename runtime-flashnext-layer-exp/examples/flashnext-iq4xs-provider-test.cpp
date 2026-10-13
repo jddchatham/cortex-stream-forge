@@ -69,10 +69,10 @@ static void quantize_q80_ref(const float * x, size_t n, std::vector<float> & y) 
     }
 }
 
-static bool reference(const flashnext_tensor_index & idx, const float * x, const int32_t * ids, const double * weights, size_t nt, std::vector<float> & out) {
+static bool reference(const flashnext_tensor_index & idx, int layer, const float * x, const int32_t * ids, const double * weights, size_t nt, std::vector<float> & out) {
     constexpr int H=2560,F=640,K=10; out.assign(nt*H, 0.0f); std::vector<float> g,u,a,y; std::vector<uint8_t> raw;
     for (size_t t=0;t<nt;++t) for (int s=0;s<K;++s) {
-        flashnext_tensor_descriptor gd,ud,dd; if (!idx.resolve_expert(0,ids[t*K+s],flashnext_projection::gate,gd) || !idx.resolve_expert(0,ids[t*K+s],flashnext_projection::up,ud) || !idx.resolve_expert(0,ids[t*K+s],flashnext_projection::down,dd)) return false;
+        flashnext_tensor_descriptor gd,ud,dd; if (!idx.resolve_expert(layer,ids[t*K+s],flashnext_projection::gate,gd) || !idx.resolve_expert(layer,ids[t*K+s],flashnext_projection::up,ud) || !idx.resolve_expert(layer,ids[t*K+s],flashnext_projection::down,dd)) return false;
         g.assign(F,0); u.assign(F,0); a.assign(F,0); y.assign(H,0);
         std::vector<float> qx;
         quantize_q8k_ref(x + t*H, H, qx);
@@ -84,13 +84,13 @@ static bool reference(const flashnext_tensor_index & idx, const float * x, const
 }
 
 int main(int argc, char ** argv) {
-    if (argc != 2) return 2; flashnext_tensor_index idx; std::string err; if (!idx.load(argv[1], &err)) { fprintf(stderr,"index: %s\n",err.c_str()); return 3; }
-    flashnext_tensor_descriptor g,u,d; if (!idx.resolve_expert(0,0,flashnext_projection::gate,g,&err) || !idx.resolve_expert(0,0,flashnext_projection::up,u,&err) || !idx.resolve_expert(0,0,flashnext_projection::down,d,&err)) return 4;
+    if (argc < 2 || argc > 3) return 2; const int layer = argc == 3 ? std::atoi(argv[2]) : 0; flashnext_tensor_index idx; std::string err; if (!idx.load(argv[1], &err)) { fprintf(stderr,"index: %s\n",err.c_str()); return 3; }
+    flashnext_tensor_descriptor g,u,d; if (!idx.resolve_expert(layer,0,flashnext_projection::gate,g,&err) || !idx.resolve_expert(layer,0,flashnext_projection::up,u,&err) || !idx.resolve_expert(layer,0,flashnext_projection::down,d,&err)) return 4;
     if (g.type != (int)GGML_TYPE_IQ4_XS || u.type != (int)GGML_TYPE_IQ4_XS || d.type != (int)GGML_TYPE_IQ4_NL) return 5;
     for (size_t nt : {size_t(1),size_t(3)}) {
         constexpr size_t H=2560,K=10; std::vector<float> x(nt*H), got(nt*H), ref; for(size_t i=0;i<x.size();++i)x[i]=0.01f*float(1+i%31);
         std::vector<int32_t> ids(nt*K); std::vector<double> w(nt*K); for(size_t t=0;t<nt;++t)for(size_t s=0;s<K;++s){ids[t*K+s]=(s%2)?3:0;w[t*K+s]=0.1;}
-        if (!flashnext_execute_selected_moe_rows(idx, "", x.data(), ids.data(), w.data(), nt, got.data(), 16*1024) || !reference(idx,x.data(),ids.data(),w.data(),nt,ref)) return 6;
+        if (!flashnext_execute_selected_moe_rows_layer(idx, layer, x.data(), ids.data(), w.data(), nt, got.data(), 16*1024) || !reference(idx,layer,x.data(),ids.data(),w.data(),nt,ref)) return 6;
         double ma=0, mr=0, rms=0; std::array<std::tuple<double,size_t,float,float>,10> top{};
         for(size_t i=0;i<got.size();++i){double e=std::abs(double(got[i])-ref[i]);ma=std::max(ma,e);mr=std::max(mr,e/(std::abs(ref[i])+1e-12));rms+=e*e;
             auto item=std::make_tuple(e,i,got[i],ref[i]);
@@ -103,6 +103,6 @@ int main(int argc, char ** argv) {
         // Relative error is reported, but is ill-conditioned near zero.
         if (ma > 1e-5 || rms > 2e-6 || !std::isfinite(ma)) return 7;
     }
-    std::vector<float> x(2560), out(2560); std::vector<int32_t> bad(10,512); std::vector<double>w(10,0.1); if (flashnext_execute_selected_moe_rows(idx,"",x.data(),bad.data(),w.data(),1,out.data())) return 8;
+    std::vector<float> x(2560), out(2560); std::vector<int32_t> bad(10,512); std::vector<double>w(10,0.1); if (flashnext_execute_selected_moe_rows_layer(idx,layer,x.data(),bad.data(),w.data(),1,out.data(),16*1024)) return 8;
     puts("IQ4XS_PROVIDER PASS"); return 0;
 }
