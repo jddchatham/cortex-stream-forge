@@ -25,6 +25,27 @@ extern "C" {
     float * conversion_f32;
     size_t conversion_f32_count;
     volatile uint32_t conversion_capture_once;
+        float * dot_result;
+        volatile uint32_t dot_capture_once;
+        bool provider_local_match;
+        volatile uint32_t cpu_plan_count;
+        volatile uint32_t mul_mat_count;
+        volatile uint32_t tiled_count;
+        volatile uint32_t one_chunk_count;
+        volatile uint32_t vec_dot_count;
+        volatile int32_t last_weight_type;
+        volatile uint32_t source_nonzero_count;
+        volatile uint32_t source_data_present;
+        volatile uint32_t weight_data_present;
+        volatile int64_t source_ne0;
+        volatile int64_t source_ne1;
+        uint8_t * weight_row;
+        size_t weight_row_size;
+        uint8_t * activation_row;
+        size_t activation_row_size;
+        float * activation_row_f32;
+        size_t activation_row_f32_count;
+        volatile uint32_t row_capture_once;
     } ggml_cpu_diagnostic_target;
 
     // the compute plan that needs to be prepared for ggml_graph_compute()

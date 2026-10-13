@@ -1176,6 +1176,23 @@ static void ggml_compute_forward_mul_mat_one_chunk(
     const struct ggml_tensor * src1 = dst->src[1];
 
     if (params->diagnostic_target && params->diagnostic_target->enabled &&
+        params->diagnostic_target->provider_local_match) {
+        __atomic_fetch_add(&params->diagnostic_target->one_chunk_count, 1u, __ATOMIC_RELAXED);
+        params->diagnostic_target->last_weight_type = (int32_t) src0->type;
+        params->diagnostic_target->source_data_present = src1->data != NULL;
+        params->diagnostic_target->weight_data_present = src0->data != NULL;
+        params->diagnostic_target->source_ne0 = src1->ne[0];
+        params->diagnostic_target->source_ne1 = src1->ne[1];
+        if (src1->data && src1->type == GGML_TYPE_F32) {
+            uint32_t nz = 0;
+            const float * sf = (const float *) src1->data;
+            const size_t n = (size_t) src1->ne[0] * (size_t) src1->ne[1];
+            for (size_t i = 0; i < n; ++i) if (sf[i] != 0.0f) ++nz;
+            params->diagnostic_target->source_nonzero_count = nz;
+        }
+    }
+
+    if (params->diagnostic_target && params->diagnostic_target->enabled &&
         params->diagnostic_target->target == dst) {
         __atomic_fetch_add(&params->diagnostic_target->match_count, 1u, __ATOMIC_RELAXED);
     }
@@ -1210,23 +1227,73 @@ static void ggml_compute_forward_mul_mat_one_chunk(
 
     const size_t src1_col_stride = src1_cont || src1->type != vec_dot_type ? row_size : nb11;
 
+    if (params->diagnostic_target && params->diagnostic_target->enabled &&
+        params->diagnostic_target->provider_local_match && params->ith == 0 &&
+        params->diagnostic_target->weight_row && params->diagnostic_target->activation_row &&
+        params->diagnostic_target->weight_row_size >= ggml_row_size(type, ne00) &&
+        params->diagnostic_target->activation_row_size >= ggml_row_size(vec_dot_type, ne10) &&
+        src0->data && wdata) {
+        bool row_nonzero = false;
+        if (src1->type == GGML_TYPE_F32) {
+            const float * sf = (const float *) src1->data;
+            for (int64_t i = 0; i < ne10 && !row_nonzero; ++i) row_nonzero = sf[i] != 0.0f;
+        }
+        for (size_t i = 0; i < ggml_row_size(type, ne00) && !row_nonzero; ++i) {
+            row_nonzero = ((const uint8_t *) src0->data)[i] != 0;
+        }
+        uint32_t expected = 0;
+        if (row_nonzero && __atomic_compare_exchange_n(&params->diagnostic_target->row_capture_once,
+                                                       &expected, 1u, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
+            memcpy(params->diagnostic_target->weight_row, src0->data, ggml_row_size(type, ne00));
+            memcpy(params->diagnostic_target->activation_row, wdata, ggml_row_size(vec_dot_type, ne10));
+            if (params->diagnostic_target->activation_row_f32 &&
+                params->diagnostic_target->activation_row_f32_count >= (size_t) ne10 &&
+                src1->type == GGML_TYPE_F32) {
+                memcpy(params->diagnostic_target->activation_row_f32, src1->data,
+                       (size_t) ne10 * sizeof(float));
+            }
+        }
+    }
+
     // Phase-2 diagnostic: the descriptor is already matched by exact dst
     // identity.  Capture only row 0/block 0 after Q8_K conversion storage is
     // available.  The caller owns both destinations for the plan lifetime.
     if (params->diagnostic_target && params->diagnostic_target->enabled &&
-        params->diagnostic_target->target == dst && params->ith == 0 &&
-        ir0_start == 0 && ir1_start == 0 && src0->type == GGML_TYPE_IQ4_XS &&
+        (params->diagnostic_target->target == dst || params->diagnostic_target->provider_local_match) &&
+        (src0->type == GGML_TYPE_IQ4_XS || src0->type == GGML_TYPE_IQ4_NL) &&
         params->diagnostic_target->weight_block && params->diagnostic_target->activation_block &&
-        params->diagnostic_target->weight_block_size >= 136 &&
-        params->diagnostic_target->activation_block_size >= ggml_row_size(vec_dot_type, 256)) {
+        params->diagnostic_target->weight_block_size >= (src0->type == GGML_TYPE_IQ4_XS ? 136 : 18) &&
+        params->diagnostic_target->activation_block_size >= ggml_row_size(vec_dot_type, src0->type == GGML_TYPE_IQ4_XS ? 256 : 32)) {
         uint32_t expected = 0;
-        if (__atomic_compare_exchange_n(&params->diagnostic_target->capture_once, &expected, 1u, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
-            memcpy(params->diagnostic_target->weight_block, src0->data, 136);
-            memcpy(params->diagnostic_target->activation_block, wdata, ggml_row_size(vec_dot_type, 256));
-            if (params->diagnostic_target->activation_f32 && params->diagnostic_target->activation_f32_count >= 256 &&
+        const size_t block_n = src0->type == GGML_TYPE_IQ4_XS ? 256 : 32;
+        bool nonzero_block = false;
+        size_t capture_block = 0;
+        if (src1->type == GGML_TYPE_F32) {
+            const float * xf = (const float *) src1->data;
+            const size_t nblocks = (size_t) src1->ne[0] / block_n;
+            for (size_t b = 0; b < nblocks && !nonzero_block; ++b) {
+                bool activation_nonzero = false;
+                for (size_t j = 0; j < block_n; ++j) {
+                    if (xf[b*block_n+j] != 0.0f) { activation_nonzero = true; break; }
+                }
+                const size_t wb = src0->type == GGML_TYPE_IQ4_XS ? 136 : 18;
+                bool weight_nonzero = false;
+                const uint8_t * wp = (const uint8_t *) src0->data + b*wb;
+                for (size_t j = 0; j < wb; ++j) {
+                    if (wp[j] != 0) { weight_nonzero = true; break; }
+                }
+                if (activation_nonzero && weight_nonzero) { nonzero_block = true; capture_block = b; }
+            }
+        }
+        if (nonzero_block && __atomic_compare_exchange_n(&params->diagnostic_target->capture_once, &expected, 1u, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
+            const size_t wb = src0->type == GGML_TYPE_IQ4_XS ? 136 : 18;
+            const size_t ab = ggml_row_size(vec_dot_type, block_n);
+            memcpy(params->diagnostic_target->weight_block, (const char *) src0->data + capture_block*wb, wb);
+            memcpy(params->diagnostic_target->activation_block, (const char *) wdata + capture_block*ab, ab);
+            if (params->diagnostic_target->activation_f32 && params->diagnostic_target->activation_f32_count >= block_n &&
                 src1->type == GGML_TYPE_F32 && src1->ne[0] >= 256) {
-                memcpy(params->diagnostic_target->activation_f32, src1->data,
-                       params->diagnostic_target->activation_f32_count * sizeof(float));
+                memcpy(params->diagnostic_target->activation_f32, (const char *) src1->data + capture_block*block_n*sizeof(float),
+                       (params->diagnostic_target->activation_f32_count < block_n ? params->diagnostic_target->activation_f32_count : block_n) * sizeof(float));
             }
         }
     }
@@ -1267,7 +1334,20 @@ static void ggml_compute_forward_mul_mat_one_chunk(
                 //}
 
                 for (int64_t ir0 = iir0; ir0 < iir0 + blck_0 && ir0 < ir0_end; ir0 += num_rows_per_vec_dot) {
+                    if (params->diagnostic_target && params->diagnostic_target->enabled &&
+                        params->diagnostic_target->provider_local_match) {
+                        __atomic_fetch_add(&params->diagnostic_target->vec_dot_count, 1u, __ATOMIC_RELAXED);
+                    }
                     vec_dot(ne00, &tmp[ir0 - iir0], (num_rows_per_vec_dot > 1 ? 16 : 0), src0_row + ir0 * nb01, (num_rows_per_vec_dot > 1 ? nb01 : 0), src1_col, (num_rows_per_vec_dot > 1 ? src1_col_stride : 0), num_rows_per_vec_dot);
+                    if (params->diagnostic_target && params->diagnostic_target->enabled &&
+                        (params->diagnostic_target->target == dst || params->diagnostic_target->provider_local_match) && params->diagnostic_target->dot_result &&
+                        params->ith == 0 && ir0 == 0 && ir1 == 0) {
+                        uint32_t expected = 0;
+                        if (__atomic_compare_exchange_n(&params->diagnostic_target->dot_capture_once,
+                                                        &expected, 1u, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
+                            *params->diagnostic_target->dot_result = tmp[0];
+                        }
+                    }
                 }
 
                 for (int cn = 0; cn < num_rows_per_vec_dot; ++cn) {
@@ -1949,6 +2029,10 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
             } break;
         case GGML_OP_MUL_MAT:
             {
+                if (params->diagnostic_target && params->diagnostic_target->enabled &&
+                    params->diagnostic_target->provider_local_match) {
+                    __atomic_fetch_add(&params->diagnostic_target->mul_mat_count, 1u, __ATOMIC_RELAXED);
+                }
                 ggml_compute_forward_mul_mat(params, tensor);
             } break;
         case GGML_OP_MUL_MAT_ID:

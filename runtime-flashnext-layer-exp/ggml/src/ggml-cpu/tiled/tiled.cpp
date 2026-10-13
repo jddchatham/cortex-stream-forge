@@ -1209,6 +1209,10 @@ static bool ggml_tiled_min_batch(int64_t rows) {
 bool ggml_compute_forward_mul_mat_tiled(
         const struct ggml_compute_params * params,
               struct ggml_tensor * dst) {
+    if (params->diagnostic_target && params->diagnostic_target->enabled &&
+        params->diagnostic_target->provider_local_match) {
+        __atomic_fetch_add(&params->diagnostic_target->tiled_count, 1u, __ATOMIC_RELAXED);
+    }
     // --use-ref means bail out and go back to vec_dot reference impl
     if (params->use_ref) {
         return false;
