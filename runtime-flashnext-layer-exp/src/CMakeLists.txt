@@ -40,6 +40,7 @@ set(LLAMA_CORE_SOURCES
     llama-sampler.cpp
     llama-vocab.cpp
     flashnext-selected-moe.cpp
+    flashnext-streaming-config.cpp
     flashnext-shared-expert.cpp
     flashnext-segment-b.cpp
     flashnext-tensor-index.cpp

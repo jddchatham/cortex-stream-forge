@@ -7,6 +7,7 @@
 #include "../src/flashnext-segment-b.h"
 #include "../src/flashnext-stock-layer0-reference.h"
 #include "../src/flashnext-tensor-index.h"
+#include "../src/flashnext-streaming-config.h"
 #include "../src/ggml-quants.h"
 
 #include <algorithm>
@@ -897,6 +898,12 @@ static layer_transaction_result run_layer_transaction(
 int main(int argc, char ** argv) {
     // semantic inputs only: model path and flashnext-tensor-index.json
     if (argc != 3) return 2;
+    const flashnext_streaming_config streaming_config = flashnext_streaming_config_from_environment();
+    std::string streaming_config_error;
+    if (!flashnext_streaming_config_validate(streaming_config, &streaming_config_error)) {
+        std::fprintf(stderr, "FLASHNEXT_STREAMING_CONFIG_FAIL %s\n", streaming_config_error.c_str());
+        return 16;
+    }
     const char * layer_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
     const uint32_t target_layer = layer_start_env ? (uint32_t) std::strtoul(layer_start_env, nullptr, 10) : 1;
     const bool range_mode = layer_start_env != nullptr && target_layer > 0;
