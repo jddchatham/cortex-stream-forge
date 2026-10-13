@@ -1,0 +1,5 @@
+build/
+**/__pycache__/
+*.o
+runtime-flashnext-layer-exp/cmake/build-info.cmake
+runtime-flashnext-layer-exp/common/build-info.cpp.in
