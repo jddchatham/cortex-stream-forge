@@ -36,7 +36,7 @@ bool pread_all(int fd, void * dst, size_t n, uint64_t off, uint64_t & calls) {
 bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type, int64_t rows,
                   uint64_t offset, const float * input, float * output,
                   void * arena, size_t arena_bytes, uint64_t & bytes,
-                  uint64_t & calls) {
+                  uint64_t & calls, int layer = -1, int token = -1, int expert = -1, int row_base = 0) {
     const size_t row_bytes = ggml_row_size(type, K == rows ? F : K);
     const int64_t width = type == DOWN_TYPE ? F : K;
     const size_t legal_row_bytes = ggml_row_size(type, width);
@@ -46,6 +46,7 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
     if (trace) std::fprintf(stderr, "CORTEX_DISPATCH provider_compute type=%d rows=%lld width=%lld op=ggml_mul_mat\n",
                             (int) type, (long long) rows, (long long) width);
 
+    static std::atomic<uint64_t> invocation_id{0};
     for (int64_t row = 0; row < rows; row += rows_per_tile) {
         const int64_t nr = std::min<int64_t>(rows_per_tile, rows - row);
         const size_t tile_bytes = static_cast<size_t>(nr) * legal_row_bytes;
@@ -106,9 +107,13 @@ bool tiled_matvec(ggml_backend_t backend, int projection, int fd, ggml_type type
                 uint32_t magic, version, projection, weight_type;
                 uint64_t width, weight_bytes, activation_bytes, f32_count;
                 float dot;
-            } header{0x43585231u, 1u, (uint32_t) projection, (uint32_t) type,
+                uint64_t invocation;
+                int32_t layer, token, expert, row, tile;
+            } header{0x43585231u, 2u, (uint32_t) projection, (uint32_t) type,
                      (uint64_t) width, (uint64_t) row_weight_bytes, (uint64_t) row_activation_bytes,
-                     (uint64_t) diag_activation_row_f32.size(), diag_dot};
+                     (uint64_t) diag_activation_row_f32.size(), diag_dot,
+                     invocation_id.fetch_add(1, std::memory_order_relaxed), layer, token, expert,
+                     (int32_t) (row_base + row), (int32_t) (row / rows_per_tile)};
             if (accept_record) {
                 char path[128];
                 std::snprintf(path, sizeof(path), "/tmp/cortex-iter140-projection-%d.bin", projection);
@@ -220,15 +225,18 @@ bool flashnext_execute_selected_moe(
         if (slice.fds[0] < 0 || slice.fds[1] < 0 || slice.fds[2] < 0) { ok = false; break; }
         ok = tiled_matvec(backend, 0, slice.fds[0], GATE_UP_TYPE, F, slice.offsets[0],
                           tx.pre_moe_hidden.data(), gate.data(), arena, arena_bytes,
-                          tx.io.selected_expert_bytes_read, tx.io.pread_calls);
+                          tx.io.selected_expert_bytes_read, tx.io.pread_calls, tx.layer, 0,
+                          tx.selected_expert_ids[i], 0);
         ok = ok && tiled_matvec(backend, 1, slice.fds[1], GATE_UP_TYPE, F, slice.offsets[1],
                                 tx.pre_moe_hidden.data(), up.data(), arena, arena_bytes,
-                                tx.io.selected_expert_bytes_read, tx.io.pread_calls);
+                                tx.io.selected_expert_bytes_read, tx.io.pread_calls, tx.layer, 0,
+                                tx.selected_expert_ids[i], 0);
         if (!ok) break;
         for (size_t j = 0; j < F; ++j) act[j] = (gate[j] / (1.0f + std::exp(-gate[j]))) * up[j];
         ok = tiled_matvec(backend, 2, slice.fds[2], DOWN_TYPE, K, slice.offsets[2],
                           act.data(), down.data(), arena, arena_bytes,
-                          tx.io.selected_expert_bytes_read, tx.io.pread_calls);
+                          tx.io.selected_expert_bytes_read, tx.io.pread_calls, tx.layer, 0,
+                          tx.selected_expert_ids[i], 0);
         if (!ok) break;
         if (std::getenv("CORTEX_FLASHNEXT_SELECTED_DEBUG") != nullptr) {
             uint64_t h = 1469598103934665603ull;
@@ -432,9 +440,12 @@ bool flashnext_execute_selected_projection_rows_layer(
                 const ggml_type type = projection == flashnext_projection::down ? DOWN_TYPE : GATE_UP_TYPE;
                 const size_t activation_offset = projection == flashnext_projection::down
                     ? (t*KSEL+s)*input_width : t*input_width;
-                ok = tiled_matvec(backend, type == DOWN_TYPE ? 2 : 0, fd, type, (int64_t)n_rows, d.offset,
+                const int projection_id = projection == flashnext_projection::gate ? 0 :
+                                          projection == flashnext_projection::up ? 1 : 2;
+                ok = tiled_matvec(backend, projection_id, fd, type, (int64_t)n_rows, d.offset,
                     activation + activation_offset, output + (t*KSEL+s)*n_rows,
-                    arena, arena_bytes, bytes_read, pread_calls);
+                    arena, arena_bytes, bytes_read, pread_calls, layer, (int) t,
+                    selected_expert_ids[t*KSEL+s], 0);
             }
             if (fd >= 0) ::close(fd);
         }
