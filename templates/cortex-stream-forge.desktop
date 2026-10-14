@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Cortex Stream Forge
+Comment=96 GB Bounded Cortex streaming chat runtime
+Exec=foot -e /home/user/bin/cortex-stream-forge
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true

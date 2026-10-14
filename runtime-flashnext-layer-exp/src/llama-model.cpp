@@ -43,6 +43,14 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
+
+static inline bool cortex_is_debug() {
+    static const bool debug = (std::getenv("CORTEX_DEBUG") != nullptr && std::strcmp(std::getenv("CORTEX_DEBUG"), "0") != 0) ||
+                              (std::getenv("CORTEX_DIAG") != nullptr && std::strcmp(std::getenv("CORTEX_DIAG"), "0") != 0) ||
+                              (std::getenv("CORTEX_VERBOSE") != nullptr && std::strcmp(std::getenv("CORTEX_VERBOSE"), "0") != 0);
+    return debug;
+}
+#define cortex_model_log_diag(...) do { if (cortex_is_debug()) { std::fprintf(stderr, __VA_ARGS__); std::fflush(stderr); } } while(0)
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -2627,9 +2635,8 @@ bool llama_model_base::cortex_rebind_layer(int il, bool internal_activation) {
     if ((!pimpl->cortex_residency_valid || pimpl->cortex_active_layer != il) && !internal_activation) {
         return fail("validate_residency", nullptr, "residency_invalid_or_layer_mismatch");
     }
-    std::fprintf(stderr, "CORTEX_REBIND checkpoint=ENTRY layer=%d selected_count=%zu metadata_entries=%zu indexed_offsets=%zu\n",
+    cortex_model_log_diag("CORTEX_REBIND checkpoint=ENTRY layer=%d selected_count=%zu metadata_entries=%zu indexed_offsets=%zu\n",
         il, selected_names.size(), tensors_by_name.size(), pimpl->cortex_offsets.size());
-    std::fflush(stderr);
     // The Qwen35 MTP/NextN head is represented as the first auxiliary block
     // immediately after the main transformer layers.  This experimental
     // branch may rebind that block as well; the frozen Qwenny path remains
@@ -2870,9 +2877,8 @@ bool llama_model_base::cortex_rebind_layer(int il, bool internal_activation) {
     }
     LLAMA_LOG_INFO("CORTEX rebind layer=%d bytes=%zu buffer=%p arena=%s\n", il, total, arena,
         std::getenv("CORTEX_PREAD_ARENA") ? "pread" : "vector");
-    std::fprintf(stderr, "CORTEX_REBIND checkpoint=EXIT layer=%d result=PASS selected_count=%zu bytes=%zu\n",
+    cortex_model_log_diag("CORTEX_REBIND checkpoint=EXIT layer=%d result=PASS selected_count=%zu bytes=%zu\n",
         il, selected.size(), total);
-    std::fflush(stderr);
     return true;
 }
 
@@ -2885,8 +2891,7 @@ bool llama_model_base::cortex_activate_layer(int il) {
         std::fflush(stderr);
         return false;
     };
-    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d stage=select\n", il);
-    std::fflush(stderr);
+    cortex_model_log_diag("CORTEX_RESIDENCY layer=%d stage=select\n", il);
     if (!pimpl->cortex_low_residency || il < 0 || il >= (int) hparams.n_layer_all) return fail(nullptr, "invalid_layer_or_low_residency", 0, pimpl->cortex_pread_arena_capacity);
     std::vector<ggml_tensor *> required;
     for (const auto & record : pimpl->descriptor_manifest) {
@@ -2906,10 +2911,8 @@ bool llama_model_base::cortex_activate_layer(int il) {
     }
     const size_t capacity = pimpl->cortex_pread_arena_capacity;
     if (total > CORTEX_FLASHNEXT_FIXED_ARENA_CAPACITY) return fail(nullptr, "plan", total, capacity);
-    std::fprintf(stderr, "CORTEX_PLAN result=PASS layer=%d tensor_count=%zu aligned_bytes=%zu capacity=%zu\n", il, next.size(), total, capacity);
-    std::fflush(stderr);
-    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d stage=materialize required_bytes=%zu resident_count=%zu\n", il, total, next.size());
-    std::fflush(stderr);
+    cortex_model_log_diag("CORTEX_PLAN result=PASS layer=%d tensor_count=%zu aligned_bytes=%zu capacity=%zu\n", il, next.size(), total, capacity);
+    cortex_model_log_diag("CORTEX_RESIDENCY layer=%d stage=materialize required_bytes=%zu resident_count=%zu\n", il, total, next.size());
     // The caller has already synchronized and destroyed the prior context.
     // Invalidate only arena-resident tensors before reusing the fixed arena;
     // global/final-head tensors have independent storage and must survive
@@ -2946,9 +2949,8 @@ bool llama_model_base::cortex_activate_layer(int il) {
     if (std::getenv("CORTEX_TRACE_EXPERT_TIMELINE") != nullptr && il == 2) {
         std::fprintf(stderr, "CORTEX_EXPERT_TIMELINE event=activate_end layer=%d model=%p\n", il, (void *) this);
     }
-    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d stage=commit resident_count=%zu\n", il, pimpl->cortex_selected_names.size());
-    std::fprintf(stderr, "CORTEX_RESIDENCY layer=%d result=PASS\n", il);
-    std::fflush(stderr);
+    cortex_model_log_diag("CORTEX_RESIDENCY layer=%d stage=commit resident_count=%zu\n", il, pimpl->cortex_selected_names.size());
+    cortex_model_log_diag("CORTEX_RESIDENCY layer=%d result=PASS\n", il);
     return true;
 }
 
