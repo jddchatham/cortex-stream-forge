@@ -18,6 +18,25 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#include <filesystem>
+
+static std::string cortex_get_state_dir() {
+    const char * env_dir = std::getenv("CORTEX_STATE_DIR");
+    if (env_dir && *env_dir) return std::string(env_dir);
+    const char * home = std::getenv("HOME");
+    std::string base = home ? std::string(home) + "/.cortex_states" : "/home/user/.cortex_states";
+    std::error_code ec;
+    std::filesystem::create_directories(base, ec);
+    return base;
+}
+
+static void cortex_clean_state_dir() {
+    std::string dir = cortex_get_state_dir();
+    std::error_code ec;
+    for (const auto & entry : std::filesystem::directory_iterator(dir, ec)) {
+        std::filesystem::remove(entry.path(), ec);
+    }
+}
 
 static bool cortex_chat_is_debug() {
     static const bool debug = (std::getenv("CORTEX_DEBUG") != nullptr && std::strcmp(std::getenv("CORTEX_DEBUG"), "0") != 0) ||
@@ -74,10 +93,23 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
         const bool terminal_layer = il + 1 == n_layer;
         if (terminal_layer) llama_set_embeddings(ctx, true);
         else llama_set_embeddings_layer_inp(ctx, il + 1, true);
-        if (!states[il].empty() && llama_state_set_data(ctx, states[il].data(), states[il].size()) == 0) {
-            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_restore\n", il);
-            std::fflush(stderr);
-            return -1;
+        {
+            std::string state_file = cortex_get_state_dir() + "/layer_" + std::to_string(il) + ".bin";
+            std::ifstream sf(state_file, std::ios::binary | std::ios::ate);
+            if (sf.is_open()) {
+                std::streamsize sf_size = sf.tellg();
+                if (sf_size > 0) {
+                    sf.seekg(0, std::ios::beg);
+                    std::vector<uint8_t> sf_buf(sf_size);
+                    if (sf.read(reinterpret_cast<char *>(sf_buf.data()), sf_size)) {
+                        if (llama_state_set_data(ctx, sf_buf.data(), sf_buf.size()) == 0) {
+                            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_restore\n", il);
+                            std::fflush(stderr);
+                            return -1;
+                        }
+                    }
+                }
+            }
         }
         if (il == 0 && pos > 0 && std::getenv("CORTEX_CHAT_RESET_S_BEFORE_TOKEN") != nullptr) {
             bool reset_ok = reinterpret_cast<llama_context *>(ctx)->debug_zero_recurrent_state(0, 1);
@@ -156,9 +188,16 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
             // graph context.
             llama_batch_free(batch);
             const size_t state_size = llama_state_get_size(ctx);
-            states[il].resize(state_size);
-            if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) {
-                llama_free(ctx); return -1;
+            {
+                std::vector<uint8_t> tmp_state(state_size);
+                if (llama_state_get_data(ctx, tmp_state.data(), state_size) != state_size) {
+                    llama_free(ctx); return -1;
+                }
+                std::string state_file = cortex_get_state_dir() + "/layer_" + std::to_string(il) + ".bin";
+                std::ofstream sf(state_file, std::ios::binary | std::ios::trunc);
+                if (!sf.write(reinterpret_cast<const char *>(tmp_state.data()), (std::streamsize) state_size)) {
+                    llama_free(ctx); return -1;
+                }
             }
             cortex_log_diag("CORTEX_CHAT STATE layer=%d kind=serialized bytes=%zu saved_position=%lld restored_position=%lld seq=0\n",
                             il, state_size, (long long) (pos + n_tokens - 1), (long long) pos);
@@ -224,11 +263,22 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
         }
         llama_batch_free(batch);
         const size_t state_size = llama_state_get_size(ctx);
-        states[il].resize(state_size);
-        if (llama_state_get_data(ctx, states[il].data(), state_size) != state_size) {
-            std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_serialize_intermediate expected=%zu\n", il, state_size);
-            std::fflush(stderr);
-            return -1;
+        {
+            std::vector<uint8_t> tmp_state(state_size);
+            if (llama_state_get_data(ctx, tmp_state.data(), state_size) != state_size) {
+                std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_serialize_intermediate expected=%zu\n", il, state_size);
+                std::fflush(stderr);
+                llama_free(ctx);
+                return -1;
+            }
+            std::string state_file = cortex_get_state_dir() + "/layer_" + std::to_string(il) + ".bin";
+            std::ofstream sf(state_file, std::ios::binary | std::ios::trunc);
+            if (!sf.write(reinterpret_cast<const char *>(tmp_state.data()), (std::streamsize) state_size)) {
+                std::fprintf(stderr, "CORTEX_CHAT checkpoint=PROCESS_FAILURE layer=%d reason=state_write_file expected=%zu\n", il, state_size);
+                std::fflush(stderr);
+                llama_free(ctx);
+                return -1;
+            }
         }
         cortex_log_diag("CORTEX_CHAT STATE layer=%d kind=serialized bytes=%zu saved_position=%lld restored_position=%lld seq=0\n",
                         il, state_size, (long long) (pos + n_tokens - 1), (long long) pos);
@@ -294,8 +344,9 @@ int main(int argc, char ** argv) {
         llama_free_model(model);
         return 0;
     }
+    cortex_clean_state_dir();
     const int n_embd = llama_model_n_embd(model);
-    std::vector<std::vector<uint8_t>> states(llama_model_n_layer(model));
+    std::vector<std::vector<uint8_t>> states; // states are persisted to disk in cortex_get_state_dir()
     std::vector<float> hidden(n_embd);
     const llama_vocab * vocab = llama_model_get_vocab(model);
     llama_sampler * sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
@@ -390,5 +441,6 @@ int main(int argc, char ** argv) {
     }
     llama_sampler_free(sampler);
     llama_model_free(model); llama_backend_free();
+    cortex_clean_state_dir();
     return 0;
 }
