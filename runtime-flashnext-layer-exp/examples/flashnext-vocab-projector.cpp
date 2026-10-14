@@ -64,14 +64,15 @@ bool cortex_stream_vocab_project(const cortex_output_weight_descriptor & d,
         }
         for (int64_t i = 0; i < nr; ++i) {
             const int token = (int) (row + i); const float value = logits[(size_t) i];
+            constexpr size_t max_top = cortex_vocab_projection_result::MAX_TOP;
             size_t at = result.top_count;
-            if (at < 10) result.top_count++;
-            else if (value <= result.top_logits[9]) continue;
+            if (at < max_top) result.top_count++;
+            else if (value <= result.top_logits[max_top - 1]) continue;
             while (at > 0 && value > result.top_logits[at - 1]) {
-                if (at < 10) { result.top_logits[at] = result.top_logits[at - 1]; result.top_tokens[at] = result.top_tokens[at - 1]; }
+                if (at < max_top) { result.top_logits[at] = result.top_logits[at - 1]; result.top_tokens[at] = result.top_tokens[at - 1]; }
                 --at;
             }
-            if (at < 10) { result.top_logits[at] = value; result.top_tokens[at] = token; }
+            if (at < max_top) { result.top_logits[at] = value; result.top_tokens[at] = token; }
         }
     }
     ggml_backend_free(backend);

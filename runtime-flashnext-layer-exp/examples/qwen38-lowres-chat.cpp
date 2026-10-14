@@ -20,22 +20,54 @@
 #include <vector>
 #include <filesystem>
 
+#include <csignal>
+
+static std::string g_cortex_state_dir;
+
+static void cortex_clean_state_dir() {
+    if (!g_cortex_state_dir.empty()) {
+        std::error_code ec;
+        std::filesystem::remove_all(g_cortex_state_dir, ec);
+    }
+}
+
+static void cortex_signal_handler(int sig) {
+    cortex_clean_state_dir();
+    _exit(128 + sig);
+}
+
 static std::string cortex_get_state_dir() {
+    if (!g_cortex_state_dir.empty()) return g_cortex_state_dir;
+
     const char * env_dir = std::getenv("CORTEX_STATE_DIR");
-    if (env_dir && *env_dir) return std::string(env_dir);
+    if (env_dir && *env_dir) {
+        g_cortex_state_dir = env_dir;
+        std::error_code ec;
+        std::filesystem::create_directories(g_cortex_state_dir, ec);
+        return g_cortex_state_dir;
+    }
+
+    // Secure isolated per-process state directory with 0700 permissions
+    // Placed in ~/.cortex_states on disk (/home partition) so tmpfs is not exhausted by recurrent state checkpoints
     const char * home = std::getenv("HOME");
     std::string base = home ? std::string(home) + "/.cortex_states" : "/home/user/.cortex_states";
     std::error_code ec;
     std::filesystem::create_directories(base, ec);
-    return base;
-}
-
-static void cortex_clean_state_dir() {
-    std::string dir = cortex_get_state_dir();
-    std::error_code ec;
-    for (const auto & entry : std::filesystem::directory_iterator(dir, ec)) {
-        std::filesystem::remove(entry.path(), ec);
+    std::string path_template = base + "/session_XXXXXX";
+    std::vector<char> tmpl_buf(path_template.begin(), path_template.end());
+    tmpl_buf.push_back('\0');
+    char * res = mkdtemp(tmpl_buf.data());
+    if (res) {
+        g_cortex_state_dir = res;
+    } else {
+        g_cortex_state_dir = base;
     }
+
+    std::atexit(cortex_clean_state_dir);
+    std::signal(SIGINT, cortex_signal_handler);
+    std::signal(SIGTERM, cortex_signal_handler);
+
+    return g_cortex_state_dir;
 }
 
 static bool cortex_chat_is_debug() {
@@ -258,7 +290,26 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
                 }
             }
             llama_token token = (llama_token) projection.token;
-            if (sampler) llama_sampler_accept(sampler, token);
+            if (sampler && projection.top_count > 0) {
+                std::vector<llama_token_data> cur_candidates;
+                cur_candidates.reserve(projection.top_count);
+                for (size_t r = 0; r < projection.top_count; ++r) {
+                    cur_candidates.push_back({ (llama_token) projection.top_tokens[r], projection.top_logits[r], 0.0f });
+                }
+                llama_token_data_array cur_p = {
+                    /* .data     = */ cur_candidates.data(),
+                    /* .size     = */ cur_candidates.size(),
+                    /* .selected = */ -1,
+                    /* .sorted   = */ true,
+                };
+                llama_sampler_apply(sampler, &cur_p);
+                if (cur_p.selected >= 0 && cur_p.selected < (int64_t) cur_p.size) {
+                    token = cur_p.data[cur_p.selected].id;
+                }
+                llama_sampler_accept(sampler, token);
+            } else if (sampler) {
+                llama_sampler_accept(sampler, token);
+            }
             return token;
         }
         llama_batch_free(batch);
@@ -350,7 +401,7 @@ int main(int argc, char ** argv) {
     std::vector<float> hidden(n_embd);
     const llama_vocab * vocab = llama_model_get_vocab(model);
     llama_sampler * sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
-    llama_sampler_chain_add(sampler, llama_sampler_init_penalties(64, 1.10f, 0.0f, 0.0f, 0.0f));
+    llama_sampler_chain_add(sampler, llama_sampler_init_penalties(llama_vocab_n_tokens(vocab), 64, 1.15f, 0.0f, 0.0f));
     llama_sampler_chain_add(sampler, llama_sampler_init_min_p(0.05f, 1));
     llama_sampler_chain_add(sampler, llama_sampler_init_temp(0.8f));
     llama_sampler_chain_add(sampler, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
