@@ -2659,6 +2659,7 @@ bool llama_model_base::cortex_rebind_layer(int il, bool internal_activation) {
                     l.hc_ffn_norm, l.hc_ffn_down, l.hc_ffn_up, l.hc_ffn_inject,
                     l.ple_key, l.ple_value, l.ple_norm_key, l.ple_norm_query,
                     l.ple_norm_conv, l.ple_conv1d,
+                    l.ffn_gate, l.ffn_down, l.ffn_up,
                     l.ffn_gate_inp, l.ffn_gate_exps, l.ffn_up_exps, l.ffn_down_exps,
                     l.ffn_gate_up_exps, l.ffn_gate_inp_shexp, l.ffn_gate_shexp,
                     l.ffn_up_shexp, l.ffn_down_shexp,
@@ -2910,7 +2911,7 @@ bool llama_model_base::cortex_activate_layer(int il) {
         total += ggml_nbytes(t);
     }
     const size_t capacity = pimpl->cortex_pread_arena_capacity;
-    if (total > CORTEX_FLASHNEXT_FIXED_ARENA_CAPACITY) return fail(nullptr, "plan", total, capacity);
+    if (total > capacity) return fail(nullptr, "plan", total, capacity);
     cortex_model_log_diag("CORTEX_PLAN result=PASS layer=%d tensor_count=%zu aligned_bytes=%zu capacity=%zu\n", il, next.size(), total, capacity);
     cortex_model_log_diag("CORTEX_RESIDENCY layer=%d stage=materialize required_bytes=%zu resident_count=%zu\n", il, total, next.size());
     // The caller has already synchronized and destroyed the prior context.

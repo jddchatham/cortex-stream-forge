@@ -255,7 +255,7 @@ static llama_token process_positions(llama_model * model, std::vector<std::vecto
             cortex_log_diag("CORTEX_CHAT TOKEN position=%lld id=%d logit=%g bytes=%zu scratch=%zu\n",
                             (long long) (pos + n_tokens - 1), projection.token, projection.logit,
                             projection.bytes_read, projection.scratch_bytes);
-            if (cortex_chat_is_debug() && pos + n_tokens - 1 == 8) for (size_t r = 0; r < projection.top_count; ++r) {
+            if (cortex_chat_is_debug()) for (size_t r = 0; r < std::min<size_t>(5, projection.top_count); ++r) {
                 const llama_vocab * top_vocab = llama_model_get_vocab(model);
                 char piece[128]; int pn = llama_token_to_piece(top_vocab, projection.top_tokens[r], piece, sizeof(piece), 0, false);
                 std::fprintf(stderr, "CORTEX_CHAT TOP rank=%zu token=%d logit=%g eog=%d control=%d piece=%.*s\n",
@@ -401,10 +401,7 @@ int main(int argc, char ** argv) {
     std::vector<float> hidden(n_embd);
     const llama_vocab * vocab = llama_model_get_vocab(model);
     llama_sampler * sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
-    llama_sampler_chain_add(sampler, llama_sampler_init_penalties(llama_vocab_n_tokens(vocab), 64, 1.15f, 0.0f, 0.0f));
-    llama_sampler_chain_add(sampler, llama_sampler_init_min_p(0.05f, 1));
-    llama_sampler_chain_add(sampler, llama_sampler_init_temp(0.8f));
-    llama_sampler_chain_add(sampler, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+    llama_sampler_chain_add(sampler, llama_sampler_init_greedy());
     std::vector<llama_chat_message> messages;
     std::vector<std::string> message_storage;
     message_storage.reserve(128);
@@ -426,7 +423,7 @@ int main(int argc, char ** argv) {
         int n = -llama_tokenize(vocab, formatted_prompt.c_str(), (int32_t) formatted_prompt.size(), nullptr, 0, pos == 0, true);
         std::vector<llama_token> prompt_tokens(n);
         if (llama_tokenize(vocab, formatted_prompt.c_str(), (int32_t) formatted_prompt.size(), prompt_tokens.data(), n, pos == 0, true) < 0) return 4;
-        if (std::getenv("CORTEX_LOGIT_DEBUG") != nullptr) {
+        if (cortex_chat_is_debug() || std::getenv("CORTEX_LOGIT_DEBUG") != nullptr) {
             std::fprintf(stderr, "CORTEX_PROMPT_TOKENS n=%zu:", prompt_tokens.size());
             for (llama_token tok : prompt_tokens) std::fprintf(stderr, " %d", tok);
             std::fprintf(stderr, "\n");
@@ -468,20 +465,8 @@ int main(int argc, char ** argv) {
                             (long long) pos, next, llama_vocab_is_eog(vocab, next) || next >= 0 ? "YES" : "NO",
                             std::max(0, len), len > 0 ? piece : "");
             if (len > 0) { std::cout.write(piece, len) << std::flush; response.append(piece, len); }
-            // For the Iteration-75 continuity test, a requested multi-token
-            // run deliberately feeds the first generated ID back once even
-            // when it is marked EOG.  Single-token/default generation keeps
-            // the normal EOG stop behavior.
-            if (llama_vocab_is_eog(vocab, next) && max_generate <= 1) break;
+            if (llama_vocab_is_eog(vocab, next)) break;
             llama_token feedback = next;
-            const char * alternate = std::getenv("CORTEX_CHAT_ALTERNATE_TOKEN");
-            if (alternate && i == 0) feedback = (llama_token) std::atoi(alternate);
-            if (alternate && i == 0) {
-                char alt_piece[256]; int alt_len = llama_token_to_piece(vocab, feedback, alt_piece, sizeof(alt_piece), 0, false);
-                cortex_log_diag("CORTEX_CHAT ALTERNATE position=%lld token=%d valid=%s piece=%.*s\n",
-                                (long long) pos, feedback, feedback >= 0 && feedback < llama_vocab_n_tokens(vocab) ? "YES" : "NO",
-                                std::max(0, alt_len), alt_len > 0 ? alt_piece : "");
-            }
             next = process_positions(model, states, {feedback}, pos++, hidden, sampler);
             if (next < 0) return 6;
         }
