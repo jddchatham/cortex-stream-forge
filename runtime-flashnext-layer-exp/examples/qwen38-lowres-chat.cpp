@@ -397,8 +397,9 @@ int main(int argc, char ** argv) {
     }
     cortex_clean_state_dir();
     const int n_embd = llama_model_n_embd(model);
+    const int hc = 4;
     std::vector<std::vector<uint8_t>> states; // states are persisted to disk in cortex_get_state_dir()
-    std::vector<float> hidden(n_embd);
+    std::vector<float> hidden(n_embd * hc);
     const llama_vocab * vocab = llama_model_get_vocab(model);
     llama_sampler * sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
     llama_sampler_chain_add(sampler, llama_sampler_init_greedy());
@@ -456,7 +457,7 @@ int main(int argc, char ** argv) {
             pos += (llama_pos) prompt_tokens.size();
         }
         if (prompt_tokens.size() > 1) {
-            hidden.erase(hidden.begin(), hidden.end() - n_embd);
+            hidden.erase(hidden.begin(), hidden.end() - n_embd * hc);
         }
         std::string response;
         for (int i = 0; i < max_generate; ++i) {
