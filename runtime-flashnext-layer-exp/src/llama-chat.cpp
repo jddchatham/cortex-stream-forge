@@ -5,6 +5,8 @@
 #include <map>
 #include <sstream>
 #include <algorithm>
+#include <cstring>
+#include <cstdlib>
 
 #if __cplusplus >= 202000L
     #define LU8(x) (const char*)(u8##x)
@@ -80,6 +82,8 @@ static const std::map<std::string, llm_chat_template> LLM_CHAT_TEMPLATES = {
     { "grok-2",            LLM_CHAT_TEMPLATE_GROK_2            },
     { "pangu-embedded",    LLM_CHAT_TEMPLATE_PANGU_EMBED       },
     { "solar-open",        LLM_CHAT_TEMPLATE_SOLAR_OPEN        },
+    { "qwen-think",        LLM_CHAT_TEMPLATE_QWEN_THINK        },
+    { "qwen-nothink",      LLM_CHAT_TEMPLATE_QWEN_NOTHINK      },
 };
 
 llm_chat_template llm_chat_template_from_str(const std::string & name) {
@@ -97,6 +101,11 @@ llm_chat_template llm_chat_detect_template(const std::string & tmpl) {
         return tmpl.find(haystack) != std::string::npos;
     };
     if (tmpl_contains("<|im_start|>")) {
+        if (tmpl_contains("enable_thinking") || tmpl_contains("reasoning_effort") || tmpl_contains("<think>")) {
+            const char * env_think = std::getenv("LLAMA_ENABLE_THINKING");
+            bool think = (env_think == nullptr || std::strcmp(env_think, "0") != 0);
+            return think ? LLM_CHAT_TEMPLATE_QWEN_THINK : LLM_CHAT_TEMPLATE_QWEN_NOTHINK;
+        }
         return tmpl_contains("<|im_sep|>")
             ? LLM_CHAT_TEMPLATE_PHI_4
             : tmpl_contains("<end_of_utterance>")
@@ -254,6 +263,29 @@ int32_t llm_chat_apply_template(
         }
         if (add_ass) {
             ss << "<|im_start|>assistant\n";
+        }
+    } else if (tmpl == LLM_CHAT_TEMPLATE_QWEN_THINK || tmpl == LLM_CHAT_TEMPLATE_QWEN_NOTHINK) {
+        // Official Qwen 3.8 / FlashNext chat formatting
+        bool has_system = false;
+        for (auto message : chat) {
+            if (std::strcmp(message->role, "system") == 0) {
+                has_system = true;
+                break;
+            }
+        }
+        if (tmpl == LLM_CHAT_TEMPLATE_QWEN_THINK && !has_system) {
+            ss << "<|im_start|>system\n"
+               << "Reasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and clarity in the final answer.<|im_end|>\n";
+        }
+        for (auto message : chat) {
+            ss << "<|im_start|>" << message->role << "\n" << message->content << "<|im_end|>\n";
+        }
+        if (add_ass) {
+            if (tmpl == LLM_CHAT_TEMPLATE_QWEN_THINK) {
+                ss << "<|im_start|>assistant\n<think>\n";
+            } else {
+                ss << "<|im_start|>assistant\n<think>\n\n</think>\n\n";
+            }
         }
     } else if (tmpl == LLM_CHAT_TEMPLATE_MISTRAL_V7 || tmpl == LLM_CHAT_TEMPLATE_MISTRAL_V7_TEKKEN) {
         // Official mistral 'v7' template
