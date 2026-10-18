@@ -13,7 +13,7 @@ struct TestCase {
     int max_tokens;
 };
 
-bool verify_test(llama_model * model, const TestCase & tc) {
+bool verify_test(llama_model * model, const TestCase & tc, const std::string & ref_prefix) {
     const llama_vocab * vocab = llama_model_get_vocab(model);
     int n_tok = -llama_tokenize(vocab, tc.prompt.c_str(), tc.prompt.size(), nullptr, 0, true, true);
     std::vector<llama_token> tokens(n_tok);
@@ -85,7 +85,7 @@ bool verify_test(llama_model * model, const TestCase & tc) {
     }
 
     // Verify prefill logits
-    std::string ref_log_path = "/tmp/" + tc.name + "_prefill_logits.bin";
+    std::string ref_log_path = ref_prefix + "_" + tc.name + "_prefill_logits.bin";
     std::ifstream f_log(ref_log_path, std::ios::binary);
     std::vector<float> ref_log(n_vocab);
     f_log.read(reinterpret_cast<char*>(ref_log.data()), n_vocab * sizeof(float));
@@ -100,7 +100,7 @@ bool verify_test(llama_model * model, const TestCase & tc) {
     }
 
     // Load golden tokens
-    std::string ref_tok_path = "/tmp/" + tc.name + "_tokens.bin";
+    std::string ref_tok_path = ref_prefix + "_" + tc.name + "_tokens.bin";
     std::ifstream f_tok(ref_tok_path, std::ios::binary);
     int ref_count = 0;
     f_tok.read(reinterpret_cast<char*>(&ref_count), sizeof(int));
@@ -190,7 +190,10 @@ bool verify_test(llama_model * model, const TestCase & tc) {
 }
 
 int main(int argc, char ** argv) {
-    if (argc < 2) return 1;
+    if (argc < 3) {
+        std::fprintf(stderr, "Usage: %s <model.gguf> <ref_prefix>\n", argv[0]);
+        return 1;
+    }
     setenv("CORTEX_PREAD_ARENA", "1", 1);
     setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
 
@@ -208,7 +211,7 @@ int main(int argc, char ** argv) {
 
     bool all_pass = true;
     for (const auto & tc : cases) {
-        if (!verify_test(model, tc)) all_pass = false;
+        if (!verify_test(model, tc, argv[2])) all_pass = false;
     }
 
     std::printf("\nOVERALL TEST SUITE RESULT: %s\n", all_pass ? "ALL PASSED" : "FAILED");

@@ -2054,6 +2054,28 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             const auto * weight = ml.get_weight(ggml_get_name(t));
             pimpl->cortex_offsets[ggml_get_name(t)] = { weight->idx, weight->offs };
         }
+        // Calculate the maximum layer byte requirement across all layers in the model
+        size_t max_layer_bytes = layer_total;
+        for (int il = 0; il < (int) hparams.n_layer_all; ++il) {
+            size_t cur_layer_bytes = 0;
+            const auto & l = layers.at(il);
+            std::vector<ggml_tensor *> l_tensors;
+            if (arch == LLM_ARCH_LLAMA) {
+                l_tensors = { l.attn_norm, l.wq, l.wk, l.wv, l.wo,
+                              l.ffn_norm, l.ffn_gate, l.ffn_down, l.ffn_up };
+            } else {
+                l_tensors = { l.attn_norm, l.attn_post_norm, l.wqkv, l.wqkv_gate,
+                              l.wq, l.wk, l.wv, l.wo, l.attn_q_norm, l.attn_k_norm,
+                              l.ssm_conv1d, l.ssm_dt, l.ssm_a, l.ssm_beta, l.ssm_alpha,
+                              l.ssm_norm, l.ssm_out, l.ffn_gate, l.ffn_down, l.ffn_up,
+                              l.nextn.eh_proj, l.nextn.enorm, l.nextn.hnorm,
+                              l.nextn.embed_tokens, l.nextn.shared_head_head,
+                              l.nextn.shared_head_norm };
+            }
+            for (ggml_tensor * lt : l_tensors) if (lt) cur_layer_bytes += ggml_nbytes(lt);
+            if (cur_layer_bytes > max_layer_bytes) max_layer_bytes = cur_layer_bytes;
+        }
+
         const bool flashnext_low_res = flashnext_layer_range ||
                 std::getenv("CORTEX_FLASHNEXT_SEGMENT_B") != nullptr ||
                 std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr ||
@@ -2061,29 +2083,29 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
         if (flashnext_low_res && global_total > 1ull*1024ull*1024ull*1024ull) {
             throw std::runtime_error(format("CORTEX low-residency global set unexpectedly large: %zu bytes", global_total));
         }
-        LLAMA_LOG_INFO("CORTEX_GLOBAL_BYTES=%zu CORTEX_LAYER_BYTES=%zu CORTEX_SELECTED_TENSORS=%zu\n",
-                global_total, layer_total, selected.size());
+        LLAMA_LOG_INFO("CORTEX_GLOBAL_BYTES=%zu CORTEX_LAYER_BYTES=%zu CORTEX_MAX_LAYER_BYTES=%zu CORTEX_SELECTED_TENSORS=%zu\n",
+                global_total, layer_total, max_layer_bytes, selected.size());
         const size_t cumulative_budget = 768ull * 1024ull * 1024ull;
-        if (flashnext_layer_range && global_total + layer_total > cumulative_budget) {
+        if (flashnext_layer_range && global_total + max_layer_bytes > cumulative_budget) {
             throw std::runtime_error(format(
                 "CORTEX range residency budget exceeded: %zu > %zu bytes",
-                global_total + layer_total, cumulative_budget));
+                global_total + max_layer_bytes, cumulative_budget));
         }
         pimpl->cortex_global_buffer.resize(global_total);
         if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
             if (pimpl->cortex_pread_arena == nullptr) {
                 const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
-                if (posix_memalign(&pimpl->cortex_pread_arena, alignment, layer_total) != 0) {
+                if (posix_memalign(&pimpl->cortex_pread_arena, alignment, max_layer_bytes) != 0) {
                     throw std::runtime_error("CORTEX pread arena allocation failed");
                 }
-                pimpl->cortex_pread_arena_capacity = layer_total;
-            } else if (pimpl->cortex_pread_arena_capacity < layer_total) {
+                pimpl->cortex_pread_arena_capacity = max_layer_bytes;
+            } else if (pimpl->cortex_pread_arena_capacity < max_layer_bytes) {
                 throw std::runtime_error(format("CORTEX pread arena too small: %zu < %zu",
-                    pimpl->cortex_pread_arena_capacity, layer_total));
+                    pimpl->cortex_pread_arena_capacity, max_layer_bytes));
             }
             pimpl->cortex_layer_buffer.clear();
         } else {
-            pimpl->cortex_layer_buffer.resize(layer_total);
+            pimpl->cortex_layer_buffer.resize(max_layer_bytes);
         }
         size_t global_offset = 0;
         size_t layer_offset = 0;
