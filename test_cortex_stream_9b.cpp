@@ -152,7 +152,7 @@ int main(int argc, char ** argv) {
     llama_tokenize(vocab, prompt.c_str(), prompt.size(), tokens.data(), n_tok, true, true);
 
     llama_context_params cp = llama_context_default_params();
-    cp.n_ctx = 512;
+    cp.n_ctx = 2048;
     cp.n_batch = std::max(n_tok, 64);
     cp.n_threads = 2;
     cp.n_threads_batch = 2;
@@ -207,7 +207,10 @@ int main(int argc, char ** argv) {
     float * final_h = current_hidden.data() + (size_t)(n_tok - 1) * n_embd;
     apply_rmsnorm(final_h, norm_w, n_embd, norm_h.data());
 
-    size_t arena_bytes = 4 * 1024 * 1024;
+    const char * tile_env = std::getenv("CORTEX_LMHEAD_TILE_MB");
+    int tile_mb = tile_env ? std::atoi(tile_env) : 2;
+    if (tile_mb < 1) tile_mb = 2;
+    size_t arena_bytes = (size_t)tile_mb * 1024 * 1024;
     std::vector<uint8_t> tile_arena(arena_bytes);
 
     auto t_head0 = bench_clock::now();
@@ -235,8 +238,9 @@ int main(int argc, char ** argv) {
         if (last_logits[v] > last_logits[cur_token]) cur_token = v;
     }
 
-    char buf[128];
-    int l = llama_token_to_piece(vocab, cur_token, buf, sizeof(buf), 0, true);
+    const int prefill_greedy_token = cur_token;
+    char prefill_buf[128];
+    int prefill_l = llama_token_to_piece(vocab, prefill_greedy_token, prefill_buf, sizeof(prefill_buf), 0, true);
 
     std::vector<llama_token> gen_tokens = { (llama_token)cur_token };
     int cur_pos = n_tok;
@@ -322,7 +326,7 @@ int main(int argc, char ** argv) {
     std::printf("  LM Head Tiled Time:    %.2f ms (all %d vocab rows)\n", head_ms, n_vocab);
     std::printf("  Decode Throughput:     %.2f tok/s (%d decode steps)\n", tok_s, decode_steps);
     std::printf("  Max Logit Difference: %.6f\n", max_diff);
-    std::printf("  Prefill Greedy Token:  %d ('%.*s')\n", cur_token, l, buf);
+    std::printf("  Prefill Greedy Token:  %d ('%.*s')\n", prefill_greedy_token, prefill_l, prefill_buf);
     std::printf("  Peak VmRSS:            %.2f MiB\n", mstats.vm_rss_kb / 1024.0);
     std::printf("  Peak RssAnon:          %.2f MiB\n", mstats.rss_anon_kb / 1024.0);
     std::printf("  Peak RssFile:          %.2f MiB\n", mstats.rss_file_kb / 1024.0);

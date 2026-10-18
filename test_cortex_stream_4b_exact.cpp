@@ -124,6 +124,9 @@ int main(int argc, char ** argv) {
 
     int fd = open(model_path, O_RDONLY);
     uint64_t tok_embd_off = 2200812928;
+    if (std::strstr(model_path, "sha256-460a1ec4580a90414bd43796cd71e845b063a0f565449a9cdf6f0397f843c37e")) {
+        tok_embd_off = 2126162624;
+    }
 
     std::string prompt = "<|im_start|>user\nWhat is 2 + 2? Answer with only the number.<|im_end|>\n<|im_start|>assistant\n";
     int n_tok = -llama_tokenize(vocab, prompt.c_str(), prompt.size(), nullptr, 0, true, true);
