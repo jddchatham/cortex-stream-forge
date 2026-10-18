@@ -8,12 +8,13 @@
 
 int main(int argc, char ** argv) {
     if (argc < 4) {
-        std::printf("Usage: %s <model_path> <out_prefix> <max_tokens>\n", argv[0]);
+        std::printf("Usage: %s <model_path> <out_prefix> <max_tokens> [prompt_type]\n", argv[0]);
         return 1;
     }
     const char * model_path = argv[1];
     const std::string out_prefix = argv[2];
     int max_tokens = std::atoi(argv[3]);
+    std::string ptype = (argc > 4) ? argv[4] : "arithmetic";
 
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
@@ -22,7 +23,15 @@ int main(int argc, char ** argv) {
     if (!model) return 1;
 
     const llama_vocab * vocab = llama_model_get_vocab(model);
-    std::string prompt = "<|im_start|>user\nWhat is 2 + 2? Answer with only the number.<|im_end|>\n<|im_start|>assistant\n";
+    std::string prompt;
+    if (ptype == "reasoning") {
+        prompt = "<|im_start|>user\nIf all bloops are razzies and all razzies are fizzies, are all bloops fizzies? Explain briefly.<|im_end|>\n<|im_start|>assistant\n";
+    } else if (ptype == "code") {
+        prompt = "<|im_start|>user\nWrite a C++ function to reverse a string in-place.<|im_end|>\n<|im_start|>assistant\n";
+    } else { // arithmetic
+        prompt = "<|im_start|>user\nWhat is 2 + 2? Answer with only the number.<|im_end|>\n<|im_start|>assistant\n";
+    }
+
     int n_tok = -llama_tokenize(vocab, prompt.c_str(), prompt.size(), nullptr, 0, true, true);
     std::vector<llama_token> tokens(n_tok);
     llama_tokenize(vocab, prompt.c_str(), prompt.size(), tokens.data(), n_tok, true, true);

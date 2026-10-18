@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <algorithm>
+#include <omp.h>
 
 using bench_clock = std::chrono::high_resolution_clock;
 
@@ -60,12 +61,21 @@ static bool read_token_embeddings_q4_k(int fd, uint64_t base_offset, const llama
 }
 
 // Output projection for Qwen 3.5 9B: type is Q6_K (type 14) at separate output.weight!
+// Direct SIMD implementation: quantizes norm_h once into vec_dot_type (Q8_K) and computes dot products directly.
 static bool compute_tiled_output_projection_q6_k(int fd, uint64_t base_offset, int n_embd, int n_vocab,
                                                  const float * norm_h, float * logits,
-                                                 uint8_t * tile_arena, size_t arena_bytes, ggml_backend_t backend) {
+                                                 uint8_t * tile_arena, size_t arena_bytes) {
     const size_t row_bytes = 3360; // For 4096 dim Q6_K
     const int tile_rows = arena_bytes / row_bytes;
     if (tile_rows < 1) return false;
+
+    const auto * cpu_traits_q6 = ggml_get_type_traits_cpu(GGML_TYPE_Q6_K);
+    const auto * cpu_traits_vec = ggml_get_type_traits_cpu((ggml_type)cpu_traits_q6->vec_dot_type);
+    const auto * traits_vec = ggml_get_type_traits((ggml_type)cpu_traits_q6->vec_dot_type);
+    size_t q8k_bytes = (n_embd / traits_vec->blck_size) * traits_vec->type_size;
+    std::vector<uint8_t> norm_h_q8k(q8k_bytes);
+
+    cpu_traits_vec->from_float(norm_h, norm_h_q8k.data(), n_embd);
 
     for (int start_row = 0; start_row < n_vocab; start_row += tile_rows) {
         int cur_rows = std::min(tile_rows, n_vocab - start_row);
@@ -79,20 +89,11 @@ static bool compute_tiled_output_projection_q6_k(int fd, uint64_t base_offset, i
             done += (size_t)n;
         }
 
-        ggml_init_params ip { 16 * 1024 * 1024, nullptr, true };
-        ggml_context * gctx = ggml_init(ip);
-        ggml_tensor * w = ggml_new_tensor_2d(gctx, GGML_TYPE_Q6_K, n_embd, cur_rows);
-        ggml_tensor * x = ggml_new_tensor_2d(gctx, GGML_TYPE_F32, n_embd, 1);
-        ggml_tensor * y = ggml_mul_mat(gctx, w, x);
-        ggml_cgraph * gf = ggml_new_graph(gctx);
-        ggml_build_forward_expand(gf, y);
-        ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(gctx, backend);
-        w->data = tile_arena;
-        ggml_backend_tensor_set(x, norm_h, 0, (size_t)n_embd * sizeof(float));
-        ggml_backend_graph_compute(backend, gf);
-        ggml_backend_tensor_get(y, logits + start_row, 0, (size_t)cur_rows * sizeof(float));
-        ggml_backend_buffer_free(buf);
-        ggml_free(gctx);
+        #pragma omp parallel for num_threads(2) schedule(static)
+        for (int r = 0; r < cur_rows; ++r) {
+            const void * row_w = tile_arena + (size_t)r * row_bytes;
+            cpu_traits_q6->vec_dot(n_embd, &logits[start_row + r], 0, row_w, 0, norm_h_q8k.data(), 0, 1);
+        }
     }
     return true;
 }
@@ -108,6 +109,8 @@ static void apply_rmsnorm(const float * x, const float * w, int n_embd, float * 
 int main(int argc, char ** argv) {
     if (argc < 2) return 1;
     const char * model_path = argv[1];
+    const int n_gen = (argc > 2) ? std::atoi(argv[2]) : 6;
+    std::string ptype = (argc > 3) ? argv[3] : "arithmetic";
 
     setenv("CORTEX_PREAD_ARENA", "1", 1);
     setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
@@ -131,14 +134,26 @@ int main(int argc, char ** argv) {
     uint64_t tok_embd_off = 5109495968;
     uint64_t output_w_off = 4275124384;
 
-    std::string prompt = "<|im_start|>user\nWhat is 2 + 2? Answer with only the number.<|im_end|>\n<|im_start|>assistant\n";
+    std::string prompt;
+    std::string ref_prefix;
+    if (ptype == "reasoning") {
+        prompt = "<|im_start|>user\nIf all bloops are razzies and all razzies are fizzies, are all bloops fizzies? Explain briefly.<|im_end|>\n<|im_start|>assistant\n";
+        ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_stock_reasoning_64";
+    } else if (ptype == "code") {
+        prompt = "<|im_start|>user\nWrite a C++ function to reverse a string in-place.<|im_end|>\n<|im_start|>assistant\n";
+        ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_stock_code_64";
+    } else { // arithmetic
+        prompt = "<|im_start|>user\nWhat is 2 + 2? Answer with only the number.<|im_end|>\n<|im_start|>assistant\n";
+        ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_stock_arith_64";
+    }
+
     int n_tok = -llama_tokenize(vocab, prompt.c_str(), prompt.size(), nullptr, 0, true, true);
     std::vector<llama_token> tokens(n_tok);
     llama_tokenize(vocab, prompt.c_str(), prompt.size(), tokens.data(), n_tok, true, true);
 
     llama_context_params cp = llama_context_default_params();
-    cp.n_ctx = 256;
-    cp.n_batch = n_tok;
+    cp.n_ctx = 512;
+    cp.n_batch = std::max(n_tok, 64);
     cp.n_threads = 2;
     cp.n_threads_batch = 2;
 
@@ -195,31 +210,26 @@ int main(int argc, char ** argv) {
     size_t arena_bytes = 4 * 1024 * 1024;
     std::vector<uint8_t> tile_arena(arena_bytes);
 
-    ggml_backend_load_all();
-    ggml_backend_t backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
-
     auto t_head0 = bench_clock::now();
-    compute_tiled_output_projection_q6_k(fd, output_w_off, n_embd, n_vocab, norm_h.data(), last_logits.data(), tile_arena.data(), arena_bytes, backend);
+    compute_tiled_output_projection_q6_k(fd, output_w_off, n_embd, n_vocab, norm_h.data(), last_logits.data(), tile_arena.data(), arena_bytes);
     auto t_head1 = bench_clock::now();
     double head_ms = std::chrono::duration<double, std::milli>(t_head1 - t_head0).count();
 
-    // Load golden prefill reference
-    std::string ref_path = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_test_prefill_logits.bin";
+    // Load golden prefill reference if exists
+    std::string ref_path = ref_prefix + "_prefill_logits.bin";
     std::ifstream f_ref(ref_path, std::ios::binary);
     std::vector<float> ref_logits(n_vocab);
-    f_ref.read(reinterpret_cast<char*>(ref_logits.data()), n_vocab * sizeof(float));
-    f_ref.close();
-
-    float max_diff = 0.0f;
-    for (int v = 0; v < n_vocab; ++v) {
-        float d = std::fabs(last_logits[v] - ref_logits[v]);
-        if (d > max_diff) max_diff = d;
+    float max_diff = -1.0f;
+    if (f_ref.is_open()) {
+        f_ref.read(reinterpret_cast<char*>(ref_logits.data()), n_vocab * sizeof(float));
+        f_ref.close();
+        max_diff = 0.0f;
+        for (int v = 0; v < n_vocab; ++v) {
+            float d = std::fabs(last_logits[v] - ref_logits[v]);
+            if (d > max_diff) max_diff = d;
+        }
     }
 
-        {
-        std::ofstream f_c_log("/tmp/cortex_9b_prefill_logits.bin", std::ios::binary);
-        f_c_log.write(reinterpret_cast<const char*>(last_logits.data()), n_vocab * sizeof(float));
-    }
     int cur_token = 0;
     for (int v = 1; v < n_vocab; ++v) {
         if (last_logits[v] > last_logits[cur_token]) cur_token = v;
@@ -230,7 +240,6 @@ int main(int argc, char ** argv) {
 
     std::vector<llama_token> gen_tokens = { (llama_token)cur_token };
     int cur_pos = n_tok;
-    const int n_gen = (argc > 2) ? std::atoi(argv[2]) : 6;
 
     std::vector<float> step_embd(n_embd);
     std::vector<float> step_hidden(n_embd);
@@ -270,7 +279,7 @@ int main(int argc, char ** argv) {
         }
 
         apply_rmsnorm(step_hidden.data(), norm_w, n_embd, norm_h.data());
-        compute_tiled_output_projection_q6_k(fd, output_w_off, n_embd, n_vocab, norm_h.data(), last_logits.data(), tile_arena.data(), arena_bytes, backend);
+        compute_tiled_output_projection_q6_k(fd, output_w_off, n_embd, n_vocab, norm_h.data(), last_logits.data(), tile_arena.data(), arena_bytes);
 
         cur_token = 0;
         for (int v = 1; v < n_vocab; ++v) {
@@ -286,26 +295,29 @@ int main(int argc, char ** argv) {
     double tok_s = (decode_steps > 0) ? (decode_steps / decode_sec) : 0.0;
 
     // Load golden tokens
-    std::string ref_tok_path = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_test_tokens.bin";
+    std::string ref_tok_path = ref_prefix + "_tokens.bin";
     std::ifstream f_tok(ref_tok_path, std::ios::binary);
     int ref_count = 0;
-    f_tok.read(reinterpret_cast<char*>(&ref_count), sizeof(int));
-    std::vector<llama_token> ref_tokens(ref_count);
-    f_tok.read(reinterpret_cast<char*>(ref_tokens.data()), ref_count * sizeof(llama_token));
-    f_tok.close();
-
-    bool matched = (gen_tokens.size() == ref_tokens.size());
-    int match_count = 0;
-    for (size_t i = 0; i < std::min(gen_tokens.size(), ref_tokens.size()); ++i) {
-        if (gen_tokens[i] == ref_tokens[i]) match_count++;
-        else matched = false;
+    std::vector<llama_token> ref_tokens;
+    if (f_tok.is_open()) {
+        f_tok.read(reinterpret_cast<char*>(&ref_count), sizeof(int));
+        ref_tokens.resize(ref_count);
+        f_tok.read(reinterpret_cast<char*>(ref_tokens.data()), ref_count * sizeof(llama_token));
+        f_tok.close();
     }
+
+    int match_count = 0;
+    int check_len = std::min(gen_tokens.size(), ref_tokens.size());
+    for (int i = 0; i < check_len; ++i) {
+        if (gen_tokens[i] == ref_tokens[i]) match_count++;
+    }
+    bool matched = (check_len > 0 && match_count == check_len);
 
     MemoryStats mstats = get_memory_stats();
 
     std::printf("\n=================================================================\n");
-    std::printf("CORTEX STREAMED QWEN 3.5 9B RESULTS & TELEMETRY:\n");
-    std::printf("  Tokens Matched:        %d / %d (%s)\n", match_count, ref_count, matched ? "PASS" : "FAIL");
+    std::printf("CORTEX STREAMED QWEN 3.5 9B RESULTS & TELEMETRY [%s, n_gen=%d]:\n", ptype.c_str(), n_gen);
+    std::printf("  Tokens Matched:        %d / %d (%s)\n", match_count, check_len, matched ? "PASS" : "FAIL");
     std::printf("  Prefill Latency:       %.2f ms (%d tokens)\n", prefill_ms, n_tok);
     std::printf("  LM Head Tiled Time:    %.2f ms (all %d vocab rows)\n", head_ms, n_vocab);
     std::printf("  Decode Throughput:     %.2f tok/s (%d decode steps)\n", tok_s, decode_steps);
