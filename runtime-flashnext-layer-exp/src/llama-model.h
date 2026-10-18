@@ -858,6 +858,8 @@ struct llama_model_base : public llama_model {
     // separately and only the selected transformer layer uses the reusable
     // external buffer.
     bool cortex_rebind_layer(int il);
+    bool cortex_prefetch_layer(int il);
+    bool cortex_wait_prefetch(int il);
     bool flashnext_layer_range_ple_rows(const int32_t * ids, size_t count, float * dst) const;
 
     // model must define these

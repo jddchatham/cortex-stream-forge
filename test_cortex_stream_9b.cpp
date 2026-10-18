@@ -138,7 +138,10 @@ int main(int argc, char ** argv) {
     std::string ref_prefix;
     if (ptype == "reasoning") {
         prompt = "<|im_start|>user\nIf all bloops are razzies and all razzies are fizzies, are all bloops fizzies? Explain briefly.<|im_end|>\n<|im_start|>assistant\n";
-        ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_stock_reasoning_64";
+        ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_unrepacked_reasoning_32";
+    } else if (ptype == "essay") {
+        prompt = "<|im_start|>user\nWrite a detailed explanation of how virtual memory and page tables work in modern operating systems.<|im_end|>\n<|im_start|>assistant\n";
+        ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_unrepacked_essay_64";
     } else if (ptype == "code") {
         prompt = "<|im_start|>user\nWrite a C++ function to reverse a string in-place.<|im_end|>\n<|im_start|>assistant\n";
         ref_prefix = "/home/user/bitnet-cortex/quant-refs/qwen35_9b_stock_code_64";
@@ -151,11 +154,15 @@ int main(int argc, char ** argv) {
     std::vector<llama_token> tokens(n_tok);
     llama_tokenize(vocab, prompt.c_str(), prompt.size(), tokens.data(), n_tok, true, true);
 
+    int n_threads = 2;
+    if (const char * env_th = std::getenv("CORTEX_COMPUTE_THREADS")) {
+        n_threads = std::max(1, std::atoi(env_th));
+    }
     llama_context_params cp = llama_context_default_params();
     cp.n_ctx = 2048;
     cp.n_batch = std::max(n_tok, 64);
-    cp.n_threads = 2;
-    cp.n_threads_batch = 2;
+    cp.n_threads = n_threads;
+    cp.n_threads_batch = n_threads;
 
     setenv("CORTEX_QWEN35_SEGMENT_START", "0", 1);
     setenv("CORTEX_QWEN35_SEGMENT_END", "1", 1);
@@ -248,6 +255,11 @@ int main(int argc, char ** argv) {
     std::vector<float> step_embd(n_embd);
     std::vector<float> step_hidden(n_embd);
 
+    const bool use_prefetch = (std::getenv("CORTEX_ASYNC_PREFETCH") != nullptr && std::strcmp(std::getenv("CORTEX_ASYNC_PREFETCH"), "1") == 0);
+    double total_rebind_ms = 0.0;
+    double total_compute_ms = 0.0;
+    double total_head_ms = 0.0;
+
     auto t_decode_start = bench_clock::now();
 
     for (int step = 2; step <= n_gen; ++step) {
@@ -256,7 +268,15 @@ int main(int argc, char ** argv) {
         read_token_embeddings_q4_k(fd, tok_embd_off, (const llama_token*)&cur_token, 1, n_embd, step_embd.data());
         std::copy(step_embd.begin(), step_embd.end(), step_hidden.begin());
 
+        if (use_prefetch && n_layer > 1) {
+            llama_cortex_prefetch_layer(model, 0);
+        }
+
         for (int il = 0; il < n_layer; ++il) {
+            if (use_prefetch && il + 1 < n_layer) {
+                llama_cortex_prefetch_layer(model, il + 1);
+            }
+
             char s_buf[16], e_buf[16];
             std::snprintf(s_buf, sizeof(s_buf), "%d", il);
             std::snprintf(e_buf, sizeof(e_buf), "%d", il + 1);
@@ -266,7 +286,10 @@ int main(int argc, char ** argv) {
             llama_set_embeddings_layer_inp(ctx, (il == 0) ? n_layer : il, false);
             llama_set_embeddings_layer_inp(ctx, il + 1, true);
 
+            auto t_reb0 = bench_clock::now();
             llama_cortex_rebind_layer(model, il);
+            auto t_reb1 = bench_clock::now();
+            total_rebind_ms += std::chrono::duration<double, std::milli>(t_reb1 - t_reb0).count();
 
             llama_batch batch = llama_batch_init(1, n_embd, 1);
             for (int d = 0; d < n_embd; ++d) batch.embd[d] = step_hidden[d];
@@ -276,14 +299,21 @@ int main(int argc, char ** argv) {
             batch.logits[0] = false;
             batch.n_tokens = 1;
 
+            auto t_cmp0 = bench_clock::now();
             llama_decode(ctx, batch);
+            auto t_cmp1 = bench_clock::now();
+            total_compute_ms += std::chrono::duration<double, std::milli>(t_cmp1 - t_cmp0).count();
+
             float * out_h = llama_get_embeddings_layer_inp(ctx, il + 1);
             std::copy(out_h, out_h + n_embd, step_hidden.begin());
             llama_batch_free(batch);
         }
 
         apply_rmsnorm(step_hidden.data(), norm_w, n_embd, norm_h.data());
+        auto t_lm0 = bench_clock::now();
         compute_tiled_output_projection_q6_k(fd, output_w_off, n_embd, n_vocab, norm_h.data(), last_logits.data(), tile_arena.data(), arena_bytes);
+        auto t_lm1 = bench_clock::now();
+        total_head_ms += std::chrono::duration<double, std::milli>(t_lm1 - t_lm0).count();
 
         cur_token = 0;
         for (int v = 1; v < n_vocab; ++v) {
@@ -325,6 +355,10 @@ int main(int argc, char ** argv) {
     std::printf("  Prefill Latency:       %.2f ms (%d tokens)\n", prefill_ms, n_tok);
     std::printf("  LM Head Tiled Time:    %.2f ms (all %d vocab rows)\n", head_ms, n_vocab);
     std::printf("  Decode Throughput:     %.2f tok/s (%d decode steps)\n", tok_s, decode_steps);
+    if (decode_steps > 0) {
+        std::printf("  Decode Breakdown/step: Rebind/Wait=%.2f ms, Compute=%.2f ms, Head=%.2f ms, Total=%.2f ms\n",
+            total_rebind_ms / decode_steps, total_compute_ms / decode_steps, total_head_ms / decode_steps, (decode_sec * 1000.0) / decode_steps);
+    }
     std::printf("  Max Logit Difference: %.6f\n", max_diff);
     std::printf("  Prefill Greedy Token:  %d ('%.*s')\n", prefill_greedy_token, prefill_l, prefill_buf);
     std::printf("  Peak VmRSS:            %.2f MiB\n", mstats.vm_rss_kb / 1024.0);

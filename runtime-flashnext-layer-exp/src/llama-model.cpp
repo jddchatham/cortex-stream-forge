@@ -38,6 +38,10 @@
 #include <cerrno>
 #include <unistd.h>
 #include <cstdlib>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <future>
 #include <numeric>
 #include <regex>
 #include <sstream>
@@ -1195,7 +1199,11 @@ static buft_list_t make_gpu_buft_list(ggml_backend_dev_t dev, llama_split_mode s
 struct llama_model::impl {
     impl() = default;
     ~impl() {
+        if (cortex_prefetch_future.valid()) {
+            cortex_prefetch_future.wait();
+        }
         std::free(cortex_pread_arena);
+        std::free(cortex_prefetch_arena);
         for (const int fd : cortex_pread_fds) {
             if (fd >= 0) close(fd);
         }
@@ -1244,6 +1252,15 @@ struct llama_model::impl {
     size_t cortex_pread_arena_capacity = 0;
     std::vector<int> cortex_pread_fds;
     std::unordered_map<std::string, std::pair<uint32_t, size_t>> cortex_offsets;
+
+    // Asynchronous double-buffered prefetch subsystem
+    void * cortex_prefetch_arena = nullptr;
+    int cortex_active_arena_idx = 0; // 0: cortex_pread_arena, 1: cortex_prefetch_arena
+    std::future<bool> cortex_prefetch_future;
+    int cortex_prefetched_layer = -1;
+    bool cortex_prefetch_inflight = false;
+    std::mutex cortex_prefetch_mutex;
+    std::condition_variable cortex_prefetch_cv;
 };
 
 bool llama_prec_policy::apply(ggml_tensor * res) const {
@@ -2231,6 +2248,86 @@ bool llama_model_base::flashnext_layer_range_ple_rows(const int32_t * ids, size_
     return true;
 }
 
+bool llama_model_base::cortex_prefetch_layer(int il) {
+    if (!pimpl->cortex_low_residency || il < 0 || il >= (int) hparams.n_layer_all) {
+        return false;
+    }
+    if (std::getenv("CORTEX_PREAD_ARENA") == nullptr) {
+        return false;
+    }
+
+    // Allocate alternate arena if needed
+    auto & l = layers.at(il);
+    std::vector<ggml_tensor *> tensors;
+    if (arch == LLM_ARCH_LLAMA) {
+        tensors = { l.attn_norm, l.wq, l.wk, l.wv, l.wo,
+                    l.ffn_norm, l.ffn_gate, l.ffn_down, l.ffn_up };
+    } else {
+        tensors = { l.attn_norm, l.attn_post_norm, l.wqkv, l.wqkv_gate,
+                    l.wq, l.wk, l.wv, l.wo, l.attn_q_norm, l.attn_k_norm,
+                    l.ssm_conv1d, l.ssm_dt, l.ssm_a, l.ssm_beta, l.ssm_alpha,
+                    l.ssm_norm, l.ssm_out, l.ffn_gate, l.ffn_down, l.ffn_up,
+                    l.nextn.eh_proj, l.nextn.enorm, l.nextn.hnorm,
+                    l.nextn.embed_tokens, l.nextn.shared_head_head,
+                    l.nextn.shared_head_norm };
+    }
+    size_t total = 0;
+    for (ggml_tensor * t : tensors) if (t) total += ggml_nbytes(t);
+
+    if (pimpl->cortex_prefetch_arena == nullptr) {
+        const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
+        if (posix_memalign(&pimpl->cortex_prefetch_arena, alignment, pimpl->cortex_pread_arena_capacity ? pimpl->cortex_pread_arena_capacity : total) != 0) {
+            return false;
+        }
+    }
+
+    // Wait on existing prefetch if any
+    if (pimpl->cortex_prefetch_future.valid()) {
+        pimpl->cortex_prefetch_future.wait();
+    }
+
+    const int target_arena_idx = 1 - pimpl->cortex_active_arena_idx;
+    uint8_t * target_arena = static_cast<uint8_t *>(target_arena_idx == 0 ? pimpl->cortex_pread_arena : pimpl->cortex_prefetch_arena);
+    pimpl->cortex_prefetched_layer = il;
+
+    // Launch asynchronous worker
+    pimpl->cortex_prefetch_future = std::async(std::launch::async, [this, il, tensors, target_arena]() -> bool {
+        size_t offset = 0;
+        for (ggml_tensor * t : tensors) {
+            if (!t) continue;
+            const auto it = pimpl->cortex_offsets.find(ggml_get_name(t));
+            if (it == pimpl->cortex_offsets.end()) return false;
+            const size_t bytes = ggml_nbytes(t);
+            if (it->second.first >= pimpl->cortex_pread_fds.size()) return false;
+            const int fd = pimpl->cortex_pread_fds.at(it->second.first);
+            size_t done = 0;
+            while (done < bytes) {
+                const ssize_t n = ::pread(fd, target_arena + offset + done,
+                    bytes - done, (off_t) (it->second.second + done));
+                if (n <= 0) {
+                    LLAMA_LOG_ERROR("CORTEX async prefetch failed layer=%d tensor=%s: %s\n",
+                        il, ggml_get_name(t), std::strerror(errno));
+                    return false;
+                }
+                done += (size_t) n;
+            }
+            offset += bytes;
+        }
+        return true;
+    });
+
+    return true;
+}
+
+bool llama_model_base::cortex_wait_prefetch(int il) {
+    if (pimpl->cortex_prefetched_layer == il && pimpl->cortex_prefetch_future.valid()) {
+        bool ok = pimpl->cortex_prefetch_future.get();
+        pimpl->cortex_prefetched_layer = -1;
+        return ok;
+    }
+    return false;
+}
+
 bool llama_model_base::cortex_rebind_layer(int il) {
     // The Qwen35 MTP/NextN head is represented as the first auxiliary block
     // immediately after the main transformer layers.  This experimental
@@ -2255,6 +2352,16 @@ bool llama_model_base::cortex_rebind_layer(int il) {
     }
     size_t total = 0;
     for (ggml_tensor * t : tensors) if (t) total += ggml_nbytes(t);
+
+    bool used_prefetch = false;
+    if (pimpl->cortex_prefetched_layer == il && pimpl->cortex_prefetch_future.valid()) {
+        if (pimpl->cortex_prefetch_future.get()) {
+            pimpl->cortex_active_arena_idx = 1 - pimpl->cortex_active_arena_idx;
+            used_prefetch = true;
+        }
+        pimpl->cortex_prefetched_layer = -1;
+    }
+
     if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
         if (pimpl->cortex_pread_arena == nullptr) {
             const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
@@ -2266,9 +2373,11 @@ bool llama_model_base::cortex_rebind_layer(int il) {
     } else {
         pimpl->cortex_layer_buffer.resize(total);
     }
+
     uint8_t * const arena = std::getenv("CORTEX_PREAD_ARENA")
-        ? static_cast<uint8_t *>(pimpl->cortex_pread_arena)
+        ? static_cast<uint8_t *>(pimpl->cortex_active_arena_idx == 0 ? pimpl->cortex_pread_arena : pimpl->cortex_prefetch_arena)
         : pimpl->cortex_layer_buffer.data();
+
     size_t offset = 0;
     for (ggml_tensor * t : tensors) {
         if (!t) continue;
@@ -2278,23 +2387,23 @@ bool llama_model_base::cortex_rebind_layer(int il) {
         }
         const size_t bytes = ggml_nbytes(t);
         if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
-            // The loader's tensor descriptors retain the source file index and
-            // absolute GGUF offset.  Use the already-open file descriptor and
-            // positional reads so no model-weight mmap is needed.
-            if (it->second.first >= pimpl->cortex_pread_fds.size()) {
-                return false;
-            }
-            const int fd = pimpl->cortex_pread_fds.at(it->second.first);
-            size_t done = 0;
-            while (done < bytes) {
-                const ssize_t n = ::pread(fd, arena + offset + done,
-                    bytes - done, (off_t) (it->second.second + done));
-                if (n <= 0) {
-                    LLAMA_LOG_ERROR("CORTEX pread failed layer=%d tensor=%s offset=%zu: %s\n",
-                        il, ggml_get_name(t), it->second.second + done, std::strerror(errno));
+            if (!used_prefetch) {
+                // Synchronous read into active arena
+                if (it->second.first >= pimpl->cortex_pread_fds.size()) {
                     return false;
                 }
-                done += (size_t) n;
+                const int fd = pimpl->cortex_pread_fds.at(it->second.first);
+                size_t done = 0;
+                while (done < bytes) {
+                    const ssize_t n = ::pread(fd, arena + offset + done,
+                        bytes - done, (off_t) (it->second.second + done));
+                    if (n <= 0) {
+                        LLAMA_LOG_ERROR("CORTEX pread failed layer=%d tensor=%s offset=%zu: %s\n",
+                            il, ggml_get_name(t), it->second.second + done, std::strerror(errno));
+                        return false;
+                    }
+                    done += (size_t) n;
+                }
             }
             t->data = arena + offset;
         } else if (std::getenv("CORTEX_DIRECT_MMAP") != nullptr) {
@@ -2309,8 +2418,8 @@ bool llama_model_base::cortex_rebind_layer(int il) {
         }
         offset += bytes;
     }
-    LLAMA_LOG_INFO("CORTEX rebind layer=%d bytes=%zu buffer=%p arena=%s\n", il, total, arena,
-        std::getenv("CORTEX_PREAD_ARENA") ? "pread" : "vector");
+    LLAMA_LOG_INFO("CORTEX rebind layer=%d bytes=%zu buffer=%p arena=%s prefetch=%s\n", il, total, arena,
+        std::getenv("CORTEX_PREAD_ARENA") ? "pread" : "vector", used_prefetch ? "true" : "false");
     return true;
 }
 
@@ -3313,6 +3422,16 @@ void llama_model_free(llama_model * model) {
 bool llama_cortex_rebind_layer(llama_model * model, int layer) {
     auto * base = dynamic_cast<llama_model_base *>(model);
     return base != nullptr && base->cortex_rebind_layer(layer);
+}
+
+bool llama_cortex_prefetch_layer(llama_model * model, int layer) {
+    auto * base = dynamic_cast<llama_model_base *>(model);
+    return base != nullptr && base->cortex_prefetch_layer(layer);
+}
+
+bool llama_cortex_wait_prefetch(llama_model * model, int layer) {
+    auto * base = dynamic_cast<llama_model_base *>(model);
+    return base != nullptr && base->cortex_wait_prefetch(layer);
 }
 
 int32_t llama_model_n_ctx_train(const llama_model * model) {
