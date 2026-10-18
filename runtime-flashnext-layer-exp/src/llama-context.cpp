@@ -2829,6 +2829,7 @@ bool llama_context::extract_layer_inputs(const llm_graph_result * res, size_t to
         }
         ggml_tensor * t = res->get_layer_inp((int) il);
         if (!t) {
+            LLAMA_LOG_ERROR("extract_layer_inputs: layer input tensor not found: requested il=%u\n", il);
             GGML_ABORT("layer input tensor not found");
         }
 

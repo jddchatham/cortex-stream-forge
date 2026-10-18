@@ -2033,9 +2033,12 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     (std::strcmp(name, "output_hc_norm.weight") == 0 ||
                      std::strcmp(name, "output_hc_down.weight") == 0 ||
                      std::strcmp(name, "output_hc_up.weight") == 0);
-                const bool eligible_global = final_head_tensor ||
+                const bool external_global = std::getenv("CORTEX_EXTERNAL_GLOBAL_TENSORS") != nullptr;
+                const bool excluded_global = external_global &&
+                    (std::strncmp(name, "token_embd", 10) == 0 || std::strcmp(name, "output.weight") == 0);
+                const bool eligible_global = !excluded_global && (final_head_tensor ||
                     (flashnext_segment_b || flashnext_layer_range ? false :
-                        (flashnext_router_only ? router_global : global_weight));
+                        (flashnext_router_only ? router_global : global_weight)));
                 // A single segment still needs the model-global embedding,
                 // output norm, and output projection. These are independent
                 // of the reusable transformer-layer working buffer.

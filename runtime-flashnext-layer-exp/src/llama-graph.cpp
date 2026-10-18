@@ -2479,18 +2479,20 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     const int64_t n_embd_inp = hparams.n_embd_inp();
     const int64_t n_embd     = hparams.n_embd;
-    const bool range_input = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
+    const bool is_flashnext_range = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
                              std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0;
+    const bool external_global = std::getenv("CORTEX_EXTERNAL_GLOBAL_TENSORS") != nullptr;
+    const bool skip_token_branch = is_flashnext_range || external_global;
     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
     // boundary, not a token embedding row.  Keep this input F32 and owned by
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
-    const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
+    const int64_t n_embd_range = is_flashnext_range ? hparams.n_embd_out() : n_embd_inp;
 
     assert(n_embd_inp >= n_embd);
 
     auto inp = std::make_unique<llm_graph_input_embd>(n_embd_inp);
 
-    if (!range_input) {
+    if (!skip_token_branch) {
         inp->tokens = ggml_new_tensor_1d(ctx0, GGML_TYPE_I32, ubatch.n_tokens);
         cb(inp->tokens, "inp_tokens", -1);
         ggml_set_input(inp->tokens);
@@ -2508,7 +2510,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     // token embeddings path (ubatch.token != nullptr).  A nonzero layer
     // range must not construct this branch: even an unreachable GET_ROWS
     // keeps token_embd.weight reachable by graph traversal/allocation.
-    if (!range_input) {
+    if (!skip_token_branch) {
         auto & cur = inps[0];
 
         cur = ggml_get_rows(ctx0, tok_embd, inp->tokens);
@@ -2534,7 +2536,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
         if (n_embd_inp != n_embd) {
             cur = ggml_pad(ctx0, cur, hparams.n_embd_inp() - n_embd, 0, 0, 0);
         }
-        if (range_input && n_embd_range != n_embd) {
+        if (is_flashnext_range && n_embd_range != n_embd) {
             cur = ggml_pad(ctx0, cur, n_embd_range - n_embd, 0, 0, 0);
         }
     }
@@ -2547,8 +2549,8 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     }
 
     ggml_tensor * cur = nullptr;
-    if (range_input) {
-        // A nonzero range consumes only the caller-owned F32 hidden input.
+    if (skip_token_branch) {
+        // A nonzero range or external global path consumes only the caller-owned F32 hidden input.
         // Do not create a select node with an absent token branch.
         cur = inps[1];
     } else {
@@ -2557,7 +2559,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
         cur = ggml_build_forward_select(gf, inps.data(), inps.size(), ubatch.token ? 0 : 1);
     }
 
-    if (!range_input && n_embd_inp != n_embd) {
+    if (!is_flashnext_range && n_embd_inp != n_embd) {
         cur = ggml_view_2d(ctx0, cur, n_embd, n_tokens, cur->nb[1], 0);
     }
 

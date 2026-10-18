@@ -9,6 +9,7 @@
 # Build and generated output
 *-build/
 build/
+build-runtime/
 runtime-*/bin/
 runtime-*/models/
 runtime-*/runtime-build/
