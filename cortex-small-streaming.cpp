@@ -36,30 +36,36 @@ int main(int argc, char ** argv) {
     const int n_vocab = llama_vocab_n_tokens(vocab);
 
     llama_context_params cp = llama_context_default_params();
-    cp.n_ctx = 256; cp.n_batch = n_tok;
+    cp.n_ctx = 256;
+    cp.n_batch = n_tok;
 
-    std::vector<llama_context *> layer_ctxs(n_layer, nullptr);
-    auto get_or_create_ctx = [&](int il) -> llama_context * {
-        if (!layer_ctxs[il]) {
-            char s_buf[16], e_buf[16];
-            std::snprintf(s_buf, sizeof(s_buf), "%d", il);
-            std::snprintf(e_buf, sizeof(e_buf), "%d", il + 1);
-            setenv("CORTEX_QWEN35_SEGMENT_START", s_buf, 1);
-            setenv("CORTEX_QWEN35_SEGMENT_END", e_buf, 1);
-            layer_ctxs[il] = llama_init_from_model(model, cp);
-            if (il > 0) llama_set_embeddings_layer_inp(layer_ctxs[il], il, false);
-            if (il + 1 < n_layer) llama_set_embeddings_layer_inp(layer_ctxs[il], il + 1, true);
-        }
-        return layer_ctxs[il];
-    };
+    // Cortex Lean Context: Single unified context for all 24 layers!
+    setenv("CORTEX_QWEN35_SEGMENT_START", "0", 1);
+    setenv("CORTEX_QWEN35_SEGMENT_END", "1", 1);
+    llama_context * ctx = llama_init_from_model(model, cp);
+    llama_memory_t mem = llama_get_memory(ctx);
 
     std::vector<float> current_hidden((size_t)n_embd * n_tok);
     std::vector<float> last_logits(n_vocab);
 
-    // Prefill
+    // Prefill 24 layers
     for (int il = 0; il < n_layer; ++il) {
+        char s_buf[16], e_buf[16];
+        std::snprintf(s_buf, sizeof(s_buf), "%d", il);
+        std::snprintf(e_buf, sizeof(e_buf), "%d", il + 1);
+        setenv("CORTEX_QWEN35_SEGMENT_START", s_buf, 1);
+        setenv("CORTEX_QWEN35_SEGMENT_END", e_buf, 1);
+
+        if (il > 0) llama_set_embeddings_layer_inp(ctx, il, false);
+        if (il + 1 < n_layer) llama_set_embeddings_layer_inp(ctx, il + 1, true);
+
+        // Reset metadata positions between layers, preserving recurrent state buffers
+        if (il > 0) {
+            llama_memory_clear(mem, false);
+        }
+
         llama_cortex_rebind_layer(model, il);
-        llama_context * ctx = get_or_create_ctx(il);
+
         llama_batch batch;
         if (il == 0) {
             batch = llama_batch_init(n_tok, 0, 1);
@@ -120,8 +126,15 @@ int main(int argc, char ** argv) {
 
         for (int il = 0; il < n_layer; ++il) {
             llama_cortex_rebind_layer(model, il);
-            char s_buf[16], e_buf[16]; std::snprintf(s_buf, sizeof(s_buf), "%d", il); std::snprintf(e_buf, sizeof(e_buf), "%d", il + 1); setenv("CORTEX_QWEN35_SEGMENT_START", s_buf, 1); setenv("CORTEX_QWEN35_SEGMENT_END", e_buf, 1);
-            llama_context * ctx = get_or_create_ctx(il);
+            char s_buf[16], e_buf[16];
+            std::snprintf(s_buf, sizeof(s_buf), "%d", il);
+            std::snprintf(e_buf, sizeof(e_buf), "%d", il + 1);
+            setenv("CORTEX_QWEN35_SEGMENT_START", s_buf, 1);
+            setenv("CORTEX_QWEN35_SEGMENT_END", e_buf, 1);
+
+            if (il > 0) llama_set_embeddings_layer_inp(ctx, il, false);
+            if (il + 1 < n_layer) llama_set_embeddings_layer_inp(ctx, il + 1, true);
+
             llama_batch batch;
             if (il == 0) {
                 batch = llama_batch_init(1, 0, 1);
@@ -176,7 +189,7 @@ int main(int argc, char ** argv) {
     }
     std::printf("\n");
 
-    for (int il = 0; il < n_layer; ++il) if (layer_ctxs[il]) llama_free(layer_ctxs[il]);
+    llama_free(ctx);
     llama_model_free(model);
     llama_backend_free();
     return 0;
