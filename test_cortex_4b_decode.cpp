@@ -123,6 +123,9 @@ int main(int argc, char ** argv) {
 
     int fd = open(model_path, O_RDONLY);
     uint64_t tok_embd_off = 2200812928;
+    if (std::strstr(model_path, "sha256-460a1ec4580a90414bd43796cd71e845b063a0f565449a9cdf6f0397f843c37e")) {
+        tok_embd_off = 2126162624;
+    }
 
     std::string prompt = "<|im_start|>user\nWhat is 2 + 2? Answer with only the number.<|im_end|>\n<|im_start|>assistant\n";
     int n_tok = -llama_tokenize(vocab, prompt.c_str(), prompt.size(), nullptr, 0, true, true);
@@ -254,7 +257,7 @@ int main(int argc, char ** argv) {
     double tok_s = (decode_steps > 0) ? (decode_steps / decode_sec) : 0.0;
 
     // Load golden tokens
-    std::string ref_tok_path = "/home/user/bitnet-cortex/quant-refs/qwen35_4b_test_tokens.bin";
+    std::string ref_tok_path = (argc > 2) ? argv[2] : "/home/user/bitnet-cortex/quant-refs/qwen35_4b_test_tokens.bin";
     std::ifstream f_tok(ref_tok_path, std::ios::binary);
     int ref_count = 0;
     f_tok.read(reinterpret_cast<char*>(&ref_count), sizeof(int));
