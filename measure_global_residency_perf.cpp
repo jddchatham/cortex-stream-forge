@@ -68,6 +68,41 @@ static bool compute_tiled_output_projection(int fd, uint64_t base_offset, int n_
     out_io_ms = 0.0;
     out_compute_ms = 0.0;
 
+    const char * simd_env = std::getenv("CORTEX_EXACT_LM_HEAD_SIMD");
+    bool use_direct_simd = (simd_env == nullptr || std::strcmp(simd_env, "0") != 0);
+
+    if (use_direct_simd) {
+        const auto * cpu_traits = ggml_get_type_traits_cpu(GGML_TYPE_Q8_0);
+        std::vector<uint8_t> q8_x(row_bytes);
+        cpu_traits->from_float(norm_h, q8_x.data(), n_embd);
+
+        for (int start_row = 0; start_row < n_vocab; start_row += tile_rows) {
+            int cur_rows = std::min(tile_rows, n_vocab - start_row);
+            size_t bytes_to_read = (size_t)cur_rows * row_bytes;
+            uint64_t file_off = base_offset + (uint64_t)start_row * row_bytes;
+
+            auto t0 = bench_clock::now();
+            size_t done = 0;
+            while (done < bytes_to_read) {
+                ssize_t n = pread(fd, tile_arena + done, bytes_to_read - done, (off_t)(file_off + done));
+                if (n <= 0) return false;
+                done += (size_t)n;
+            }
+            auto t1 = bench_clock::now();
+            out_io_ms += std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+            auto t2 = bench_clock::now();
+            #pragma omp parallel for num_threads(2) schedule(static)
+            for (int r = 0; r < cur_rows; ++r) {
+                const void * row_w = tile_arena + (size_t)r * row_bytes;
+                cpu_traits->vec_dot(n_embd, &logits[start_row + r], 0, row_w, 0, q8_x.data(), 0, 1);
+            }
+            auto t3 = bench_clock::now();
+            out_compute_ms += std::chrono::duration<double, std::milli>(t3 - t2).count();
+        }
+        return true;
+    }
+
     for (int start_row = 0; start_row < n_vocab; start_row += tile_rows) {
         int cur_rows = std::min(tile_rows, n_vocab - start_row);
         size_t bytes_to_read = (size_t)cur_rows * row_bytes;
@@ -193,7 +228,12 @@ int main(int argc, char ** argv) {
     float * final_h = current_hidden.data() + (size_t)(n_tok - 1) * n_embd;
     apply_rmsnorm(final_h, norm_w, n_embd, norm_h.data());
 
-    size_t arena_bytes = 16 * 1024 * 1024;
+    size_t arena_bytes = 4 * 1024 * 1024;
+    const char * tile_env = std::getenv("CORTEX_LM_HEAD_TILE_MIB");
+    if (tile_env) {
+        int mib = std::atoi(tile_env);
+        if (mib > 0) arena_bytes = (size_t)mib * 1024 * 1024;
+    }
     std::vector<uint8_t> tile_arena(arena_bytes);
 
     ggml_backend_load_all();

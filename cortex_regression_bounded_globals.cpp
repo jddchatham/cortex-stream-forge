@@ -64,6 +64,38 @@ static bool compute_tiled_output_projection(int fd, uint64_t base_offset, int n_
     const int tile_rows = arena_bytes / row_bytes;
     if (tile_rows < 1) return false;
 
+    // Check runtime flag CORTEX_EXACT_LM_HEAD_SIMD (default: 1)
+    const char * simd_env = std::getenv("CORTEX_EXACT_LM_HEAD_SIMD");
+    bool use_direct_simd = (simd_env == nullptr || std::strcmp(simd_env, "0") != 0);
+
+    if (use_direct_simd) {
+        // Direct AVX2 SIMD path using ggml_get_type_traits_cpu
+        const auto * cpu_traits = ggml_get_type_traits_cpu(GGML_TYPE_Q8_0);
+        std::vector<uint8_t> q8_x(row_bytes);
+        cpu_traits->from_float(norm_h, q8_x.data(), n_embd);
+
+        for (int start_row = 0; start_row < n_vocab; start_row += tile_rows) {
+            int cur_rows = std::min(tile_rows, n_vocab - start_row);
+            size_t bytes_to_read = (size_t)cur_rows * row_bytes;
+            uint64_t file_off = base_offset + (uint64_t)start_row * row_bytes;
+
+            size_t done = 0;
+            while (done < bytes_to_read) {
+                ssize_t n = pread(fd, tile_arena + done, bytes_to_read - done, (off_t)(file_off + done));
+                if (n <= 0) return false;
+                done += (size_t)n;
+            }
+
+            #pragma omp parallel for num_threads(2) schedule(static)
+            for (int r = 0; r < cur_rows; ++r) {
+                const void * row_w = tile_arena + (size_t)r * row_bytes;
+                cpu_traits->vec_dot(n_embd, &logits[start_row + r], 0, row_w, 0, q8_x.data(), 0, 1);
+            }
+        }
+        return true;
+    }
+
+    // Baseline fallback path using GGML graph evaluation
     for (int start_row = 0; start_row < n_vocab; start_row += tile_rows) {
         int cur_rows = std::min(tile_rows, n_vocab - start_row);
         size_t bytes_to_read = (size_t)cur_rows * row_bytes;
@@ -329,7 +361,13 @@ int main(int argc, char ** argv) {
     // GGUF v3 data_offset + relative offset = 11966848 + 552457472 = 564424320
     uint64_t tok_embd_off = 564424320;
 
-    size_t arena_bytes = 16 * 1024 * 1024; // 16 MiB tile arena
+    // Allow tile size selection via CORTEX_LM_HEAD_TILE_MIB (default: 4 MiB)
+    size_t arena_bytes = 4 * 1024 * 1024;
+    const char * tile_env = std::getenv("CORTEX_LM_HEAD_TILE_MIB");
+    if (tile_env) {
+        int mib = std::atoi(tile_env);
+        if (mib > 0) arena_bytes = (size_t)mib * 1024 * 1024;
+    }
     std::vector<uint8_t> tile_arena(arena_bytes);
 
     ggml_backend_load_all();
