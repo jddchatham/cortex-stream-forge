@@ -1,5 +1,6 @@
 #include "llama-model.h"
 #include "flashnext-ple-provider.h"
+#include <fcntl.h>
 
 #include "llama-arch.h"
 #include "llama-ext.h"
@@ -2369,6 +2370,32 @@ bool llama_model_base::cortex_rebind_layer(int il) {
             pimpl->cortex_pread_arena_capacity = total;
         } else if (pimpl->cortex_pread_arena_capacity < total) {
             return false;
+        }
+
+        // Apply posix_fadvise if requested (e.g. CORTEX_FADVISE=willneed or sequential)
+        const char * fadv_env = std::getenv("CORTEX_FADVISE");
+        if (fadv_env && !pimpl->cortex_pread_fds.empty()) {
+            int advice = -1;
+            if (std::strcmp(fadv_env, "sequential") == 0 || std::strcmp(fadv_env, "1") == 0) advice = POSIX_FADV_SEQUENTIAL;
+            else if (std::strcmp(fadv_env, "willneed") == 0 || std::strcmp(fadv_env, "2") == 0) advice = POSIX_FADV_WILLNEED;
+            if (advice != -1) {
+                // Find min offset and total length across all tensors in this layer
+                uint64_t min_off = UINT64_MAX;
+                uint64_t max_off = 0;
+                int fd = pimpl->cortex_pread_fds[0];
+                for (ggml_tensor * t : tensors) {
+                    if (!t) continue;
+                    auto it = pimpl->cortex_offsets.find(ggml_get_name(t));
+                    if (it != pimpl->cortex_offsets.end()) {
+                        fd = pimpl->cortex_pread_fds.at(it->second.first);
+                        min_off = std::min(min_off, (uint64_t)it->second.second);
+                        max_off = std::max(max_off, (uint64_t)(it->second.second + ggml_nbytes(t)));
+                    }
+                }
+                if (min_off < max_off) {
+                    ::posix_fadvise(fd, min_off, max_off - min_off, advice);
+                }
+            }
         }
     } else {
         pimpl->cortex_layer_buffer.resize(total);

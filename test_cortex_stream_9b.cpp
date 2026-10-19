@@ -344,6 +344,9 @@ int main(int argc, char ** argv) {
     int check_len = std::min(gen_tokens.size(), ref_tokens.size());
     for (int i = 0; i < check_len; ++i) {
         if (gen_tokens[i] == ref_tokens[i]) match_count++;
+        else {
+            std::printf("MISMATCH at token [%d]: gen=%d ref=%d\n", i, gen_tokens[i], ref_tokens[i]);
+        }
     }
     bool matched = (check_len > 0 && match_count == check_len);
 
