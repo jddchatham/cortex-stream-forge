@@ -1,0 +1,182 @@
+{
+  "A_none_2mb": [
+    {
+      "run_idx": 0,
+      "config": "A_none_2mb",
+      "exit_code": 0,
+      "duration_s": 47.01063370704651,
+      "matched": "6",
+      "head_ms": 150.19,
+      "tok_s": 0.18,
+      "Rebind/Wait": 4784.4,
+      "Compute": 539.34,
+      "Head": 148.51,
+      "Total": 5474.67,
+      "peak_rss_mib": 393.88
+    },
+    {
+      "run_idx": 11,
+      "config": "A_none_2mb",
+      "exit_code": 0,
+      "duration_s": 28.10846185684204,
+      "matched": "6",
+      "head_ms": 148.85,
+      "tok_s": 0.38,
+      "Rebind/Wait": 1980.61,
+      "Compute": 521.43,
+      "Head": 149.9,
+      "Total": 2653.71,
+      "peak_rss_mib": 394.14
+    }
+  ],
+  "B_seq_2mb": [
+    {
+      "run_idx": 1,
+      "config": "B_seq_2mb",
+      "exit_code": 0,
+      "duration_s": 40.538684368133545,
+      "matched": "6",
+      "head_ms": 157.66,
+      "tok_s": 0.22,
+      "Rebind/Wait": 3850.32,
+      "Compute": 519.43,
+      "Head": 145.84,
+      "Total": 4519.31,
+      "peak_rss_mib": 389.07
+    },
+    {
+      "run_idx": 10,
+      "config": "B_seq_2mb",
+      "exit_code": 0,
+      "duration_s": 28.2342426776886,
+      "matched": "6",
+      "head_ms": 150.4,
+      "tok_s": 0.37,
+      "Rebind/Wait": 1978.66,
+      "Compute": 543.62,
+      "Head": 144.82,
+      "Total": 2668.85,
+      "peak_rss_mib": 389.5
+    }
+  ],
+  "C_will_2mb": [
+    {
+      "run_idx": 2,
+      "config": "C_will_2mb",
+      "exit_code": 0,
+      "duration_s": 38.97272324562073,
+      "matched": "6",
+      "head_ms": 153.04,
+      "tok_s": 0.23,
+      "Rebind/Wait": 3763.83,
+      "Compute": 523.32,
+      "Head": 150.34,
+      "Total": 4439.49,
+      "peak_rss_mib": 389.12
+    },
+    {
+      "run_idx": 9,
+      "config": "C_will_2mb",
+      "exit_code": 0,
+      "duration_s": 29.49088144302368,
+      "matched": "6",
+      "head_ms": 152.42,
+      "tok_s": 0.35,
+      "Rebind/Wait": 2218.5,
+      "Compute": 511.9,
+      "Head": 150.46,
+      "Total": 2882.64,
+      "peak_rss_mib": 389.87
+    }
+  ],
+  "D_none_8mb": [
+    {
+      "run_idx": 3,
+      "config": "D_none_8mb",
+      "exit_code": 0,
+      "duration_s": 37.0257043838501,
+      "matched": "6",
+      "head_ms": 217.02,
+      "tok_s": 0.24,
+      "Rebind/Wait": 3351.8,
+      "Compute": 526.09,
+      "Head": 214.74,
+      "Total": 4094.4,
+      "peak_rss_mib": 399.16
+    },
+    {
+      "run_idx": 8,
+      "config": "D_none_8mb",
+      "exit_code": 0,
+      "duration_s": 31.066596746444702,
+      "matched": "6",
+      "head_ms": 219.14,
+      "tok_s": 0.32,
+      "Rebind/Wait": 2363.69,
+      "Compute": 508.04,
+      "Head": 226.68,
+      "Total": 3100.15,
+      "peak_rss_mib": 400.11
+    }
+  ],
+  "E_seq_8mb": [
+    {
+      "run_idx": 4,
+      "config": "E_seq_8mb",
+      "exit_code": 0,
+      "duration_s": 34.52324962615967,
+      "matched": "6",
+      "head_ms": 228.99,
+      "tok_s": 0.27,
+      "Rebind/Wait": 2943.0,
+      "Compute": 514.56,
+      "Head": 226.74,
+      "Total": 3686.21,
+      "peak_rss_mib": 394.68
+    },
+    {
+      "run_idx": 7,
+      "config": "E_seq_8mb",
+      "exit_code": 0,
+      "duration_s": 31.752411127090454,
+      "matched": "6",
+      "head_ms": 224.4,
+      "tok_s": 0.31,
+      "Rebind/Wait": 2424.13,
+      "Compute": 585.47,
+      "Head": 219.69,
+      "Total": 3231.18,
+      "peak_rss_mib": 394.7
+    }
+  ],
+  "F_will_8mb": [
+    {
+      "run_idx": 5,
+      "config": "F_will_8mb",
+      "exit_code": 0,
+      "duration_s": 34.40877175331116,
+      "matched": "6",
+      "head_ms": 223.86,
+      "tok_s": 0.27,
+      "Rebind/Wait": 2926.6,
+      "Compute": 515.92,
+      "Head": 214.57,
+      "Total": 3659.03,
+      "peak_rss_mib": 394.72
+    },
+    {
+      "run_idx": 6,
+      "config": "F_will_8mb",
+      "exit_code": 0,
+      "duration_s": 33.36675477027893,
+      "matched": "6",
+      "head_ms": 214.72,
+      "tok_s": 0.28,
+      "Rebind/Wait": 2780.06,
+      "Compute": 508.91,
+      "Head": 218.17,
+      "Total": 3508.92,
+      "peak_rss_mib": 394.7
+    }
+  ]
+}
