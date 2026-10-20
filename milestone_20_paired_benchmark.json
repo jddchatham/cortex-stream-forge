@@ -1,0 +1,58 @@
+{
+  "fixed_willneed": [
+    {
+      "run_idx": 0,
+      "name": "fixed_willneed",
+      "exit_code": 0,
+      "duration_s": 24.182976484298706,
+      "tok_s": 0.54,
+      "rebind_ms": 1050.99,
+      "compute_ms": 599.59,
+      "head_ms": 214.88,
+      "total_ms": 1867.2,
+      "peak_rss_mib": 388.88,
+      "matched": "6 / 6 (PASS)"
+    },
+    {
+      "run_idx": 3,
+      "name": "fixed_willneed",
+      "exit_code": 0,
+      "duration_s": 21.69757342338562,
+      "tok_s": 0.64,
+      "rebind_ms": 906.89,
+      "compute_ms": 498.24,
+      "head_ms": 150.28,
+      "total_ms": 1557.14,
+      "peak_rss_mib": 388.93,
+      "matched": "6 / 6 (PASS)"
+    }
+  ],
+  "adaptive_io": [
+    {
+      "run_idx": 1,
+      "name": "adaptive_io",
+      "exit_code": 0,
+      "duration_s": 21.703144073486328,
+      "tok_s": 0.64,
+      "rebind_ms": 902.26,
+      "compute_ms": 497.37,
+      "head_ms": 155.77,
+      "total_ms": 1558.34,
+      "peak_rss_mib": 388.97,
+      "matched": "6 / 6 (PASS)"
+    },
+    {
+      "run_idx": 2,
+      "name": "adaptive_io",
+      "exit_code": 0,
+      "duration_s": 22.306162118911743,
+      "tok_s": 0.63,
+      "rebind_ms": 914.98,
+      "compute_ms": 514.2,
+      "head_ms": 152.78,
+      "total_ms": 1583.62,
+      "peak_rss_mib": 389.1,
+      "matched": "6 / 6 (PASS)"
+    }
+  ]
+}
