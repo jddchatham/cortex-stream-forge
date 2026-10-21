@@ -195,3 +195,8 @@ target_compile_features(llama-flashnext-l2-moe-reference PRIVATE cxx_std_17)
         endif()
     endif()
 endif()
+
+add_executable(llama-flashnext-chat flashnext-chat.cpp)
+target_link_libraries(llama-flashnext-chat PRIVATE llama ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(llama-flashnext-chat PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+target_compile_features(llama-flashnext-chat PRIVATE cxx_std_17)
