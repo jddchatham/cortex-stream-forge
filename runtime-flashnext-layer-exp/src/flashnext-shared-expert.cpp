@@ -1,4 +1,5 @@
 #include "flashnext-shared-expert.h"
+#include "flashnext-layer-transaction.h"
 #include "ggml.h"
 #include "ggml-backend.h"
 #include <array>
@@ -11,7 +12,7 @@
 namespace {
 bool rd(int fd, void * p, size_t n, uint64_t off) {
     size_t done = 0;
-    while (done < n) { ssize_t r = ::pread(fd, static_cast<uint8_t *>(p) + done, n - done, off + done); if (r <= 0) return false; done += r; }
+    while (done < n) { ssize_t r = ::pread(fd, static_cast<uint8_t *>(p) + done, n - done, off + done); if (r <= 0) return false; flashnext_profile::record_pread(static_cast<size_t>(r)); done += r; }
     return true;
 }
 }

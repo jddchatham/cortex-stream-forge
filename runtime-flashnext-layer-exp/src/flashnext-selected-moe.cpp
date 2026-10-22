@@ -15,6 +15,17 @@
 #include <limits>
 #include <numeric>
 
+namespace flashnext_profile {
+static std::atomic<uint64_t> g_pread_calls{0};
+static std::atomic<uint64_t> g_pread_bytes{0};
+void record_pread(size_t bytes) {
+    g_pread_calls.fetch_add(1, std::memory_order_relaxed);
+    g_pread_bytes.fetch_add(bytes, std::memory_order_relaxed);
+}
+uint64_t pread_calls() { return g_pread_calls.load(std::memory_order_relaxed); }
+uint64_t pread_bytes() { return g_pread_bytes.load(std::memory_order_relaxed); }
+}
+
 namespace {
 static constexpr int64_t K = 2560;
 static constexpr int64_t F = 640;
@@ -28,6 +39,7 @@ bool pread_all(int fd, void * dst, size_t n, uint64_t off, uint64_t & calls) {
         const ssize_t got = ::pread(fd, static_cast<uint8_t *>(dst) + done, n - done,
                                     static_cast<off_t>(off + done));
         if (got <= 0) return false;
+        flashnext_profile::record_pread(static_cast<size_t>(got));
         done += static_cast<size_t>(got);
     }
     return true;

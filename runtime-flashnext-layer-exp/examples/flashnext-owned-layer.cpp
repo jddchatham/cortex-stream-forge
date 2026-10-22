@@ -428,18 +428,34 @@ struct flashnext_transaction_context {
 };
 
 static bool capture_transaction_router(
-        flashnext_transaction_context & txc, llama_context * ctx, const flashnext_layer_descriptor & layer) {
-    const std::string suffix = "-" + std::to_string(layer.index);
-    const size_t moe_bytes = ctx->debug_copy_flashnext_tensor(("diag_moe_input" + suffix).c_str(),
-        txc.moe_input.data(), sizeof(txc.moe_input));
-    const size_t router_bytes = ctx->debug_copy_flashnext_tensor(("diag_router_logits" + suffix).c_str(),
-        txc.router_logits.data(), sizeof(txc.router_logits));
-    const size_t residual_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_residual" + suffix).c_str(),
-        txc.residual_hc.data(), sizeof(txc.residual_hc));
-    const size_t inject_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_inject" + suffix).c_str(),
-        txc.injection.data(), sizeof(txc.injection));
-    if (moe_bytes != sizeof(txc.moe_input) || router_bytes != sizeof(txc.router_logits) ||
-        residual_bytes != sizeof(txc.residual_hc) || inject_bytes != sizeof(txc.injection)) return false;
+        flashnext_transaction_context & txc, llama_context * ctx, const flashnext_layer_descriptor & /*layer*/) {
+    const float * artifact = llama_get_logits_ith(ctx, 0);
+    if (!artifact) return false;
+    std::memcpy(txc.moe_input.data(), artifact, 2560 * sizeof(float));
+    std::memcpy(txc.residual_hc.data(), artifact + 2560, 10240 * sizeof(float));
+    std::memcpy(txc.injection.data(), artifact + 12800, 4 * sizeof(float));
+    std::memcpy(txc.router_logits.data(), artifact + 12804, 512 * sizeof(float));
+    auto stats = [](const char * name, const float * p, size_t n, size_t offset) {
+        float lo = INFINITY, hi = -INFINITY, absmax = 0.0f;
+        size_t nonzero = 0, nonfinite = 0;
+        double ss = 0.0;
+        for (size_t i = 0; i < n; ++i) {
+            const float x = p[i];
+            if (!std::isfinite(x)) { ++nonfinite; continue; }
+            lo = std::min(lo, x); hi = std::max(hi, x);
+            absmax = std::max(absmax, std::fabs(x));
+            nonzero += x != 0.0f; ss += double(x) * double(x);
+        }
+        std::printf("SEGMENT_A_FIELD name=%s offset_f32=%zu elements=%zu dtype=f32 nonzero=%zu nonfinite=%zu min=%.9g max=%.9g absmax=%.9g rms=%.9g\n",
+            name, offset, n, nonzero, nonfinite, lo, hi, absmax,
+            n ? std::sqrt(ss / double(n)) : 0.0);
+    };
+    stats("moe_input", txc.moe_input.data(), txc.moe_input.size(), 0);
+    stats("hc_residual", txc.residual_hc.data(), txc.residual_hc.size(), 2560);
+    stats("ffn_injection", txc.injection.data(), txc.injection.size(), 12800);
+    stats("router_logits", txc.router_logits.data(), txc.router_logits.size(), 12804);
+    std::printf("SEGMENT_A_INJECTION_SOURCE=FFN_INJECTION ATTENTION_INJECTION=NOT_USED\n");
+
     for (float x : txc.moe_input) if (!std::isfinite(x)) return false;
     for (float x : txc.router_logits) if (!std::isfinite(x)) return false;
     for (float x : txc.residual_hc) if (!std::isfinite(x)) return false;
@@ -906,6 +922,16 @@ int main(int argc, char ** argv) {
         setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
         setenv("CORTEX_FLASHNEXT_SEGMENT_A", "1", 1);
         setenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER", "1", 1);
+        // Keep the full token embedding table out of the low-residency
+        // global set.  The proven row-streaming path supplies the single
+        // layer-0 input row below.
+        setenv("CORTEX_FLASHNEXT_EXTERNAL_EMBEDDING", "1", 1);
+        // Declare the homogeneous physical range consumed by this bounded
+        // layer-0 transaction; otherwise context setup attempts [0,48).
+        setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+        setenv("CORTEX_FLASHNEXT_LAYER_START", "0", 1);
+        setenv("CORTEX_FLASHNEXT_LAYER_END", "1", 1);
+        setenv("CORTEX_QWEN35_SEGMENT_END", "1", 1);
     } else {
         setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
         // Nonzero-layer transactions are completed by the external sparse
@@ -1723,8 +1749,15 @@ int main(int argc, char ** argv) {
         }
         llama_free(ctx); llama_model_free(model); llama_backend_free(); return rc == 0 ? 0 : 13;
     }
-    llama_batch batch = llama_batch_init(1, 0, 1);
-    batch.token[0] = 248045; batch.pos[0] = 0; batch.n_seq_id[0] = 1;
+    constexpr int32_t layer0_token = 248045;
+    std::array<float, 2560> layer0_embedding{};
+    if (!llama_cortex_external_token_rows(model, &layer0_token, 1, layer0_embedding.data())) {
+        std::fprintf(stderr, "FLASHNEXT_EXTERNAL_EMBEDDING_FAILURE token=%d\n", layer0_token);
+        llama_free(ctx); llama_model_free(model); llama_backend_free(); return 5;
+    }
+    llama_batch batch = llama_batch_init(1, (int) layer0_embedding.size(), 1);
+    std::memcpy(batch.embd, layer0_embedding.data(), layer0_embedding.size() * sizeof(float));
+    batch.pos[0] = 0; batch.n_seq_id[0] = 1;
     batch.seq_id[0][0] = 0; batch.logits[0] = 1; batch.n_tokens = 1;
     if (llama_decode(ctx, batch) != 0) return 5;
     llama_synchronize(ctx);
@@ -1769,7 +1802,8 @@ int main(int argc, char ** argv) {
     // and then reuses the existing owned-activation transaction coordinator
     // for layers 1..47.  Layer-0 recurrent state belongs to layer 0; each
     // subsequent layer gets its own freshly initialized context/state.
-    if (std::getenv("CORTEX_FLASHNEXT_CHAIN_0_48") != nullptr) {
+    const bool chain_0_1 = std::getenv("CORTEX_FLASHNEXT_CHAIN_0_1") != nullptr;
+    if (std::getenv("CORTEX_FLASHNEXT_CHAIN_0_48") != nullptr || chain_0_1) {
         std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT chain_branch_begin\n"); std::fflush(stderr);
         const std::vector<float> layer0_output(tx.layer_output.begin(), tx.layer_output.end());
         std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT output_copy_done\n"); std::fflush(stderr);
@@ -1804,7 +1838,8 @@ int main(int argc, char ** argv) {
         setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
         std::vector<float> previous_output = layer0_output;
         bool chain_ok = true;
-        for (uint32_t il = 1; il < std::min<uint32_t>(48, model_layer_count); ++il) {
+        const uint32_t chain_end = chain_0_1 ? std::min<uint32_t>(2, model_layer_count) : std::min<uint32_t>(48, model_layer_count);
+        for (uint32_t il = 1; il < chain_end; ++il) {
             std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT next_load_begin=%u\n", il); std::fflush(stderr);
             setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(il).c_str(), 1);
             setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(il).c_str(), 1);
@@ -1843,7 +1878,14 @@ int main(int argc, char ** argv) {
             llama_free(next_ctx);
             llama_model_free(next_model);
         }
-        if (chain_ok) {
+        if (chain_ok && chain_0_1) {
+            const uint64_t layer1_hash = hash_f32(previous_output.data(), previous_output.size());
+            std::printf("LAYER1_STREAMED_OUTPUT_HASH=%016llx LAYER1_OUTPUT_ELEMENTS=%zu\n",
+                (unsigned long long) layer1_hash, previous_output.size());
+            std::printf("LAYER1_STOCK_REFERENCE=UNAVAILABLE_WITHOUT_FULL_RESIDENT_LAYER_MODEL\n");
+            std::printf("LAYER1_NUMERICAL_COMPARISON=UNVERIFIED\n");
+            std::printf("BOUNDED_CHAIN_0_TO_1_PASS=YES LAYERS_EXECUTED=2\n");
+        } else if (chain_ok) {
             const uint64_t final_activation_hash = hash_f32(previous_output.data(), previous_output.size());
             std::printf("FULL_CHAIN_0_TO_47_PASS=YES LAYERS_EXECUTED=%u FINAL_ACTIVATION_HASH=%016llx\n",
                 std::min<uint32_t>(48, model_layer_count),
@@ -1860,6 +1902,11 @@ int main(int argc, char ** argv) {
             setenv("CORTEX_FLASHNEXT_LAYER_END", "48", 1);
             setenv("CORTEX_FLASHNEXT_FINAL_HEAD", "1", 1);
             setenv("CORTEX_FLASHNEXT_FINAL_HEAD_NORM_ONLY", "1", 1);
+            // The final-head graph needs only the bounded HC normalization
+            // tensors; vocabulary projection remains externally streamed.
+            // Without this selector the layer-probe loader rejects the HC
+            // head tensors as an oversized global residency set.
+            setenv("CORTEX_FLASHNEXT_FINAL_HEAD_ONLY", "1", 1);
             setenv("CORTEX_LOW_RESIDENCY_LAYER", "47", 1);
             llama_model * head_model = llama_model_load_from_file(argv[1], mp);
             llama_context_params head_cp = cp;
@@ -1903,6 +1950,9 @@ int main(int argc, char ** argv) {
                             (unsigned long long) (norm ? hash_f32(norm, norm_n) : 0),
                             norm && nonfinite == 0 ? "YES" : "NO");
                         if (norm && nonfinite == 0 && norm_n == 2560) {
+                            if (FILE * f = std::fopen("/tmp/cortex_final_norm.f32", "wb")) {
+                                std::fwrite(norm, sizeof(float), norm_n, f); std::fclose(f);
+                            }
                             flashnext_tensor_index out_index;
                             std::string out_error;
                             flashnext_tensor_descriptor out_desc;
@@ -1914,12 +1964,25 @@ int main(int argc, char ** argv) {
                                     std::max_element(streamed_logits.begin(), streamed_logits.end()));
                                 predicted_logit = streamed_logits[predicted_token];
                                 logits_hash = hash_f32(streamed_logits.data(), streamed_logits.size());
+                                if (FILE * f = std::fopen("/tmp/cortex_streamed_logits.f32", "wb")) {
+                                    std::fwrite(streamed_logits.data(), sizeof(float), streamed_logits.size(), f); std::fclose(f);
+                                }
                                 output_projection_pass = std::isfinite(predicted_logit);
                                 std::printf("OUTPUT_PROJECTION_PASS=%s VOCAB_LOGITS_COMPUTED=YES VOCAB_SIZE=%zu "
                                     "PREDICTED_TOKEN_ID=%u PREDICTED_TOKEN_LOGIT=%.9g LOGITS_HASH=%016llx "
                                     "REFERENCE_COMPARISON=NOT_RUN\n",
                                     output_projection_pass ? "YES" : "NO", streamed_logits.size(),
                                     predicted_token, predicted_logit, (unsigned long long) logits_hash);
+                                std::vector<size_t> top_order(streamed_logits.size());
+                                for (size_t i = 0; i < top_order.size(); ++i) top_order[i] = i;
+                                const size_t top_n = std::min<size_t>(5, top_order.size());
+                                std::partial_sort(top_order.begin(), top_order.begin() + top_n, top_order.end(),
+                                    [&streamed_logits](size_t a, size_t b) { return streamed_logits[a] > streamed_logits[b]; });
+                                std::printf("TOP_STREAMED_TOKENS");
+                                for (size_t i = 0; i < top_n; ++i) {
+                                    std::printf(" rank=%zu id=%zu logit=%.9g", i + 1, top_order[i], streamed_logits[top_order[i]]);
+                                }
+                                std::printf("\n");
                             } else {
                                 std::printf("OUTPUT_PROJECTION_PASS=NO VOCAB_LOGITS_COMPUTED=NO ERROR=%s\n", out_error.c_str());
                             }

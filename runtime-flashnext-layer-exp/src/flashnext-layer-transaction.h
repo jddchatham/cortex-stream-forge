@@ -4,6 +4,12 @@
 #include <cstdint>
 #include <vector>
 
+namespace flashnext_profile {
+void record_pread(size_t bytes);
+uint64_t pread_calls();
+uint64_t pread_bytes();
+}
+
 // Bounded, model-weight-free transaction for one qwen4exp layer position.
 // The vectors own their storage; no member points into a ggml graph arena or
 // a temporary serialized artifact.  Model tensors remain owned by the
