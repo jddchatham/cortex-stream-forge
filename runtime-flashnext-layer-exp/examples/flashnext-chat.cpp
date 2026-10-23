@@ -75,6 +75,14 @@ static bool cortex_profile_enabled() {
     return g_profile.enabled;
 }
 
+// State comparison materializes two full serialized layer states and is a
+// validation diagnostic only.  Keep it enabled by default for regression
+// runs; production inference can set CORTEX_CHAT_STATE_COMPARE=0.
+static bool chat_state_compare_enabled() {
+    const char * value = std::getenv("CORTEX_CHAT_STATE_COMPARE");
+    return value == nullptr || std::strcmp(value, "0") != 0;
+}
+
 static double cortex_now_sec() {
     return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
@@ -908,7 +916,7 @@ static bool forward_step(
             llama_free(next_ctx); llama_model_free(next_model); return false;
         }
         layer_states[il] = capture_interned_state(next_ctx, state_pool);
-        chat_state_compare(layer_states, il, position);
+        if (chat_state_compare_enabled()) chat_state_compare(layer_states, il, position);
         current_output.assign(res.output.begin(), res.output.end());
         // The transaction's pre-decode snapshot is only needed until the
         // transaction commits.  The serialized state copied above is the
