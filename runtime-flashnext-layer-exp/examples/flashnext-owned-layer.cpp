@@ -305,10 +305,47 @@ static void print_preflight(llama_model * model) {
 }
 static void export_blob(const char * name, int pos, const void * p, size_t n, const char * shape, const char * dtype) {
     const char * dir = std::getenv("FLASHNEXT_COMPARE_DIR"); if (!dir) return;
-    mkdir(dir, 0755); char path[1024]; std::snprintf(path, sizeof(path), "%s/cortex_%s_p%d.bin", dir, name, pos);
-    FILE * f = std::fopen(path, "wb"); if (!f) return; std::fwrite(p, 1, n, f); std::fclose(f);
-    std::string mp = std::string(dir) + "/manifest.tsv"; FILE * m = std::fopen(mp.c_str(), "a"); if (!m) return;
+    if (mkdir(dir, 0755) != 0 && errno != EEXIST) {
+        std::fprintf(stderr, "CAPTURE_WRITE_FAIL name=%s reason=mkdir errno=%d\n", name, errno);
+        return;
+    }
+    char path[1024]; std::snprintf(path, sizeof(path), "%s/cortex_%s_p%d.bin", dir, name, pos);
+    std::string tmp = std::string(path) + ".tmp";
+    FILE * f = std::fopen(tmp.c_str(), "wb");
+    if (!f) { std::fprintf(stderr, "CAPTURE_WRITE_FAIL name=%s reason=fopen errno=%d\n", name, errno); return; }
+    const size_t written = std::fwrite(p, 1, n, f);
+    const bool flushed = written == n && std::fflush(f) == 0;
+    const int close_rc = std::fclose(f);
+    if (!flushed || close_rc != 0 || std::rename(tmp.c_str(), path) != 0) {
+        std::fprintf(stderr, "CAPTURE_WRITE_FAIL name=%s expected=%zu written=%zu errno=%d\n", name, n, written, errno);
+        std::remove(tmp.c_str());
+        return;
+    }
+    std::fprintf(stderr, "CAPTURE_WRITE_OK name=%s position=%d bytes=%zu shape=%s dtype=%s\n", name, pos, n, shape, dtype);
+    std::string mp = std::string(dir) + "/manifest.tsv"; FILE * m = std::fopen(mp.c_str(), "a"); if (!m) {
+        std::fprintf(stderr, "CAPTURE_MANIFEST_FAIL name=%s errno=%d\n", name, errno);
+        return;
+    }
     std::fprintf(m, "cortex\t%s\t%d\t%s\t%s\t%zu\t%zu\t%016llx\n", name, pos, shape, dtype, n/4, n, (unsigned long long) hash_bytes((const uint8_t *) p, n)); std::fclose(m);
+}
+static bool capture_file_ready(const char * dir, const char * name, size_t bytes) {
+    if (!dir) return false;
+    struct stat st{};
+    const std::string path = std::string(dir) + "/cortex_" + name + "_p0.bin";
+    return stat(path.c_str(), &st) == 0 && (size_t) st.st_size == bytes;
+}
+static void export_segment_b_contract(const char * dir, const flashnext_layer_transaction & tx) {
+    if (!dir) return;
+    const std::string tmp = std::string(dir) + "/segment_b_contract.tsv.tmp";
+    const std::string path = std::string(dir) + "/segment_b_contract.tsv";
+    FILE * f = std::fopen(tmp.c_str(), "wb");
+    if (!f) return;
+    std::fprintf(f, "QUORTEX_SEGMENT_B_CONTRACT_V1\n");
+    std::fprintf(f, "input\ttoken=248045\tposition=0\tsequence=0\tendianness=little\tdtype=f32\n");
+    std::fprintf(f, "complete_moe\t2560\t%016llx\n", (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(tx.complete_moe.data()), tx.complete_moe.size()*sizeof(float)));
+    std::fprintf(f, "recurrent_residual\t10240\t%016llx\n", (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(tx.residual_hc.data()), tx.residual_hc.size()*sizeof(float)));
+    std::fprintf(f, "injection\t4\t%016llx\n", (unsigned long long) hash_bytes(reinterpret_cast<const uint8_t *>(tx.inject.data()), tx.inject.size()*sizeof(float)));
+    std::fclose(f); std::rename(tmp.c_str(), path.c_str());
 }
 static void export_state_components(llama_context * ctx, int pos) {
     const char * dir = std::getenv("FLASHNEXT_COMPARE_DIR"); if (!dir) return;
@@ -894,6 +931,7 @@ static layer_transaction_result run_layer_transaction(
     return result;
 }
 
+#ifndef CORTEX_LAYER_DRIVER_LIBRARY
 int main(int argc, char ** argv) {
     // semantic inputs only: model path and flashnext-tensor-index.json
     if (argc != 3) return 2;
@@ -903,6 +941,10 @@ int main(int argc, char ** argv) {
     setenv("CORTEX_PREAD_ARENA", "1", 1);
     setenv("CORTEX_LOW_RESIDENCY_LAYER", range_mode ? std::to_string(target_layer).c_str() : "0", 1);
     if (!range_mode) {
+        // The primary embedding is supplied as a streamed caller-owned row;
+        // keep token_embd.weight out of the executed graph and preserve the
+        // stock graph mathematics after the embedding input.
+        setenv("CORTEX_EXTERNAL_GLOBAL_TENSORS", "1", 1);
         setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
         setenv("CORTEX_FLASHNEXT_SEGMENT_A", "1", 1);
         setenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER", "1", 1);
@@ -1723,8 +1765,24 @@ int main(int argc, char ** argv) {
         }
         llama_free(ctx); llama_model_free(model); llama_backend_free(); return rc == 0 ? 0 : 13;
     }
-    llama_batch batch = llama_batch_init(1, 0, 1);
-    batch.token[0] = 248045; batch.pos[0] = 0; batch.n_seq_id[0] = 1;
+    const int32_t token_id = 248045;
+    const int n_embd_inp = llama_model_n_embd_inp(model);
+    std::vector<float> token_embedding((size_t) n_embd_inp);
+    if (n_embd_inp <= 0 || !llama_cortex_token_embd_rows(model, &token_id, 1, token_embedding.data())) {
+        std::fprintf(stderr, "FLASHNEXT_TOKEN_EMBEDDING_STREAM=FAIL\n");
+        return 5;
+    }
+    for (float v : token_embedding) if (!std::isfinite(v)) {
+        std::fprintf(stderr, "FLASHNEXT_TOKEN_EMBEDDING_FINITE=FAIL\n");
+        return 5;
+    }
+    llama_batch batch = llama_batch_init(1, n_embd_inp, 1);
+    if (!batch.embd || batch.token != nullptr) {
+        std::fprintf(stderr, "FLASHNEXT_EMBEDDING_BATCH_OWNERSHIP=FAIL\n");
+        llama_batch_free(batch); return 5;
+    }
+    std::memcpy(batch.embd, token_embedding.data(), token_embedding.size() * sizeof(float));
+    batch.pos[0] = 0; batch.n_seq_id[0] = 1;
     batch.seq_id[0][0] = 0; batch.logits[0] = 1; batch.n_tokens = 1;
     if (llama_decode(ctx, batch) != 0) return 5;
     llama_synchronize(ctx);
@@ -1733,6 +1791,60 @@ int main(int argc, char ** argv) {
     if (!artifact) return 6;
 
     flashnext_layer_transaction tx;
+    if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
+        export_blob("segment_a_boundary", 0, artifact, (2560 + 10240 + 4) * sizeof(float), "12804", "f32");
+        export_blob("router_logits", 0, artifact + 12804, 512 * sizeof(float), "512", "f32");
+        const char * capture_dir = std::getenv("FLASHNEXT_COMPARE_DIR");
+        const bool captures_ready = capture_file_ready(capture_dir, "segment_a_boundary", 12804 * sizeof(float)) &&
+            capture_file_ready(capture_dir, "router_logits", 512 * sizeof(float));
+        const bool segment_a_only = std::getenv("CORTEX_REFERENCE_POSITION0_ONLY") != nullptr;
+        const bool full_layer0_only = std::getenv("CORTEX_REFERENCE_FULL_LAYER0_ONLY") != nullptr;
+        if (segment_a_only && full_layer0_only) {
+            std::fprintf(stderr, "FLASHNEXT_DIAGNOSTIC_MODE=FAIL mutually_exclusive\n");
+            llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return 7;
+        }
+        if (segment_a_only) {
+            if (!captures_ready) {
+                std::fprintf(stderr, "FLASHNEXT_POSITION0_ONLY=FAIL captures_incomplete\n");
+                llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return 7;
+            }
+            std::printf("FLASHNEXT_POSITION0_ONLY=PASS captures_ready=YES\n");
+            llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return 0;
+        }
+        if (std::getenv("CORTEX_REFERENCE_TWO_TOKEN_ONLY") != nullptr) {
+            const int32_t token1 = 248046;
+            // Reuse the original embedding-backed batch allocation. Creating a
+            // second batch causes the reusable graph input binding to lose its
+            // tensor pointer before set_input(); reusing the allocation keeps
+            // ownership and the persistent graph input stable.
+            std::vector<float> embedding1((size_t) n_embd_inp);
+            bool ok = n_embd_inp > 0 && llama_cortex_token_embd_rows(model, &token1, 1, embedding1.data());
+            if (ok) {
+                std::copy(embedding1.begin(), embedding1.end(), batch.embd);
+                batch.pos[0] = 1; batch.n_seq_id[0] = 1; batch.seq_id[0][0] = 0; batch.logits[0] = 1; batch.n_tokens = 1;
+                ok = llama_decode(ctx, batch) == 0;
+                llama_synchronize(ctx);
+            }
+            // This diagnostic context does not allocate the optional
+            // embeddings buffer.  The completed graph exposes the packed
+            // output through the logits accessor, as position 0 does above.
+            const float * output1 = ok ? llama_get_logits_ith(ctx, 0) : nullptr;
+            const int n_out1 = llama_model_n_embd_out(model);
+            if (ok && output1 && n_out1 > 0) {
+                for (int i = 0; i < n_out1; ++i) ok = ok && std::isfinite(output1[i]);
+                export_blob("two_token_pos1_output", 0, output1, (size_t) n_out1 * sizeof(float), "n_embd_out", "f32");
+            } else ok = false;
+            const std::vector<uint8_t> state_after_position1 = capture_seq_state(ctx);
+            if (ok) {
+                export_blob("two_token_pos0_state", 0, state_after_position0.data(), state_after_position0.size(), "opaque", "u8");
+                export_blob("two_token_pos1_state", 0, state_after_position1.data(), state_after_position1.size(), "opaque", "u8");
+                ok = !state_after_position0.empty() && !state_after_position1.empty();
+            }
+            std::printf("REFERENCE_TWO_TOKEN_ONLY=%s token0=248045 token1=248046 state0_bytes=%zu state1_bytes=%zu\n",
+                ok ? "PASS" : "FAIL", state_after_position0.size(), state_after_position1.size());
+            llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return ok ? 0 : 12;
+        }
+    }
     std::memcpy(tx.pre_moe_hidden.data(), artifact, tx.pre_moe_hidden.size()*sizeof(float));
     std::memcpy(tx.residual_hc.data(), artifact + 2560, tx.residual_hc.size()*sizeof(float));
     std::memcpy(tx.inject.data(), artifact + 2560 + tx.residual_hc.size(), tx.inject.size()*sizeof(float));
@@ -1760,10 +1872,47 @@ int main(int argc, char ** argv) {
     std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT shared_moe_begin\n"); std::fflush(stderr);
     if (!flashnext_execute_shared_expert(shared, tx)) { ::close(fd); return 10; }
     std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT shared_moe_done\n"); std::fflush(stderr);
+    if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
+        bool moe_finite = true;
+        for (float value : tx.selected_moe) moe_finite = moe_finite && std::isfinite(value);
+        for (float value : tx.shared_moe) moe_finite = moe_finite && std::isfinite(value);
+        if (!moe_finite) return 10;
+        export_blob("selected_moe", 0, tx.selected_moe.data(), tx.selected_moe.size() * sizeof(float), "2560", "f32");
+        export_blob("shared_moe", 0, tx.shared_moe.data(), tx.shared_moe.size() * sizeof(float), "2560", "f32");
+    }
     for (size_t i = 0; i < tx.complete_moe.size(); ++i) tx.complete_moe[i] = tx.selected_moe[i] + tx.shared_moe[i];
+    if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
+        export_blob("pre_hc_block_out", 0, tx.complete_moe.data(), tx.complete_moe.size() * sizeof(float), "2560", "f32");
+        export_blob("complete_moe", 0, tx.complete_moe.data(), tx.complete_moe.size() * sizeof(float), "2560", "f32");
+        export_blob("recurrent_residual", 0, tx.residual_hc.data(), tx.residual_hc.size() * sizeof(float), "2560,4,1", "f32");
+        export_blob("injection", 0, tx.inject.data(), tx.inject.size() * sizeof(float), "4", "f32");
+        export_segment_b_contract(std::getenv("FLASHNEXT_COMPARE_DIR"), tx);
+    }
     std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT graph_b_begin\n"); std::fflush(stderr);
     if (!flashnext_execute_segment_b(tx)) return 11;
+    if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
+        export_blob("post_segment_b", 0, tx.layer_output.data(), tx.layer_output.size() * sizeof(float), "2560,4,1", "f32");
+    }
     std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT graph_b_done\n"); std::fflush(stderr);
+
+    if (std::getenv("CORTEX_REFERENCE_FULL_LAYER0_ONLY") != nullptr) {
+        const char * capture_dir = std::getenv("FLASHNEXT_COMPARE_DIR");
+        bool finite = true;
+        for (size_t i = 0; i < 12804 + 512; ++i) finite = finite && std::isfinite(artifact[i]);
+        for (float value : tx.layer_output) finite = finite && std::isfinite(value);
+        const bool captures_ready = capture_dir != nullptr &&
+            capture_file_ready(capture_dir, "segment_a_boundary", 12804 * sizeof(float)) &&
+            capture_file_ready(capture_dir, "router_logits", 512 * sizeof(float)) &&
+            capture_file_ready(capture_dir, "selected_moe", 2560 * sizeof(float)) &&
+            capture_file_ready(capture_dir, "shared_moe", 2560 * sizeof(float)) &&
+            capture_file_ready(capture_dir, "post_segment_b", 10240 * sizeof(float));
+        if (!captures_ready || !finite) {
+            std::fprintf(stderr, "FLASHNEXT_FULL_LAYER0_ONLY=FAIL captures_incomplete finite=%s\n", finite ? "YES" : "NO");
+            llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return 12;
+        }
+        std::printf("FLASHNEXT_FULL_LAYER0_ONLY=PASS captures_ready=YES segment_b=executed\n");
+        llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return 0;
+    }
 
     // Complete-chain mode starts with the real stock layer-0 token path above
     // and then reuses the existing owned-activation transaction coordinator
@@ -1807,6 +1956,7 @@ int main(int argc, char ** argv) {
         for (uint32_t il = 1; il < std::min<uint32_t>(48, model_layer_count); ++il) {
             std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT next_load_begin=%u\n", il); std::fflush(stderr);
             setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(il).c_str(), 1);
+            extern char ** environ; for(char ** s = environ; *s; ++s) if(std::string(*s).find("CORTEX")!=std::string::npos) std::fprintf(stderr, "ENV_AT_LAYER_%u: %s\n", il, *s);
             setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(il).c_str(), 1);
             setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(il + 1).c_str(), 1);
             setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(il + 1).c_str(), 1);
@@ -2026,3 +2176,4 @@ int main(int argc, char ** argv) {
         (unsigned long long)tx.io.tensor_window_bytes,(unsigned long long)tx.io.pread_calls);
     ::close(fd); llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free(); return 0;
 }
+#endif // CORTEX_LAYER_DRIVER_LIBRARY
