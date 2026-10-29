@@ -19,6 +19,9 @@ int flashnext_layer_driver_embedding(flashnext_layer_driver * driver, int32_t to
 // 10,240-element output to the next layer without reinitializing the handle.
 int flashnext_layer_driver_run(flashnext_layer_driver * driver, int32_t position,
         const float * input, size_t input_count, float * output, size_t output_capacity);
+int flashnext_layer_driver_run_layer(flashnext_layer_driver * driver, uint32_t layer,
+        int32_t position, const float * input, size_t input_count,
+        float * output, size_t output_capacity);
 size_t flashnext_layer_driver_state_size(const flashnext_layer_driver * driver);
 int flashnext_layer_driver_copy_state(const flashnext_layer_driver * driver, void * dst, size_t capacity);
 void flashnext_layer_driver_close(flashnext_layer_driver * driver);

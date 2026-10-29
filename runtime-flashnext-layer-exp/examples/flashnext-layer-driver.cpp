@@ -47,6 +47,17 @@ extern "C" int flashnext_layer_driver_run(flashnext_layer_driver * d, int32_t po
     return (int) owned.size();
 }
 
+extern "C" int flashnext_layer_driver_run_layer(flashnext_layer_driver * d, uint32_t layer,
+        int32_t position, const float * input, size_t input_count,
+        float * output, size_t output_capacity) {
+    if (!d || layer < d->layer_start || layer >= d->layer_end || !input || !output || input_count != 2560 || output_capacity < 10240) return -1;
+    std::vector<float> owned(input, input + input_count);
+    const auto result = run_layer_transaction(d->ctx, layer, position, owned, d->index_path);
+    if (!result.state_committed || result.output.size() > output_capacity) return -2;
+    std::copy(result.output.begin(), result.output.end(), output);
+    return (int) result.output.size();
+}
+
 extern "C" int flashnext_layer_driver_embedding(flashnext_layer_driver * d, int32_t token,
         float * output, size_t capacity) {
     if (!d || !d->model || !output || capacity < 2560 || token < 0) return -1;
