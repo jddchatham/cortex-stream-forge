@@ -13,6 +13,8 @@ typedef struct flashnext_layer_driver flashnext_layer_driver;
 // remain owned by the driver; returned output is caller-owned.
 flashnext_layer_driver * flashnext_layer_driver_open(const char * model_path,
         const char * tensor_index_path, uint32_t layer_start, uint32_t layer_end);
+int flashnext_layer_driver_embedding(flashnext_layer_driver * driver, int32_t token,
+        float * output, size_t capacity);
 // Executes every layer in [layer_start, layer_end), handing each layer's
 // 10,240-element output to the next layer without reinitializing the handle.
 int flashnext_layer_driver_run(flashnext_layer_driver * driver, int32_t position,

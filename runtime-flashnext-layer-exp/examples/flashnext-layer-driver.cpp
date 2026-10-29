@@ -47,6 +47,12 @@ extern "C" int flashnext_layer_driver_run(flashnext_layer_driver * d, int32_t po
     return (int) owned.size();
 }
 
+extern "C" int flashnext_layer_driver_embedding(flashnext_layer_driver * d, int32_t token,
+        float * output, size_t capacity) {
+    if (!d || !d->model || !output || capacity < 2560 || token < 0) return -1;
+    return llama_cortex_token_embd_rows(d->model, &token, 1, output) ? 2560 : -2;
+}
+
 extern "C" size_t flashnext_layer_driver_state_size(const flashnext_layer_driver * d) {
     return d && d->ctx ? llama_state_seq_get_size(d->ctx, 0) : 0;
 }
