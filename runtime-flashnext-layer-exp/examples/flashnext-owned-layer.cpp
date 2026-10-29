@@ -935,11 +935,12 @@ static layer_transaction_result run_layer_transaction(
 int main(int argc, char ** argv) {
     // semantic inputs only: model path and flashnext-tensor-index.json
     if (argc != 3) return 2;
+    const bool chain_1_2_mode = std::getenv("CORTEX_FLASHNEXT_CHAIN_1_2") != nullptr;
     const char * layer_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
-    const uint32_t target_layer = layer_start_env ? (uint32_t) std::strtoul(layer_start_env, nullptr, 10) : 1;
-    const bool range_mode = layer_start_env != nullptr && target_layer > 0;
+    const uint32_t target_layer = chain_1_2_mode ? 0 : (layer_start_env ? (uint32_t) std::strtoul(layer_start_env, nullptr, 10) : 1);
+    const bool range_mode = chain_1_2_mode || (layer_start_env != nullptr && target_layer > 0);
     setenv("CORTEX_PREAD_ARENA", "1", 1);
-    setenv("CORTEX_LOW_RESIDENCY_LAYER", range_mode ? std::to_string(target_layer).c_str() : "0", 1);
+    setenv("CORTEX_LOW_RESIDENCY_LAYER", range_mode ? (chain_1_2_mode ? "0" : std::to_string(target_layer).c_str()) : "0", 1);
     if (!range_mode) {
         // The primary embedding is supplied as a streamed caller-owned row;
         // keep token_embd.weight out of the executed graph and preserve the
@@ -949,6 +950,9 @@ int main(int argc, char ** argv) {
         setenv("CORTEX_FLASHNEXT_SEGMENT_A", "1", 1);
         setenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER", "1", 1);
     } else {
+        if (chain_1_2_mode) {
+            setenv("CORTEX_EXTERNAL_GLOBAL_TENSORS", "1", 1);
+        }
         setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
         // Nonzero-layer transactions are completed by the external sparse
         // MoE bridge.  Keep the GGML graph at the authoritative pre-MoE
@@ -958,12 +962,17 @@ int main(int argc, char ** argv) {
         if (std::getenv("CORTEX_FLASHNEXT_PRE_MOE") != nullptr) {
             LLAMA_LOG_INFO("FLASHNEXT_PRE_MOE_RUN start=1 end=2\n");
         }
-        setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(target_layer + 1).c_str(), 1);
+        setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(chain_1_2_mode ? 2 : target_layer + 1).c_str(), 1);
         if (target_layer == 3 && std::getenv("CORTEX_FLASHNEXT_LAYER3_TRANSACTION") != nullptr) {
             setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
         }
-        LLAMA_LOG_INFO("FLASHNEXT_RANGE_RUN start=%u end=%u owned_input_width=10240 embedding_path=SKIPPED\n",
-                target_layer, target_layer + 1);
+        LLAMA_LOG_INFO("FLASHNEXT_RANGE_RUN start=%u end=%u owned_input_width=10240 embedding_path=%s\n",
+                chain_1_2_mode ? 0 : target_layer, chain_1_2_mode ? 2 : target_layer + 1,
+                chain_1_2_mode ? "STREAMED_TOKEN" : "SKIPPED");
+        if (chain_1_2_mode) {
+            setenv("CORTEX_FLASHNEXT_LAYER_START", "0", 1);
+            setenv("CORTEX_FLASHNEXT_LAYER_END", "2", 1);
+        }
     }
     llama_backend_init();
     if (!known_pattern_backend_test()) return 16;
@@ -974,6 +983,33 @@ int main(int argc, char ** argv) {
     if (range_mode) cp.embeddings = true;
     llama_context * ctx = llama_init_from_model(model, cp);
     if (!ctx) return 4;
+
+    if (chain_1_2_mode) {
+        const int32_t token = 248045;
+        std::vector<float> embedding(2560), layer0(10240), layer1(10240);
+        const bool embedded = llama_cortex_token_embd_rows(model, &token, 1, embedding.data());
+        auto run = [&](int layer, const std::vector<float> & in, std::vector<float> & out) {
+            const auto result = run_layer_transaction(ctx, layer, 0, in, argv[2]);
+            if (!result.state_committed || result.output.size() != out.size()) return false;
+            std::copy(result.output.begin(), result.output.end(), out.begin());
+            return true;
+        };
+        const bool ok0 = embedded && run(0, embedding, layer0);
+        const auto state0 = capture_seq_state(ctx);
+        const bool ok1 = ok0 && run(1, layer0, layer1);
+        const auto state1 = capture_seq_state(ctx);
+        const char * dir = std::getenv("FLASHNEXT_COMPARE_DIR");
+        if (dir && ok1) {
+            export_blob("layer0_output", 0, layer0.data(), layer0.size()*sizeof(float), "10240", "f32");
+            export_blob("layer1_output", 0, layer1.data(), layer1.size()*sizeof(float), "10240", "f32");
+            export_blob("layer0_state", 0, state0.data(), state0.size(), "opaque", "u8");
+            export_blob("layer1_state", 0, state1.data(), state1.size(), "opaque", "u8");
+        }
+        std::printf("GENUINE_CHAIN_0_1=%s EMBEDDING=%s LAYER0=%s LAYER1=%s STATE0_BYTES=%zu STATE1_BYTES=%zu\n",
+            ok1 ? "PASS" : "FAIL", embedded ? "PASS" : "FAIL", ok0 ? "PASS" : "FAIL", ok1 ? "PASS" : "FAIL", state0.size(), state1.size());
+        llama_free(ctx); llama_model_free(model); llama_backend_free();
+        return ok1 ? 0 : 20;
+    }
 
     // First real full-attention milestone: execute the stock layer-3 graph
     // through its existing pre-MoE boundary.  This intentionally does not
