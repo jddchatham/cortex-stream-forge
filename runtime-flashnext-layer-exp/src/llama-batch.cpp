@@ -1012,7 +1012,12 @@ struct llama_batch llama_batch_init(int32_t n_tokens_alloc, int32_t embd, int32_
         batch.token = (llama_token *) malloc(sizeof(llama_token) * n_tokens_alloc);
     }
 
-    batch.pos      = (llama_pos *)     malloc(sizeof(llama_pos)      * n_tokens_alloc);
+    // Embedding-backed models may consume multiple positional components
+    // (M-RoPE / n_pos_per_embd). Keep the legacy public batch layout
+    // compatible while providing the maximum supported position tuple;
+    // callers that use one position continue to use element zero.
+    constexpr int32_t n_pos_alloc = GGML_MROPE_SECTIONS;
+    batch.pos      = (llama_pos *)     calloc((size_t) n_tokens_alloc * n_pos_alloc, sizeof(llama_pos));
     batch.n_seq_id = (int32_t *)       malloc(sizeof(int32_t)        * n_tokens_alloc);
     batch.seq_id   = (llama_seq_id **) malloc(sizeof(llama_seq_id *) * (n_tokens_alloc + 1));
     for (int i = 0; i < n_tokens_alloc; ++i) {
