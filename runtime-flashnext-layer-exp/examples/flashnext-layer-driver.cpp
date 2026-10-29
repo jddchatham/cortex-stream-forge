@@ -38,10 +38,13 @@ extern "C" int flashnext_layer_driver_run(flashnext_layer_driver * d, int32_t po
         const float * input, size_t input_count, float * output, size_t output_capacity) {
     if (!d || !input || !output || input_count != 2560 || output_capacity < 10240) return -1;
     std::vector<float> owned(input, input + input_count);
-    const auto result = run_layer_transaction(d->ctx, d->layer_start, position, owned, d->index_path);
-    if (!result.state_committed || result.output.size() > output_capacity) return -2;
-    std::copy(result.output.begin(), result.output.end(), output);
-    return (int) result.output.size();
+    for (uint32_t layer = d->layer_start; layer < d->layer_end; ++layer) {
+        const auto result = run_layer_transaction(d->ctx, layer, position, owned, d->index_path);
+        if (!result.state_committed || result.output.size() > output_capacity) return -2;
+        owned.assign(result.output.begin(), result.output.end());
+    }
+    std::copy(owned.begin(), owned.end(), output);
+    return (int) owned.size();
 }
 
 extern "C" size_t flashnext_layer_driver_state_size(const flashnext_layer_driver * d) {
