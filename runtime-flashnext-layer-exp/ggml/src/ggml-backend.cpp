@@ -23,6 +23,12 @@
 #include <unordered_map>
 #include <vector>
 
+#if defined(__linux__)
+#include <execinfo.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
+
 static thread_local uint64_t g_cortex_diag_graph_id = 0;
 static thread_local uint32_t g_cortex_diag_layer_start = 0;
 static thread_local uint32_t g_cortex_diag_layer_end = 0;
@@ -361,6 +367,21 @@ enum ggml_backend_buffer_usage ggml_backend_buffer_get_usage(ggml_backend_buffer
 }
 
 ggml_backend_buffer_type_t ggml_backend_buffer_get_type(ggml_backend_buffer_t buffer) {
+    if (buffer == NULL) {
+#if defined(__linux__)
+        void * frames[16];
+        const int n = backtrace(frames, 16);
+        GGML_LOG_ERROR("CORTEX null-buffer get_type graph_id=%llu range=[%u,%u) tid=%ld return=%p frames=%d\n",
+            (unsigned long long) g_cortex_diag_graph_id, g_cortex_diag_layer_start,
+            g_cortex_diag_layer_end, (long) syscall(SYS_gettid),
+            __builtin_return_address(0), n);
+        backtrace_symbols_fd(frames, n, fileno(stderr));
+        fflush(stderr);
+#else
+        GGML_LOG_ERROR("CORTEX null-buffer get_type\n");
+        fflush(stderr);
+#endif
+    }
     GGML_ASSERT(buffer);
     return buffer->buft;
 }
