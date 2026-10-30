@@ -327,6 +327,14 @@ size_t ggml_backend_buffer_get_max_size(ggml_backend_buffer_t buffer) {
 }
 
 size_t ggml_backend_buffer_get_alloc_size(ggml_backend_buffer_t buffer, const struct ggml_tensor * tensor) {
+    if (buffer == NULL) {
+        GGML_LOG_ERROR("CORTEX alloc_size missing-buffer tensor=%s ptr=%p type=%d ne=[%lld,%lld,%lld,%lld] data=%p tensor_buffer=%p view_src=%p\n",
+            tensor ? tensor->name : "<null>", (const void *) tensor, tensor ? (int) tensor->type : -1,
+            tensor ? (long long) tensor->ne[0] : 0, tensor ? (long long) tensor->ne[1] : 0,
+            tensor ? (long long) tensor->ne[2] : 0, tensor ? (long long) tensor->ne[3] : 0,
+            tensor ? tensor->data : NULL, tensor ? (void *) tensor->buffer : NULL,
+            tensor ? (void *) tensor->view_src : NULL);
+    }
     return ggml_backend_buft_get_alloc_size(ggml_backend_buffer_get_type(buffer), tensor);
 }
 
