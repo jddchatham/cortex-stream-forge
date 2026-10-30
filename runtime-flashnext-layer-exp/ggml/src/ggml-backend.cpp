@@ -23,6 +23,16 @@
 #include <unordered_map>
 #include <vector>
 
+static thread_local uint64_t g_cortex_diag_graph_id = 0;
+static thread_local uint32_t g_cortex_diag_layer_start = 0;
+static thread_local uint32_t g_cortex_diag_layer_end = 0;
+
+extern "C" void ggml_backend_sched_set_cortex_diag_graph(uint64_t graph_id, uint32_t layer_start, uint32_t layer_end) {
+    g_cortex_diag_graph_id = graph_id;
+    g_cortex_diag_layer_start = layer_start;
+    g_cortex_diag_layer_end = layer_end;
+}
+
 #ifdef __APPLE__
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -2156,6 +2166,13 @@ bool ggml_backend_sched_alloc_graph(ggml_backend_sched_t sched, struct ggml_cgra
     GGML_ASSERT((int)sched->hash_set.size >= graph->n_nodes + graph->n_leafs);
     GGML_ASSERT(!sched->is_alloc);
 
+    if (getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+        GGML_LOG_ERROR("SCHED_ALLOC_BEGIN graph_build_id=%llu graph_uid=%llu range=[%u,%u) scheduler=%p graph=%p nodes=%d leafs=%d\n",
+                (unsigned long long) g_cortex_diag_graph_id, (unsigned long long) graph->uid,
+                g_cortex_diag_layer_start, g_cortex_diag_layer_end,
+                (void *) sched, (void *) graph, graph->n_nodes, graph->n_leafs);
+    }
+
     // Bounded forensic trace for the FlashNext two-range allocation failure.
     // This is intentionally diagnostic-only: it does not alter allocation or
     // ownership decisions.  The layer range is supplied by the Cortex caller
@@ -2197,6 +2214,13 @@ bool ggml_backend_sched_alloc_graph(ggml_backend_sched_t sched, struct ggml_cgra
     }
 
     sched->is_alloc = true;
+
+    if (getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+        GGML_LOG_ERROR("SCHED_ALLOC_END graph_build_id=%llu graph_uid=%llu range=[%u,%u) scheduler=%p graph=%p nodes=%d leafs=%d\n",
+                (unsigned long long) g_cortex_diag_graph_id, (unsigned long long) graph->uid,
+                g_cortex_diag_layer_start, g_cortex_diag_layer_end,
+                (void *) sched, (void *) graph, graph->n_nodes, graph->n_leafs);
+    }
 
     return true;
 }

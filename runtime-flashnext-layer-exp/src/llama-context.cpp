@@ -16,6 +16,7 @@
 #include "llama.h"
 
 #include <cinttypes>
+#include <atomic>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -24,6 +25,7 @@
 #include <unordered_map>
 
 namespace {
+static std::atomic<uint64_t> cortex_diag_graph_build_seq{0};
 // Decode-local ownership guard.  This deliberately does not alter memory
 // preparation or graph semantics; it makes the existing context lifetime
 // explicit and prevents accidental reuse after close.
@@ -2007,7 +2009,20 @@ llm_graph_result * llama_context::process_ubatch_prepared(
 
         //const auto t_start_us = ggml_time_us();
 
+        const uint64_t diag_graph_id = ++cortex_diag_graph_build_seq;
+        if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+            const uint32_t requested_start = gparams.range ? gparams.range->start_layer : 0;
+            const uint32_t requested_end = gparams.range ? gparams.range->end_layer_exclusive : model.hparams.n_layer();
+            LLAMA_LOG_ERROR("GRAPH_BUILD_BEGIN graph_build_id=%" PRIu64 " range=[%u,%u) scheduler=%p result=%p\n",
+                    diag_graph_id, requested_start, requested_end, (void *) sched.get(), (void *) res);
+            ggml_backend_sched_set_cortex_diag_graph(diag_graph_id, requested_start, requested_end);
+        }
         gf = model.build_graph(gparams);
+
+        if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+            LLAMA_LOG_ERROR("GRAPH_BUILD_END graph_build_id=%" PRIu64 " graph=%p\n",
+                    diag_graph_id, (void *) gf);
+        }
 
         //LLAMA_LOG_INFO("graph build time: %.3f ms\n", (ggml_time_us() - t_start_us)/1000.0);
 
