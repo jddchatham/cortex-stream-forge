@@ -23,6 +23,40 @@
 #include <string>
 #include <unordered_map>
 
+namespace {
+// Decode-local ownership guard.  This deliberately does not alter memory
+// preparation or graph semantics; it makes the existing context lifetime
+// explicit and prevents accidental reuse after close.
+class memory_context_owner {
+public:
+    memory_context_owner() = default;
+    explicit memory_context_owner(llama_memory_context_ptr value) : value_(std::move(value)) {}
+    memory_context_owner(const memory_context_owner &) = delete;
+    memory_context_owner & operator=(const memory_context_owner &) = delete;
+    memory_context_owner(memory_context_owner &&) noexcept = default;
+    memory_context_owner & operator=(memory_context_owner &&) noexcept = default;
+
+    llama_memory_context_i * get() const { return closed_ ? nullptr : value_.get(); }
+    llama_memory_context_i * operator->() const {
+        GGML_ASSERT(!closed_ && value_ != nullptr);
+        return value_.get();
+    }
+    explicit operator bool() const { return !closed_ && value_ != nullptr; }
+
+    void close() {
+        GGML_ASSERT(!closed_);
+        value_.reset();
+        closed_ = true;
+    }
+
+    ~memory_context_owner() = default;
+
+private:
+    llama_memory_context_ptr value_;
+    bool closed_ = false;
+};
+}
+
 //
 // llama_context
 //
@@ -2333,10 +2367,10 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
     // handle any pending shifts/copies
     memory_update(false);
 
-    llama_memory_context_ptr mctx;
+    memory_context_owner mctx;
 
     while (true) {
-        mctx = memory->init_batch(*balloc, cparams.n_ubatch, output_all);
+        mctx = memory_context_owner(memory->init_batch(*balloc, cparams.n_ubatch, output_all));
         if (!mctx) {
             return -2;
         }
