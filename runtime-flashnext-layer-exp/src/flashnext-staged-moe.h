@@ -1,6 +1,7 @@
 #pragma once
 
 #include "flashnext-layer-transaction.h"
+#include "flashnext-tensor-index.h"
 
 #include <functional>
 #include <string>
@@ -17,6 +18,9 @@ struct flashnext_staged_moe {
     phase state = phase::empty;
 
     bool begin(int layer, int64_t position, std::string & error);
+    bool execute_streamed_moe(const flashnext_tensor_index & index,
+                              const std::string & index_path,
+                              std::string & error);
     bool run(stage_a_fn stage_a, stage_b_fn stage_b, stage_c_fn stage_c, std::string & error);
     bool close(std::string & error);
 };

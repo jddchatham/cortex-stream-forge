@@ -1,6 +1,10 @@
 #include "flashnext-staged-moe.h"
+#include "flashnext-selected-moe.h"
+#include "flashnext-shared-expert.h"
 
 #include <cmath>
+#include <fcntl.h>
+#include <unistd.h>
 
 namespace {
 template <typename Range>
@@ -17,6 +21,43 @@ bool flashnext_staged_moe::begin(int layer, int64_t position, std::string & erro
     tx.position = position;
     state = phase::empty;
     return true;
+}
+
+bool flashnext_staged_moe::execute_streamed_moe(const flashnext_tensor_index & index,
+                                                const std::string & index_path,
+                                                std::string & error) {
+    if (state != phase::pre_moe) { error = "Stage B requires completed Stage A"; return false; }
+
+    if (!flashnext_execute_selected_moe(index, index_path, tx)) {
+        error = "selected-expert streaming failed";
+        return false;
+    }
+
+    flashnext_shared_expert_slices shared;
+    std::array<flashnext_tensor_descriptor, 4> descriptors;
+    const flashnext_projection projections[] = {
+        flashnext_projection::gate, flashnext_projection::up,
+        flashnext_projection::down, flashnext_projection::shared_control,
+    };
+    for (size_t i = 0; i < descriptors.size(); ++i) {
+        if (!index.resolve_shared(tx.layer, projections[i], descriptors[i], &error)) return false;
+        shared.fds[i] = ::open(descriptors[i].path.c_str(), O_RDONLY | O_CLOEXEC);
+        if (shared.fds[i] < 0) { error = "cannot open shared-expert shard"; break; }
+    }
+    if (error.empty()) {
+        shared.gate_offset = descriptors[0].offset;
+        shared.up_offset = descriptors[1].offset;
+        shared.down_offset = descriptors[2].offset;
+        shared.sigmoid_offset = descriptors[3].offset;
+        if (!flashnext_execute_shared_expert(shared, tx)) error = "shared-expert streaming failed";
+    }
+    for (int fd : shared.fds) if (fd >= 0) ::close(fd);
+    if (!error.empty()) return false;
+
+    for (size_t i = 0; i < tx.complete_moe.size(); ++i)
+        tx.complete_moe[i] = tx.selected_moe[i] + tx.shared_moe[i];
+    state = phase::streamed;
+    return finite_range(tx.complete_moe);
 }
 bool flashnext_staged_moe::run(stage_a_fn stage_a, stage_b_fn stage_b,
                                stage_c_fn stage_c, std::string & error) {
