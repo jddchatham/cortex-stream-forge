@@ -2491,6 +2491,8 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
     const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
 
+    GGML_ASSERT(range_input || tok_embd != nullptr);
+
     if (range_input) {
         const size_t expected = (size_t) n_embd_range * ubatch.n_tokens;
         const size_t supplied = ubatch.data ? ubatch.data->embd.size() : 0;

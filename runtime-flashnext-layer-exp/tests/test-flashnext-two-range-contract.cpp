@@ -41,6 +41,7 @@ int main() {
     if (range1.data->embd != layer0 || range1.embd != range1.data->embd.data()) return 2;
     range1_data.reset();
     if (!range1.data || range1.embd != range1.data->embd.data()) return 3;
+    if (range1.token != nullptr) return 4;
     std::puts("flashnext two-range contract: PASS");
     return 0;
 }
