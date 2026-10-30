@@ -2486,6 +2486,16 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
     const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
 
+    if (range_input) {
+        const size_t expected = (size_t) n_embd_range * ubatch.n_tokens;
+        const size_t supplied = ubatch.data ? ubatch.data->embd.size() : 0;
+        if (!ubatch.embd || supplied != expected) {
+            throw std::runtime_error(format(
+                "FlashNext range input requires %zu F32 values, supplied %zu",
+                expected, supplied));
+        }
+    }
+
     assert(n_embd_inp >= n_embd);
 
     auto inp = std::make_unique<llm_graph_input_embd>(n_embd_inp);
