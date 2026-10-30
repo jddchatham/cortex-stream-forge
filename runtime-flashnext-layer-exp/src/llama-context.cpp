@@ -14,9 +14,11 @@
 #include "llama-ext.h"
 #include "llama-sampler.h"
 #include "llama.h"
+#include "flashnext-staged-moe.h"
 
 #include <cinttypes>
 #include <atomic>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -1347,6 +1349,39 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
     if (cap < it->second.size()) return it->second.size();
     if (dst && !it->second.empty()) std::memcpy(dst, it->second.data(), it->second.size());
     return it->second.size();
+}
+
+bool llama_context::debug_export_flashnext_stage_a(flashnext_layer_transaction & tx, std::string & error) const {
+    const size_t boundary_count = tx.pre_moe_hidden.size() + tx.residual_hc.size() + tx.inject.size();
+    std::vector<float> boundary(boundary_count), router(512);
+    if (debug_copy_flashnext_tensor("flashnext_segment_a_boundary-0", boundary.data(),
+                                    boundary.size() * sizeof(float)) != boundary.size() * sizeof(float) ||
+        debug_copy_flashnext_tensor("diag_router_logits-0", router.data(),
+                                    router.size() * sizeof(float)) != router.size() * sizeof(float)) {
+        error = "Stage-A boundary or router capture is missing or has the wrong size";
+        return false;
+    }
+    std::copy(boundary.begin(), boundary.begin() + tx.pre_moe_hidden.size(), tx.pre_moe_hidden.begin());
+    std::copy(boundary.begin() + tx.pre_moe_hidden.size(),
+              boundary.begin() + tx.pre_moe_hidden.size() + tx.residual_hc.size(), tx.residual_hc.begin());
+    std::copy(boundary.end() - tx.inject.size(), boundary.end(), tx.inject.begin());
+
+    std::array<int, 512> order{};
+    for (int i = 0; i < 512; ++i) order[i] = i;
+    std::partial_sort(order.begin(), order.begin() + tx.experts_used, order.end(),
+        [&router](int a, int b) { return router[a] > router[b]; });
+    double total = 0.0;
+    std::array<double, tx.experts_used> weights{};
+    for (size_t i = 0; i < tx.experts_used; ++i) {
+        tx.selected_expert_ids[i] = order[i];
+        weights[i] = std::exp(static_cast<double>(router[order[i]]));
+        total += weights[i];
+    }
+    if (!(total > 0.0) || !std::isfinite(total)) { error = "invalid Stage-A router weights"; return false; }
+    for (size_t i = 0; i < tx.experts_used; ++i) tx.routing_weights[i] = weights[i] / total;
+    tx.layer = 0;
+    tx.position = 0;
+    return true;
 }
 
 bool llama_copy_graph_output_f32(ggml_backend_t backend, ggml_tensor * output,
@@ -3427,7 +3462,8 @@ llm_graph_cb llama_context::graph_get_cb() const {
 
         if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0 &&
             (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
-             strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "conv_", 5) == 0 ||
+             strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "flashnext_segment_a_boundary", 28) == 0 ||
+             strncmp(name, "conv_", 5) == 0 ||
              strncmp(name, "hc_", 3) == 0 ||
              strcmp(name, "linear_attn_qkv_mixed") == 0)) {
             flashnext_diag_tensors[format("%s-%d", name, il)] = cur;

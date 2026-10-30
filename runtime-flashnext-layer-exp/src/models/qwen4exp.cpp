@@ -797,7 +797,8 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
         // through the selected layer's attention/mixer, then expose only the
         // router logits.  Expert projections are deliberately not referenced
         // in this graph, so their payloads need not become resident.
-        if ((segment_a && il == 0) || (pre_moe_cut && il == layer_start)) {
+        if ((segment_a && il == 0) || (pre_moe_cut && il == layer_start) ||
+            (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr && il == 0)) {
             if (internal_diag && il >= 0) {
                 cb(cur, "diag_moe_input", il);
                 ggml_build_forward_expand(gf, cur);
