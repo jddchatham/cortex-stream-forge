@@ -82,7 +82,7 @@ struct llama_context {
 
     size_t debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap);
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
-    bool debug_export_flashnext_stage_a(flashnext_layer_transaction & tx, std::string & error) const;
+    bool debug_export_flashnext_stage_a(flashnext_layer_transaction & tx, std::string & error);
     // Copy the graph's final range activation after scheduler completion.
     // The destination is caller-owned and must hold exactly expected F32 values.
     bool debug_copy_flashnext_range_output(float * dst, size_t capacity, size_t expected);

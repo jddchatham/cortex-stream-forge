@@ -2495,7 +2495,9 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
     // boundary, not a token embedding row.  Keep this input F32 and owned by
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
-    const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
+    const bool staged_moe_stage_c = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE_STAGE_C") != nullptr;
+    const int64_t n_embd_range = staged_moe_stage_c ? (hparams.n_embd + hparams.n_embd * hparams.dsv4_hc_mult + hparams.dsv4_hc_mult) :
+        (range_input ? hparams.n_embd_out() : n_embd_inp);
 
     GGML_ASSERT(range_input || tok_embd != nullptr);
 

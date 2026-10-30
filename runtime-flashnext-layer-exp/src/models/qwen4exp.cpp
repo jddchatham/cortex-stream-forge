@@ -610,7 +610,8 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     // it is externally resident after range 0 and must not become a second
     // scheduler allocation candidate.
     const char * range_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
-    const bool nonzero_range = layer_start > 0 ||
+    const bool staged_moe_stage_c = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE_STAGE_C") != nullptr;
+    const bool nonzero_range = staged_moe_stage_c || layer_start > 0 ||
         (range_start_env != nullptr && std::strtoul(range_start_env, nullptr, 10) > 0);
     ggml_tensor * inpL = build_inp_embd(nonzero_range ? nullptr : model.tok_embd);
     if (layer_start > 0) {
@@ -619,6 +620,27 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     }
     cb(inpL, "model.input_embed", -1);
     ggml_build_forward_expand(gf, inpL);
+
+    if (staged_moe_stage_c) {
+        const int64_t hc = hparams.dsv4_hc_mult;
+        const int64_t hidden = hparams.n_embd;
+        const size_t block_off = hidden * sizeof(float);
+        const size_t residual_off = (hidden + hidden * hc) * sizeof(float);
+        ggml_tensor * block = ggml_view_1d(ctx0, inpL, hidden, block_off);
+        ggml_tensor * residual_flat = ggml_view_1d(ctx0, inpL, hidden * hc, block_off);
+        ggml_tensor * inject = ggml_view_1d(ctx0, inpL, hc, residual_off);
+        block = ggml_reshape_3d(ctx0, block, hidden, 1, n_tokens);
+        residual_flat = ggml_reshape_3d(ctx0, residual_flat, hidden, hc, n_tokens);
+        inject = ggml_reshape_3d(ctx0, inject, hc, 1, n_tokens);
+        cb(block, "staged_moe_complete", 0);
+        cb(residual_flat, "staged_moe_residual", 0);
+        cb(inject, "staged_moe_inject", 0);
+        ggml_tensor * output = build_hc_combine(residual_flat, block, inject, 0);
+        res->t_embd = output;
+        cb(output, "flashnext_staged_stage_c_output", 0);
+        ggml_build_forward_expand(gf, output);
+        return;
+    }
 
     const bool route_only = std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr;
     const bool internal_diag = std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr;

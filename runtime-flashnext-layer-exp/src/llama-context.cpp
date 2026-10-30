@@ -1351,7 +1351,8 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
     return it->second.size();
 }
 
-bool llama_context::debug_export_flashnext_stage_a(flashnext_layer_transaction & tx, std::string & error) const {
+bool llama_context::debug_export_flashnext_stage_a(flashnext_layer_transaction & tx, std::string & error) {
+    synchronize();
     const size_t boundary_count = tx.pre_moe_hidden.size() + tx.residual_hc.size() + tx.inject.size();
     std::vector<float> boundary(boundary_count), router(512);
     if (debug_copy_flashnext_tensor("flashnext_segment_a_boundary-0", boundary.data(),
@@ -2596,9 +2597,28 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
                             if (!index.load(index_path, &error)) return false;
                             return staged.execute_streamed_moe(index, index_path, error);
                         },
-                        [](const flashnext_layer_transaction &, std::string & error) {
-                            error = "Stage-C external-MoE graph is not yet implemented";
-                            return false;
+                        [this, &ubatch, &mctx, graph_type, &status, &res](const flashnext_layer_transaction & tx, std::string & error) {
+                            std::vector<float> packed;
+                            packed.reserve(tx.complete_moe.size() + tx.residual_hc.size() + tx.inject.size());
+                            packed.insert(packed.end(), tx.complete_moe.begin(), tx.complete_moe.end());
+                            packed.insert(packed.end(), tx.residual_hc.begin(), tx.residual_hc.end());
+                            packed.insert(packed.end(), tx.inject.begin(), tx.inject.end());
+
+                            auto data = std::make_shared<llama_ubatch::data_t>(*ubatch.data);
+                            data->embd = std::move(packed);
+                            llama_ubatch stage_c_batch = ubatch;
+                            stage_c_batch.data = data;
+                            stage_c_batch.embd = data->embd.data();
+                            stage_c_batch.token = nullptr;
+
+                            const char * old_stage_c = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE_STAGE_C");
+                            const std::string saved_stage_c = old_stage_c ? old_stage_c : "";
+                            setenv("CORTEX_FLASHNEXT_STAGED_MOE_STAGE_C", "1", 1);
+                            res = process_ubatch_prepared(stage_c_batch, graph_type, mctx.get(), status);
+                            if (old_stage_c) setenv("CORTEX_FLASHNEXT_STAGED_MOE_STAGE_C", saved_stage_c.c_str(), 1);
+                            else unsetenv("CORTEX_FLASHNEXT_STAGED_MOE_STAGE_C");
+                            if (!res) { error = "Stage-C graph execution failed"; return false; }
+                            return true;
                         }, staged_error);
                 if (!staged_ok) {
                     LLAMA_LOG_ERROR("FLASHNEXT_STAGED_MOE_FAILED %s\n", staged_error.c_str());
