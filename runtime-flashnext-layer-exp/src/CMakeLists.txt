@@ -41,6 +41,7 @@ set(LLAMA_CORE_SOURCES
     llama-vocab.cpp
     flashnext-selected-moe.cpp
     flashnext-shared-expert.cpp
+    flashnext-staged-moe.cpp
     flashnext-segment-b.cpp
     flashnext-tensor-index.cpp
     flashnext-stock-layer0-reference.cpp
