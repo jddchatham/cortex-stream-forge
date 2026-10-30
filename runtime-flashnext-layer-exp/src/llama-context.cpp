@@ -1166,7 +1166,16 @@ void llama_context::synchronize() {
         return;
     }
 
+    const bool forensic = std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr;
+    if (forensic) {
+        LLAMA_LOG_ERROR("SYNC_BEGIN scheduler=%p active_graph_id=%" PRIu64 "\n",
+                (void *) sched.get(), cortex_diag_active_graph_id.load(std::memory_order_relaxed));
+    }
     ggml_backend_sched_synchronize(sched.get());
+    if (forensic) {
+        LLAMA_LOG_ERROR("SYNC_END scheduler=%p active_graph_id=%" PRIu64 "\n",
+                (void *) sched.get(), cortex_diag_active_graph_id.load(std::memory_order_relaxed));
+    }
 
     if (flashnext_post_node_observer_active && backend_cpu != nullptr) {
         ggml_backend_cpu_set_post_node_observer(backend_cpu, nullptr, nullptr);
@@ -1204,6 +1213,10 @@ void llama_context::synchronize() {
     if ((std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr ||
          std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) &&
         !flashnext_diag_tensors.empty()) {
+        if (forensic) {
+            LLAMA_LOG_ERROR("CAPTURE_BEGIN graph_id=%" PRIu64 " tensors=%zu\n",
+                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), flashnext_diag_tensors.size());
+        }
         for (const auto & it : flashnext_diag_tensors) {
             if (flashnext_diag_owned.find(it.first) != flashnext_diag_owned.end()) {
                 continue;
@@ -1257,6 +1270,10 @@ void llama_context::synchronize() {
                     cortex_diag_active_graph_id.load(std::memory_order_relaxed), it.first.c_str(),
                     (void *) t, (void *) t->buffer);
             }
+        }
+        if (forensic) {
+            LLAMA_LOG_ERROR("CAPTURE_END graph_id=%" PRIu64 " owned=%zu\n",
+                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), flashnext_diag_owned.size());
         }
         flashnext_diag_tensors.clear();
     }
@@ -2033,6 +2050,10 @@ llm_graph_result * llama_context::process_ubatch_prepared(
         // those tensors have no runtime buffers.  Never carry them into the
         // staged execution capture map.
         flashnext_diag_tensors.clear();
+        // Reservation graphs are topology measurements only.  Their
+        // diagnostic tensors have no execution backing and must never enter
+        // the post-compute capture set.
+        cortex_diag_active_graph_id.store(0, std::memory_order_relaxed);
     }
 
     // the new graph parameters
@@ -2084,10 +2105,18 @@ llm_graph_result * llama_context::process_ubatch_prepared(
             return nullptr;
         }
 
+        if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+            LLAMA_LOG_ERROR("SCHED_ALLOC_BEGIN graph_build_id=%" PRIu64 " graph=%p scheduler=%p\n",
+                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), (void *) gf, (void *) sched.get());
+        }
         if (!ggml_backend_sched_alloc_graph(sched.get(), gf)) {
             LLAMA_LOG_ERROR("%s: failed to allocate graph\n", __func__);
             ret = GGML_STATUS_ALLOC_FAILED;
             return nullptr;
+        }
+        if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+            LLAMA_LOG_ERROR("SCHED_ALLOC_END graph_build_id=%" PRIu64 " graph=%p status=success\n",
+                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), (void *) gf);
         }
 
         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr &&
@@ -2121,7 +2150,15 @@ llm_graph_result * llama_context::process_ubatch_prepared(
         //LLAMA_LOG_INFO("graph set inputs time: %.3f ms\n", (ggml_time_us() - t_start_us)/1000.0);
     }
 
+    if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+        LLAMA_LOG_ERROR("GRAPH_COMPUTE_BEGIN graph_build_id=%" PRIu64 " graph=%p scheduler=%p\n",
+                cortex_diag_active_graph_id.load(std::memory_order_relaxed), (void *) res->get_gf(), (void *) sched.get());
+    }
     const auto status = graph_compute(res->get_gf(), ubatch.n_tokens > 1);
+    if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+        LLAMA_LOG_ERROR("GRAPH_COMPUTE_END graph_build_id=%" PRIu64 " graph=%p status=%d\n",
+                cortex_diag_active_graph_id.load(std::memory_order_relaxed), (void *) res->get_gf(), (int) status);
+    }
     if (status != GGML_STATUS_SUCCESS) {
         LLAMA_LOG_ERROR("%s: failed to compute graph, compute status: %d\n", __func__, status);
         ret = status;
@@ -3371,7 +3408,11 @@ ggml_cgraph * llama_context::graph_reserve(
 
     res->reset();
 
+    // A reserved graph is not executable and its tensors are intentionally
+    // unbacked.  Keep it out of staged post-compute diagnostics.
+    const uint64_t saved_diag_graph_id = cortex_diag_active_graph_id.exchange(0, std::memory_order_relaxed);
     auto * gf = model.build_graph(gparams);
+    cortex_diag_active_graph_id.store(saved_diag_graph_id, std::memory_order_relaxed);
 
     this->n_input_tensors = llama_graph_n_input_tensors(gf);
     this->n_outputs = save_n_outputs;
@@ -3533,12 +3574,17 @@ llm_graph_cb llama_context::graph_get_cb() const {
              strncmp(name, "conv_", 5) == 0 ||
              strncmp(name, "hc_", 3) == 0 ||
              strcmp(name, "linear_attn_qkv_mixed") == 0)) {
-            flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
-            ++flashnext_diag_generation;
-            if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
-                LLAMA_LOG_INFO("FLASHNEXT_STAGED_DIAG_REGISTER graph_id=%" PRIu64 " name=%s-%d tensor=%p buffer=%p\n",
-                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), name, il,
-                    (void *) cur, (void *) cur->buffer);
+            // During graph reservation the active id is zero and tensors are
+            // deliberately unbacked.  Only the execution graph may register
+            // tensors for post-synchronization capture.
+            if (cortex_diag_active_graph_id.load(std::memory_order_relaxed) != 0) {
+                flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
+                ++flashnext_diag_generation;
+                if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
+                    LLAMA_LOG_INFO("FLASHNEXT_STAGED_DIAG_REGISTER graph_id=%" PRIu64 " name=%s-%d tensor=%p buffer=%p\n",
+                        cortex_diag_active_graph_id.load(std::memory_order_relaxed), name, il,
+                        (void *) cur, (void *) cur->buffer);
+                }
             }
         }
 
