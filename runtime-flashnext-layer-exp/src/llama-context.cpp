@@ -28,6 +28,7 @@
 
 namespace {
 static std::atomic<uint64_t> cortex_diag_graph_build_seq{0};
+static std::atomic<uint64_t> cortex_diag_active_graph_id{0};
 // Decode-local ownership guard.  This deliberately does not alter memory
 // preparation or graph semantics; it makes the existing context lifetime
 // explicit and prevents accidental reuse after close.
@@ -1251,6 +1252,11 @@ void llama_context::synchronize() {
                 (long long)t->ne[2], (long long)t->ne[3], (int)t->type,
                 elements, bytes, nan, inf, minv, maxv,
                 (unsigned long long) hash, t->data, (void *) t->buffer);
+            if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
+                LLAMA_LOG_INFO("FLASHNEXT_STAGED_DIAG_CAPTURE graph_id=%" PRIu64 " name=%s tensor=%p buffer=%p\n",
+                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), it.first.c_str(),
+                    (void *) t, (void *) t->buffer);
+            }
         }
         flashnext_diag_tensors.clear();
     }
@@ -2062,6 +2068,7 @@ llm_graph_result * llama_context::process_ubatch_prepared(
                     diag_graph_id, requested_start, requested_end, (void *) sched.get(), (void *) res);
             ggml_backend_sched_set_cortex_diag_graph(diag_graph_id, requested_start, requested_end);
         }
+        cortex_diag_active_graph_id.store(diag_graph_id, std::memory_order_relaxed);
         gf = model.build_graph(gparams);
 
         if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
@@ -3528,6 +3535,11 @@ llm_graph_cb llama_context::graph_get_cb() const {
              strcmp(name, "linear_attn_qkv_mixed") == 0)) {
             flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
             ++flashnext_diag_generation;
+            if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
+                LLAMA_LOG_INFO("FLASHNEXT_STAGED_DIAG_REGISTER graph_id=%" PRIu64 " name=%s-%d tensor=%p buffer=%p\n",
+                    cortex_diag_active_graph_id.load(std::memory_order_relaxed), name, il,
+                    (void *) cur, (void *) cur->buffer);
+            }
         }
 
         // - norm may be automatically assigned to the backend of the previous layer, increasing data transfer between backends
