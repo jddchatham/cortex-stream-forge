@@ -2022,6 +2022,13 @@ llm_graph_result * llama_context::process_ubatch_prepared(
     auto * res = get_gf_res_prev();
     auto * gf  = res->get_gf();
 
+    if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
+        // Reservation graphs register diagnostic tensor pointers too, but
+        // those tensors have no runtime buffers.  Never carry them into the
+        // staged execution capture map.
+        flashnext_diag_tensors.clear();
+    }
+
     // the new graph parameters
     // in order to correctly reuse a graph, it's full topology has to be uniquely determined by these parameters
     const auto gparams = graph_params(res, ubatch, mctx, gtype);
