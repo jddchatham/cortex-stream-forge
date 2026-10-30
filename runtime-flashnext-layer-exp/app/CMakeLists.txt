@@ -3,6 +3,14 @@ set(TARGET llama-app)
 add_executable(${TARGET} llama.cpp download.cpp)
 set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME llama)
 
+# llama.cpp includes the generated build-info.h owned by llama-common-base.
+# Keep the generated-header location explicit for fresh out-of-tree builds.
+target_include_directories(${TARGET} PRIVATE
+    ${PROJECT_SOURCE_DIR}/common
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/ggml/include
+)
+
 target_link_libraries(${TARGET} PRIVATE
     llama-server-impl
     llama-cli-impl
