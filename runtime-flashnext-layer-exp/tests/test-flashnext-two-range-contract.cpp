@@ -20,10 +20,12 @@ int main() {
     batch.data = data;
 
     int prepare = 0;
+    int apply = 0;
     int find_slot = 0;
     int next = 0;
     std::vector<int> ranges;
     ++prepare;
+    ++apply;
     ++find_slot;
     ranges.push_back(0);
     layer1 = batch.data->embd;
@@ -35,7 +37,7 @@ int main() {
     range1.token = nullptr;
     ranges.push_back(1);
 
-    if (prepare != 1 || find_slot != 1 || next != 0 || ranges != std::vector<int>({0, 1})) return 1;
+    if (prepare != 1 || apply != 1 || find_slot != 1 || next != 0 || ranges != std::vector<int>({0, 1})) return 1;
     if (range1.data->embd != layer0 || range1.embd != range1.data->embd.data()) return 2;
     range1_data.reset();
     if (!range1.data || range1.embd != range1.data->embd.data()) return 3;

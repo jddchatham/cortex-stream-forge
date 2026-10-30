@@ -2531,6 +2531,12 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
             if (ubatch.n_tokens == 0 || hparams.n_embd_out() <= 0 || ubatch.data == nullptr) {
                 LLAMA_LOG_ERROR("%s: invalid FlashNext two-range batch\n", __func__);
                 status = GGML_STATUS_FAILED;
+            } else if (!mctx->apply()) {
+                // Prepared recurrent/hybrid contexts still require one apply
+                // to publish k-pool state before graph construction.  Reuse
+                // this applied context for both ranges below.
+                LLAMA_LOG_ERROR("%s: failed to apply FlashNext two-range memory context\n", __func__);
+                status = GGML_STATUS_FAILED;
             } else {
                 const size_t activation_count = (size_t) hparams.n_embd_out() * ubatch.n_tokens;
                 flashnext_range_activation.resize(activation_count);
