@@ -2026,7 +2026,8 @@ llm_graph_result * llama_context::process_ubatch_prepared(
     // in order to correctly reuse a graph, it's full topology has to be uniquely determined by these parameters
     const auto gparams = graph_params(res, ubatch, mctx, gtype);
 
-    if (!graph_reuse_disable && gf_res_prev_active == res && res->can_reuse(gparams)) {
+    const bool staged_moe = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr;
+    if (!graph_reuse_disable && !staged_moe && gf_res_prev_active == res && res->can_reuse(gparams)) {
         //LLAMA_LOG_DEBUG("%s: reusing previous graph\n", __func__);
 
         // with pipeline parallelism, the previous graph_compute_async may still be running

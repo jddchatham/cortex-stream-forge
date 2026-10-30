@@ -868,7 +868,7 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
                 // is an artifact bridge only; expert execution remains
                 // outside this graph.
                 ggml_tensor * router = build_lora_mm(model.layers[il].ffn_gate_inp, cur);
-                if (internal_diag && il >= 0) {
+                if ((internal_diag || std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) && il >= 0) {
                     cb(router, "diag_router_logits", il);
                     ggml_build_forward_expand(gf, router);
                 }
