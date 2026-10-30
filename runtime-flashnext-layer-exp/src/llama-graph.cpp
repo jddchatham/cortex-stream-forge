@@ -92,13 +92,13 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
             }
         }
     }
-    if (ubatch->token) {
+    if (ubatch->token && tokens) {
         const int64_t n_tokens = ubatch->n_tokens;
 
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
     }
 
-    if (ubatch->embd) {
+    if (ubatch->embd && embd) {
         GGML_ASSERT(embd->type == GGML_TYPE_F32);
 
         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
@@ -144,12 +144,12 @@ void llm_graph_input_embd_h::set_input(const llama_ubatch * ubatch) {
     }
     const int64_t n_tokens = ubatch->n_tokens;
 
-    if (ubatch->token) {
+    if (ubatch->token && tokens) {
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
-    } else {
+    } else if (!ubatch->token) {
         // note: mtmd embedding input goes through here
         GGML_ASSERT(ubatch->embd);
-        if (embd->buffer) {
+        if (embd && embd->buffer) {
             GGML_ASSERT(n_embd == embd->ne[0]);
             ggml_backend_tensor_set(embd, ubatch->embd, 0, n_tokens*n_embd*ggml_element_size(h));
         }
