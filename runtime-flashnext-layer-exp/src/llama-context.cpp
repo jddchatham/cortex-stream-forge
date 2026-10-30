@@ -1379,11 +1379,26 @@ bool llama_context::debug_export_flashnext_stage_a(flashnext_layer_transaction &
     synchronize();
     const size_t boundary_count = tx.pre_moe_hidden.size() + tx.residual_hc.size() + tx.inject.size();
     std::vector<float> boundary(boundary_count), router(512);
-    if (debug_copy_flashnext_tensor("flashnext_segment_a_boundary-0", boundary.data(),
-                                    boundary.size() * sizeof(float)) != boundary.size() * sizeof(float) ||
-        debug_copy_flashnext_tensor("diag_router_logits-0", router.data(),
-                                    router.size() * sizeof(float)) != router.size() * sizeof(float)) {
-        error = "Stage-A boundary or router capture is missing or has the wrong size";
+    const size_t boundary_bytes = debug_copy_flashnext_tensor(
+        "flashnext_segment_a_boundary-0", boundary.data(), boundary.size() * sizeof(float));
+    if (boundary_bytes == 0) {
+        error = "STAGE_A_CAPTURE_MISSING boundary";
+        return false;
+    }
+    if (boundary_bytes != boundary.size() * sizeof(float)) {
+        error = "STAGE_A_CAPTURE_DIMENSION boundary expected=" +
+            std::to_string(boundary.size() * sizeof(float)) + " actual=" + std::to_string(boundary_bytes);
+        return false;
+    }
+    const size_t router_bytes = debug_copy_flashnext_tensor(
+        "diag_router_logits-0", router.data(), router.size() * sizeof(float));
+    if (router_bytes == 0) {
+        error = "STAGE_A_CAPTURE_MISSING router";
+        return false;
+    }
+    if (router_bytes != router.size() * sizeof(float)) {
+        error = "STAGE_A_CAPTURE_DIMENSION router expected=" +
+            std::to_string(router.size() * sizeof(float)) + " actual=" + std::to_string(router_bytes);
         return false;
     }
     std::copy(boundary.begin(), boundary.begin() + tx.pre_moe_hidden.size(), tx.pre_moe_hidden.begin());
@@ -2642,8 +2657,21 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
                 std::string staged_error;
                 const bool staged_ok = index_path != nullptr && staged.begin(0, ubatch.pos ? ubatch.pos[0] : 0, staged_error) &&
                     staged.run(
-                        [this](flashnext_layer_transaction & tx, std::string & error) {
-                            return debug_export_flashnext_stage_a(tx, error);
+                        [this, &ubatch, &mctx, graph_type, &status, &res](flashnext_layer_transaction & tx, std::string & error) {
+                            // Stage A must execute the production graph before
+                            // its post-synchronization captures are exported.
+                            res = process_ubatch_prepared(ubatch, graph_type, mctx.get(), status);
+                            if (!res) {
+                                error = "STAGE_A_GRAPH_EXECUTION_FAILED status=" + std::to_string((int) status);
+                                return false;
+                            }
+                            if (!debug_export_flashnext_stage_a(tx, error)) {
+                                if (error.rfind("STAGE_A_CAPTURE_", 0) != 0) {
+                                    error = "STAGE_A_CAPTURE_FAILED " + error;
+                                }
+                                return false;
+                            }
+                            return true;
                         },
                         [&staged, &index_path](flashnext_layer_transaction &, std::string & error) {
                             flashnext_tensor_index index;
