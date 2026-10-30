@@ -334,6 +334,7 @@ size_t ggml_backend_buffer_get_alloc_size(ggml_backend_buffer_t buffer, const st
             tensor ? (long long) tensor->ne[2] : 0, tensor ? (long long) tensor->ne[3] : 0,
             tensor ? tensor->data : NULL, tensor ? (void *) tensor->buffer : NULL,
             tensor ? (void *) tensor->view_src : NULL);
+        fflush(stderr);
     }
     return ggml_backend_buft_get_alloc_size(ggml_backend_buffer_get_type(buffer), tensor);
 }
