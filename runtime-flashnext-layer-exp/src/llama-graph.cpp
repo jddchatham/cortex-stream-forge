@@ -2484,8 +2484,14 @@ bool llm_graph_validate_flashnext_range_input(const llama_ubatch * ubatch, size_
 ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     const int64_t n_embd_inp = hparams.n_embd_inp();
     const int64_t n_embd     = hparams.n_embd;
-    const bool range_input = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
-                             std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0;
+    // A non-null token embedding is only valid for the initial range.  Treat
+    // an omitted embedding as an explicit external-activation request as
+    // well, so graph construction and input binding cannot disagree about
+    // whether token_embd.weight is reachable.
+    const char * range_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
+    const bool range_input = tok_embd == nullptr ||
+                             (range_start_env != nullptr &&
+                              std::strtoul(range_start_env, nullptr, 10) > 0);
     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
     // boundary, not a token embedding row.  Keep this input F32 and owned by
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].

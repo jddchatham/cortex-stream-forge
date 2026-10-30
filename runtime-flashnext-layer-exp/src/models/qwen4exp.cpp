@@ -609,7 +609,10 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     // pass the primary vocabulary embedding tensor into that graph at all:
     // it is externally resident after range 0 and must not become a second
     // scheduler allocation candidate.
-    ggml_tensor * inpL = build_inp_embd(layer_start > 0 ? nullptr : model.tok_embd);
+    const char * range_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
+    const bool nonzero_range = layer_start > 0 ||
+        (range_start_env != nullptr && std::strtoul(range_start_env, nullptr, 10) > 0);
+    ggml_tensor * inpL = build_inp_embd(nonzero_range ? nullptr : model.tok_embd);
     if (layer_start > 0) {
         LLAMA_LOG_INFO("FLASHNEXT_RANGE_INPUT layer_start=%lld hidden_shape=[%lld,%lld] token_metadata=%s embedding_path=SKIPPED\n",
                 (long long) layer_start, (long long) inpL->ne[0], (long long) inpL->ne[1], ubatch.token ? "PRESENT" : "ABSENT");
