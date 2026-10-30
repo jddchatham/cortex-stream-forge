@@ -160,3 +160,8 @@ add_executable(llama-flashnext-chat flashnext-chat.cpp)
 target_link_libraries(llama-flashnext-chat PRIVATE llama ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(llama-flashnext-chat PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 target_compile_features(llama-flashnext-chat PRIVATE cxx_std_17)
+
+add_executable(llama-flashnext-two-range flashnext-two-range.cpp)
+target_link_libraries(llama-flashnext-two-range PRIVATE llama ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(llama-flashnext-two-range PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+target_compile_features(llama-flashnext-two-range PRIVATE cxx_std_17)
