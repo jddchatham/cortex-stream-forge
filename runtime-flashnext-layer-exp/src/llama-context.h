@@ -27,6 +27,9 @@ class llama_io_write_i;
 struct llama_memory_i;
 struct llama_memory_context_i;
 
+bool llama_copy_graph_output_f32(ggml_backend_t backend, ggml_tensor * tensor,
+        float * dst, size_t capacity, size_t expected);
+
 // stores copy of the memory in device buffer. used for fast state save/load
 struct llama_memory_buffer {
     int n_tensors = 0;
@@ -78,6 +81,9 @@ struct llama_context {
 
     size_t debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap);
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
+    // Copy the graph's final range activation after scheduler completion.
+    // The destination is caller-owned and must hold exactly expected F32 values.
+    bool debug_copy_flashnext_range_output(float * dst, size_t capacity, size_t expected);
     bool debug_copy_final_head_output(std::vector<uint8_t> & bytes, std::array<int64_t, 4> & ne,
             std::array<size_t, 4> & nb, enum ggml_type & type, std::string & name);
     size_t debug_copy_cpu_operand(const char * name, void * dst, size_t cap) const;

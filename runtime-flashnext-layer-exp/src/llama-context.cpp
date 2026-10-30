@@ -1347,6 +1347,28 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
     return it->second.size();
 }
 
+bool llama_copy_graph_output_f32(ggml_backend_t backend, ggml_tensor * output,
+        float * dst, size_t capacity, size_t expected) {
+    if (!backend || !dst || expected == 0 || capacity < expected || !output ||
+        output->type != GGML_TYPE_F32 || ggml_nelements(output) != (int64_t) expected ||
+        output->buffer == nullptr || output->data == nullptr) return false;
+    ggml_backend_tensor_get(output, dst, 0, expected * sizeof(float));
+    for (size_t i = 0; i < expected; ++i) {
+        if (!std::isfinite(dst[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool llama_context::debug_copy_flashnext_range_output(float * dst, size_t capacity, size_t expected) {
+    if (gf_res_prev_active == nullptr) return false;
+    synchronize();
+    ggml_tensor * output = gf_res_prev_active->get_embd();
+    ggml_backend_t backend = output ? ggml_backend_sched_get_tensor_backend(sched.get(), output) : nullptr;
+    return llama_copy_graph_output_f32(backend, output, dst, capacity, expected);
+}
+
 bool llama_context::debug_copy_final_head_output(std::vector<uint8_t> & bytes,
         std::array<int64_t, 4> & ne, std::array<size_t, 4> & nb,
         enum ggml_type & type, std::string & name) {
