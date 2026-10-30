@@ -2044,6 +2044,29 @@ llm_graph_result * llama_context::process_ubatch_prepared(
     return res;
 }
 
+llm_graph_result * llama_context::process_ubatch_prepared_range(
+        const llama_ubatch & ubatch, llm_graph_type gtype,
+        llama_memory_context_i * mctx, uint32_t layer_start,
+        uint32_t layer_end_exclusive, ggml_status & ret) {
+    if (layer_start >= layer_end_exclusive || layer_end_exclusive > model.hparams.n_layer()) {
+        LLAMA_LOG_ERROR("%s: invalid layer range [%u,%u)\n", __func__, layer_start, layer_end_exclusive);
+        ret = GGML_STATUS_FAILED;
+        return nullptr;
+    }
+    const char * old_start = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
+    const char * old_end   = std::getenv("CORTEX_FLASHNEXT_LAYER_END");
+    const std::string saved_start = old_start ? old_start : "";
+    const std::string saved_end   = old_end ? old_end : "";
+    setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(layer_start).c_str(), 1);
+    setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(layer_end_exclusive).c_str(), 1);
+    auto result = process_ubatch_prepared(ubatch, gtype, mctx, ret);
+    if (old_start) setenv("CORTEX_FLASHNEXT_LAYER_START", saved_start.c_str(), 1);
+    else unsetenv("CORTEX_FLASHNEXT_LAYER_START");
+    if (old_end) setenv("CORTEX_FLASHNEXT_LAYER_END", saved_end.c_str(), 1);
+    else unsetenv("CORTEX_FLASHNEXT_LAYER_END");
+    return result;
+}
+
 int llama_context::encode(const llama_batch_ext & batch_inp) {
     if (batch_inp.tokens.empty()) {
         LLAMA_LOG_ERROR("%s: n_tokens == 0\n", __func__);
