@@ -1943,12 +1943,20 @@ bool llama_context::set_adapter_cvec(
     return res;
 }
 
-llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, llm_graph_type gtype, llama_memory_context_i * mctx, ggml_status & ret) {
+llm_graph_result * llama_context::process_ubatch(
+        const llama_ubatch & ubatch, llm_graph_type gtype,
+        llama_memory_context_i * mctx, ggml_status & ret) {
     if (mctx && !mctx->apply()) {
         LLAMA_LOG_ERROR("%s: failed to apply memory context\n", __func__);
         ret = GGML_STATUS_FAILED;
         return nullptr;
     }
+    return process_ubatch_prepared(ubatch, gtype, mctx, ret);
+}
+
+llm_graph_result * llama_context::process_ubatch_prepared(
+        const llama_ubatch & ubatch, llm_graph_type gtype,
+        llama_memory_context_i * mctx, ggml_status & ret) {
 
     auto * res = get_gf_res_prev();
     auto * gf  = res->get_gf();

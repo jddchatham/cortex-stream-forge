@@ -155,6 +155,14 @@ struct llama_context {
             llama_memory_context_i * mctx,
                        ggml_status & ret);
 
+    // Internal prepared-memory path. The caller owns a successfully prepared
+    // memory context and must not invoke this after close or rollback.
+    llm_graph_result * process_ubatch_prepared(
+                const llama_ubatch & ubatch,
+                    llm_graph_type   gtype,
+            llama_memory_context_i * mctx,
+                       ggml_status & ret);
+
     int encode(const llama_batch_ext & batch_inp);
     int decode(const llama_batch_ext & batch_inp);
 
