@@ -36,6 +36,18 @@ public:
     memory_context_owner(memory_context_owner &&) noexcept = default;
     memory_context_owner & operator=(memory_context_owner &&) noexcept = default;
 
+    bool prepare_once(llama_memory_context_ptr value) {
+        GGML_ASSERT(!closed_ && !prepared_ && value != nullptr);
+        value_ = std::move(value);
+        prepared_ = true;
+        return true;
+    }
+
+    llama_memory_context_i * prepared() const {
+        GGML_ASSERT(!closed_ && prepared_);
+        return value_.get();
+    }
+
     llama_memory_context_i * get() const { return closed_ ? nullptr : value_.get(); }
     llama_memory_context_i * operator->() const {
         GGML_ASSERT(!closed_ && value_ != nullptr);
@@ -53,6 +65,7 @@ public:
 
 private:
     llama_memory_context_ptr value_;
+    bool prepared_ = false;
     bool closed_ = false;
 };
 }
@@ -2370,7 +2383,9 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
     memory_context_owner mctx;
 
     while (true) {
-        mctx = memory_context_owner(memory->init_batch(*balloc, cparams.n_ubatch, output_all));
+        if (!mctx.prepare_once(memory->init_batch(*balloc, cparams.n_ubatch, output_all))) {
+            return -2;
+        }
         if (!mctx) {
             return -2;
         }
@@ -2393,6 +2408,8 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
                         if (memory_update(true)) {
                             LLAMA_LOG_DEBUG("%s: retrying batch size %d after cache optimization\n", __func__, balloc->get_n_tokens());
 
+                            mctx.close();
+                            mctx = memory_context_owner();
                             continue;
                         }
                     }
