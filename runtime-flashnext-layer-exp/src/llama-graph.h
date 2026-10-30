@@ -25,6 +25,10 @@ struct llama_prec_policy;
 
 struct llama_memory_context_i;
 
+// Validate the caller-owned F32 activation used by non-zero FlashNext ranges.
+// The storage remains owned by llama_ubatch::data for the duration of binding.
+bool llm_graph_validate_flashnext_range_input(const llama_ubatch * ubatch, size_t expected);
+
 class llama_kv_cache_context;
 class llama_kv_cache_dsa_context;
 class llama_kv_cache_dsa_iswa_context;

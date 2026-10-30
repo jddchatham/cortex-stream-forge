@@ -2476,6 +2476,11 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 }
 
 // input embeddings with optional lora
+bool llm_graph_validate_flashnext_range_input(const llama_ubatch * ubatch, size_t expected) {
+    return ubatch != nullptr && ubatch->embd != nullptr && ubatch->data != nullptr &&
+           ubatch->data->embd.size() == expected;
+}
+
 ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     const int64_t n_embd_inp = hparams.n_embd_inp();
     const int64_t n_embd     = hparams.n_embd;
@@ -2489,7 +2494,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     if (range_input) {
         const size_t expected = (size_t) n_embd_range * ubatch.n_tokens;
         const size_t supplied = ubatch.data ? ubatch.data->embd.size() : 0;
-        if (!ubatch.embd || supplied != expected) {
+        if (!llm_graph_validate_flashnext_range_input(&ubatch, expected)) {
             throw std::runtime_error(format(
                 "FlashNext range input requires %zu F32 values, supplied %zu",
                 expected, supplied));
