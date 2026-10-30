@@ -1200,7 +1200,8 @@ void llama_context::synchronize() {
         }
     }
 
-    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr &&
+    if ((std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr ||
+         std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) &&
         !flashnext_diag_tensors.empty()) {
         for (const auto & it : flashnext_diag_tensors) {
             if (flashnext_diag_owned.find(it.first) != flashnext_diag_owned.end()) {
