@@ -839,7 +839,8 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
             ggml_tensor * zero_tail = ggml_repeat(ctx0, zero_scalar, tail_shape);
             ggml_tensor * boundary_out = ggml_concat(ctx0, boundary, zero_tail, 0);
             cb(boundary, "flashnext_segment_a_boundary", il);
-            if (std::getenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER") != nullptr || pre_moe_cut) {
+            if (std::getenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER") != nullptr || pre_moe_cut ||
+                std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
                 // Keep the real Segment-A transaction and append the real
                 // router logits from the identical pre-MoE hidden row.  This
                 // is an artifact bridge only; expert execution remains

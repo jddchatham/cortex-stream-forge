@@ -2573,11 +2573,41 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
         ggml_status status;
 
         const bool flashnext_two_range = std::getenv("CORTEX_FLASHNEXT_TWO_RANGE") != nullptr;
+        const bool staged_moe_enabled = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr;
         const llm_graph_type graph_type = ctx_type_to_graph_type(cparams.ctx_type);
         const llm_graph_result * res = nullptr;
         std::vector<float> flashnext_range_activation;
 
-        if (flashnext_two_range) {
+        if (staged_moe_enabled) {
+            if (!mctx->apply()) {
+                LLAMA_LOG_ERROR("%s: failed to apply staged-MoE memory context\n", __func__);
+                status = GGML_STATUS_FAILED;
+            } else {
+                const auto index_path = std::getenv("FLASHNEXT_TENSOR_INDEX");
+                flashnext_staged_moe staged;
+                std::string staged_error;
+                const bool staged_ok = index_path != nullptr && staged.begin(0, ubatch.pos ? ubatch.pos[0] : 0, staged_error) &&
+                    staged.run(
+                        [this](flashnext_layer_transaction & tx, std::string & error) {
+                            return debug_export_flashnext_stage_a(tx, error);
+                        },
+                        [&staged, &index_path](flashnext_layer_transaction &, std::string & error) {
+                            flashnext_tensor_index index;
+                            if (!index.load(index_path, &error)) return false;
+                            return staged.execute_streamed_moe(index, index_path, error);
+                        },
+                        [](const flashnext_layer_transaction &, std::string & error) {
+                            error = "Stage-C external-MoE graph is not yet implemented";
+                            return false;
+                        }, staged_error);
+                if (!staged_ok) {
+                    LLAMA_LOG_ERROR("FLASHNEXT_STAGED_MOE_FAILED %s\n", staged_error.c_str());
+                    status = GGML_STATUS_FAILED;
+                } else {
+                    status = GGML_STATUS_SUCCESS;
+                }
+            }
+        } else if (flashnext_two_range) {
             if (ubatch.n_tokens == 0 || hparams.n_embd_out() <= 0 || ubatch.data == nullptr) {
                 LLAMA_LOG_ERROR("%s: invalid FlashNext two-range batch\n", __func__);
                 status = GGML_STATUS_FAILED;
@@ -3460,7 +3490,8 @@ llm_graph_cb llama_context::graph_get_cb() const {
             ggml_set_name(cur, name);
         }
 
-        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0 &&
+        if ((std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr ||
+             std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) && il >= 0 &&
             (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
              strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "flashnext_segment_a_boundary", 28) == 0 ||
              strncmp(name, "conv_", 5) == 0 ||
