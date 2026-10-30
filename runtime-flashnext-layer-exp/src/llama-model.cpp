@@ -2015,6 +2015,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     pimpl->cortex_offsets[name] = { weight->idx, weight->offs };
                 }
                 const bool flashnext_segment_b = std::getenv("CORTEX_FLASHNEXT_SEGMENT_B") != nullptr;
+                const bool flashnext_two_range = std::getenv("CORTEX_FLASHNEXT_TWO_RANGE") != nullptr;
                 const bool selected_layer = !flashnext_segment_b && std::strncmp(name, prefix, std::strlen(prefix)) == 0;
                 const bool global_weight = std::strncmp(name, "blk.", 4) != 0;
                 const bool flashnext_router_only = std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr;
@@ -2033,7 +2034,11 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     (std::strcmp(name, "output_hc_norm.weight") == 0 ||
                      std::strcmp(name, "output_hc_down.weight") == 0 ||
                      std::strcmp(name, "output_hc_up.weight") == 0);
-                const bool eligible_global = final_head_tensor ||
+                // The first range still consumes one genuine token embedding.
+                // Keep only that bounded global tensor in two-range mode; all
+                // other global tables remain excluded from low-residency load.
+                const bool initial_two_range_global = flashnext_two_range && router_global;
+                const bool eligible_global = final_head_tensor || initial_two_range_global ||
                     (flashnext_segment_b || flashnext_layer_range ? false :
                         (flashnext_router_only ? router_global : global_weight));
                 // A single segment still needs the model-global embedding,
