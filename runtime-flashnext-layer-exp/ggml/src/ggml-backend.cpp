@@ -2156,6 +2156,37 @@ bool ggml_backend_sched_alloc_graph(ggml_backend_sched_t sched, struct ggml_cgra
     GGML_ASSERT((int)sched->hash_set.size >= graph->n_nodes + graph->n_leafs);
     GGML_ASSERT(!sched->is_alloc);
 
+    // Bounded forensic trace for the FlashNext two-range allocation failure.
+    // This is intentionally diagnostic-only: it does not alter allocation or
+    // ownership decisions.  The layer range is supplied by the Cortex caller
+    // through the existing diagnostic environment variables.
+    if (getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
+        static struct ggml_tensor * previous_token_embd = nullptr;
+        const char * start = getenv("CORTEX_FLASHNEXT_LAYER_START");
+        const char * end   = getenv("CORTEX_FLASHNEXT_LAYER_END");
+        auto trace = [&](struct ggml_tensor * tensor, const char * kind, int index) {
+            if (tensor == nullptr || strcmp(tensor->name, "token_embd.weight") != 0) {
+                return;
+            }
+            GGML_LOG_ERROR("TOKEN_EMBD_TRACE graph_uid=%llu range=[%s,%s) scheduler=%p graph=%p tensor_ptr=%p %s=%d buffer=%p data=%p type=%d ne=[%lld,%lld,%lld,%lld] srcs=[%p,%p,%p,%p] previous_graph_match=%s\n",
+                    (unsigned long long) graph->uid, start ? start : "?", end ? end : "?",
+                    (void *) sched, (void *) graph, (void *) tensor, kind, index,
+                    (void *) tensor->buffer, tensor->data, (int) tensor->type,
+                    (long long) tensor->ne[0], (long long) tensor->ne[1],
+                    (long long) tensor->ne[2], (long long) tensor->ne[3],
+                    (void *) tensor->src[0], (void *) tensor->src[1],
+                    (void *) tensor->src[2], (void *) tensor->src[3],
+                    previous_token_embd == tensor ? "yes" : "no");
+            previous_token_embd = tensor;
+        };
+        for (int i = 0; i < graph->n_leafs; ++i) {
+            trace(graph->leafs[i], "leaf", i);
+        }
+        for (int i = 0; i < graph->n_nodes; ++i) {
+            trace(graph->nodes[i], "node", i);
+        }
+    }
+
     sched->cur_copy = sched->next_copy;
     sched->next_copy = (sched->next_copy + 1) % sched->n_copies;
 
