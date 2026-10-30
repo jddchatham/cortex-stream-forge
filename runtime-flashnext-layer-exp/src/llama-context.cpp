@@ -2079,9 +2079,14 @@ llm_graph_result * llama_context::process_ubatch_prepared_range(
     const char * old_end   = std::getenv("CORTEX_FLASHNEXT_LAYER_END");
     const std::string saved_start = old_start ? old_start : "";
     const std::string saved_end   = old_end ? old_end : "";
+    const bool saved_reuse_disable = graph_reuse_disable;
     setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(layer_start).c_str(), 1);
     setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(layer_end_exclusive).c_str(), 1);
+    // The range is an environment-selected graph topology and is not encoded
+    // in llm_graph_params::can_reuse(). Never reuse the previous range graph.
+    graph_reuse_disable = true;
     auto result = process_ubatch_prepared(ubatch, gtype, mctx, ret);
+    graph_reuse_disable = saved_reuse_disable;
     if (old_start) setenv("CORTEX_FLASHNEXT_LAYER_START", saved_start.c_str(), 1);
     else unsetenv("CORTEX_FLASHNEXT_LAYER_START");
     if (old_end) setenv("CORTEX_FLASHNEXT_LAYER_END", saved_end.c_str(), 1);
@@ -2517,7 +2522,46 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
 
         ggml_status status;
 
-        const auto * res = process_ubatch(ubatch, ctx_type_to_graph_type(cparams.ctx_type), mctx.get(), status);
+        const bool flashnext_two_range = std::getenv("CORTEX_FLASHNEXT_TWO_RANGE") != nullptr;
+        const llm_graph_type graph_type = ctx_type_to_graph_type(cparams.ctx_type);
+        const llm_graph_result * res = nullptr;
+        std::vector<float> flashnext_range_activation;
+
+        if (flashnext_two_range) {
+            if (ubatch.n_tokens == 0 || hparams.n_embd_out() <= 0 || ubatch.data == nullptr) {
+                LLAMA_LOG_ERROR("%s: invalid FlashNext two-range batch\n", __func__);
+                status = GGML_STATUS_FAILED;
+            } else {
+                const size_t activation_count = (size_t) hparams.n_embd_out() * ubatch.n_tokens;
+                flashnext_range_activation.resize(activation_count);
+
+                // Both ranges use the same prepared memory context.  The first
+                // range is the only operation that consumes the token embedding.
+                res = process_ubatch_prepared_range(ubatch, graph_type, mctx.get(), 0, 1, status);
+                if (res && !debug_copy_flashnext_range_output(
+                            flashnext_range_activation.data(), flashnext_range_activation.size(), activation_count)) {
+                    LLAMA_LOG_ERROR("%s: failed to capture complete FlashNext range-0 output\n", __func__);
+                    res = nullptr;
+                    status = GGML_STATUS_FAILED;
+                }
+
+                if (res) {
+                    // Keep the original batch metadata and replace only the
+                    // caller-owned embedding storage.  This storage remains
+                    // alive until the second graph has completed.
+                    auto range_data = std::make_shared<llama_ubatch::data_t>(*ubatch.data);
+                    range_data->embd = flashnext_range_activation;
+                    llama_ubatch range1 = ubatch;
+                    range1.data = range_data;
+                    range1.embd = range_data->embd.data();
+                    range1.token = nullptr;
+
+                    res = process_ubatch_prepared_range(range1, graph_type, mctx.get(), 1, 2, status);
+                }
+            }
+        } else {
+            res = process_ubatch(ubatch, graph_type, mctx.get(), status);
+        }
 
         if (!res) {
             // the last ubatch failed or was aborted -> remove all positions of that ubatch from the memory module
