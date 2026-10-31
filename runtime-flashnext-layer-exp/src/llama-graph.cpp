@@ -1153,7 +1153,11 @@ void llm_graph_input_mem_hybrid::set_input(const llama_ubatch * ubatch) {
     if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr) {
         return;
     }
-    if (inp_attn->self_k_idxs) {
+    // Layer-scoped FlashNext graphs may not consume the KV index input.  In
+    // that case the tensor remains a topology-only input and is intentionally
+    // not allocated by the scheduler.  Only bind inputs that belong to the
+    // allocated execution graph.
+    if (inp_attn->self_k_idxs && inp_attn->self_k_idxs->buffer) {
         mctx->get_attn()->set_input_k_idxs(inp_attn->self_k_idxs, ubatch);
         mctx->get_attn()->set_input_v_idxs(inp_attn->self_v_idxs, ubatch);
         mctx->get_attn()->set_input_kq_mask(inp_attn->self_kq_mask, ubatch, cparams.causal_attn);
