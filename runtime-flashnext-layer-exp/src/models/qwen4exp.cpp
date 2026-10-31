@@ -643,6 +643,7 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     }
 
     const bool route_only = std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr;
+    const bool staged_moe = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr;
     const bool internal_diag = std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr;
     const bool segment_a = std::getenv("CORTEX_FLASHNEXT_SEGMENT_A") != nullptr;
     const bool pre_moe_cut = std::getenv("CORTEX_FLASHNEXT_PRE_MOE") != nullptr;
@@ -650,7 +651,8 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     // A pre-MoE cut still needs positional/KV inputs when the selected range
     // begins with full attention.  Recurrent ranges do not consume them.
     const bool full_attention_range = layer_start < n_layer && !hparams.is_recr(layer_start);
-    const bool cut_without_kv_inputs = partial_prefix || (pre_moe_cut && !full_attention_range);
+    const bool cut_without_kv_inputs = partial_prefix || staged_moe ||
+        (pre_moe_cut && !full_attention_range);
     auto * inp = build_inp_mem_hybrid();
     if (cut_without_kv_inputs) {
         // Layer 0 is recurrent in this model and the router-only graph stops
@@ -820,7 +822,7 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
         // router logits.  Expert projections are deliberately not referenced
         // in this graph, so their payloads need not become resident.
         if ((segment_a && il == 0) || (pre_moe_cut && il == layer_start) ||
-            (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr && il == 0)) {
+            (staged_moe && il == 0)) {
             if (internal_diag && il >= 0) {
                 cb(cur, "diag_moe_input", il);
                 ggml_build_forward_expand(gf, cur);
