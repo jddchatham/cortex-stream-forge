@@ -2129,6 +2129,22 @@ llm_graph_result * llama_context::process_ubatch_prepared(
             ret = GGML_STATUS_ALLOC_FAILED;
             return nullptr;
         }
+        if (std::getenv("CORTEX_FLASHNEXT_INPUT_AUDIT") != nullptr) {
+            // Audit only tensors that are actually reachable in the allocated
+            // execution graph.  Reservation-only input objects are not in
+            // this node list and must not be mistaken for runtime inputs.
+            for (int i = 0; i < ggml_graph_n_nodes(gf); ++i) {
+                ggml_tensor * t = ggml_graph_node(gf, i);
+                if ((t->flags & GGML_TENSOR_FLAG_INPUT) == 0) {
+                    continue;
+                }
+                LLAMA_LOG_ERROR("FLASHNEXT_INPUT_AUDIT name=%s tensor=%p buffer=%p data=%p type=%s ne=[%lld,%lld,%lld,%lld]\n",
+                        t->name, (void *) t, (void *) t->buffer, t->data,
+                        ggml_type_name(t->type), (long long) t->ne[0],
+                        (long long) t->ne[1], (long long) t->ne[2],
+                        (long long) t->ne[3]);
+            }
+        }
         if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
             LLAMA_LOG_ERROR("SCHED_ALLOC_END graph_build_id=%" PRIu64 " graph=%p status=success\n",
                     cortex_diag_active_graph_id.load(std::memory_order_relaxed), (void *) gf);
