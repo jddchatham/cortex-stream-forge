@@ -3619,9 +3619,12 @@ llm_graph_cb llama_context::graph_get_cb() const {
         }
 
         if ((std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr ||
-             std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) && il >= 0 &&
+             std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr ||
+             std::getenv("CORTEX_FLASHNEXT_CONVENTIONAL_STAGE_A_CAPTURE") != nullptr) && il >= 0 &&
             (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
              strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "flashnext_segment_a_boundary", 28) == 0 ||
+             (std::getenv("CORTEX_FLASHNEXT_CONVENTIONAL_STAGE_A_CAPTURE") != nullptr &&
+              (strncmp(name, "flashnext_conventional_stage_a_", 31) == 0)) ||
              strncmp(name, "conv_", 5) == 0 ||
              strncmp(name, "hc_", 3) == 0 ||
              strcmp(name, "linear_attn_qkv_mixed") == 0)) {
@@ -3631,7 +3634,8 @@ llm_graph_cb llama_context::graph_get_cb() const {
             if (cortex_diag_active_graph_id.load(std::memory_order_relaxed) != 0) {
                 flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
                 ++flashnext_diag_generation;
-                if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr) {
+                if (std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr ||
+                    std::getenv("CORTEX_FLASHNEXT_CONVENTIONAL_STAGE_A_CAPTURE") != nullptr) {
                     LLAMA_LOG_INFO("FLASHNEXT_STAGED_DIAG_REGISTER graph_id=%" PRIu64 " name=%s-%d tensor=%p buffer=%p\n",
                         cortex_diag_active_graph_id.load(std::memory_order_relaxed), name, il,
                         (void *) cur, (void *) cur->buffer);

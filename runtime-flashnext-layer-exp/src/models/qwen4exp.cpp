@@ -927,6 +927,28 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
             return;
         }
 
+        // Optional conventional reference seam.  This is deliberately placed
+        // immediately before the normal MoE builder and leaves the normal
+        // path unchanged when the flag is absent.  The packed layout matches
+        // flashnext_segment_a_boundary: pre-MoE hidden, HC residual, inject.
+        if (std::getenv("CORTEX_FLASHNEXT_CONVENTIONAL_STAGE_A_CAPTURE") != nullptr &&
+            il == layer_start) {
+            const int64_t nt_boundary = cur->ne[1] * cur->ne[2];
+            ggml_tensor * pre_moe = ggml_reshape_2d(ctx0, cur, cur->ne[0], nt_boundary);
+            ggml_tensor * res_flat = ggml_reshape_2d(ctx0, res_hc,
+                    res_hc->ne[0] * res_hc->ne[1], res_hc->ne[2]);
+            ggml_tensor * inj_flat = ggml_reshape_2d(ctx0, inject,
+                    inject->ne[0], inject->ne[1] * inject->ne[2]);
+            ggml_tensor * boundary = ggml_concat(ctx0, pre_moe, res_flat, 0);
+            boundary = ggml_concat(ctx0, boundary, inj_flat, 0);
+            cb(boundary, "flashnext_conventional_stage_a_boundary", il);
+            ggml_build_forward_expand(gf, boundary);
+
+            ggml_tensor * router = build_lora_mm(model.layers[il].ffn_gate_inp, cur);
+            cb(router, "flashnext_conventional_stage_a_router", il);
+            ggml_build_forward_expand(gf, router);
+        }
+
         cur = build_layer_ffn(cur, il);
         cb(cur, "ffn_out", il);
 

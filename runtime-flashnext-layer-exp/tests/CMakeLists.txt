@@ -158,6 +158,8 @@ llama_build(test-flashnext-two-range-contract.cpp)
 llama_test(test-flashnext-two-range-contract)
 llama_build(test-flashnext-index-config.cpp)
 llama_test(test-flashnext-index-config)
+llama_build(test-flashnext-numerical-oracle.cpp)
+llama_test(test-flashnext-numerical-oracle)
 
 if (NOT WIN32 OR NOT BUILD_SHARED_LIBS)
     # these tests are disabled on Windows because they use internal functions not exported with LLAMA_API (when building with shared libraries)
