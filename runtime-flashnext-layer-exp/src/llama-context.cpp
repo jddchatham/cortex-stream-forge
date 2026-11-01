@@ -2143,6 +2143,13 @@ llm_graph_result * llama_context::process_ubatch_prepared(
                         ggml_type_name(t->type), (long long) t->ne[0],
                         (long long) t->ne[1], (long long) t->ne[2],
                         (long long) t->ne[3]);
+                if ((std::strcmp(t->name, "inp_embd") == 0 ||
+                     std::strcmp(t->name, "rs_s_copy") == 0) &&
+                    (t->buffer == nullptr || t->data == nullptr)) {
+                    LLAMA_LOG_ERROR("FLASHNEXT_INPUT_AUDIT_REQUIRED_UNBACKED name=%s\n", t->name);
+                    ret = GGML_STATUS_ALLOC_FAILED;
+                    return nullptr;
+                }
             }
         }
         if (std::getenv("CORTEX_FLASHNEXT_GRAPH_FORENSICS") != nullptr) {
