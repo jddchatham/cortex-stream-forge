@@ -947,6 +947,14 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
             ggml_tensor * router = build_lora_mm(model.layers[il].ffn_gate_inp, cur);
             cb(router, "flashnext_conventional_stage_a_router", il);
             ggml_build_forward_expand(gf, router);
+
+            // The reference graph intentionally terminates at the pre-MoE
+            // boundary.  This keeps the conventional calculation independent
+            // of the staged graph while preventing full expert-bank tensors
+            // from becoming graph dependencies for the oracle run.
+            res->t_embd = boundary;
+            res->t_logits = router;
+            return;
         }
 
         cur = build_layer_ffn(cur, il);
