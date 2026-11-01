@@ -168,3 +168,7 @@ target_include_directories(llama-flashnext-staged-moe-test PRIVATE ${CMAKE_CURRE
 target_link_libraries(llama-flashnext-two-range PRIVATE llama ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(llama-flashnext-two-range PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 target_compile_features(llama-flashnext-two-range PRIVATE cxx_std_17)
+    add_executable(llama-flashnext-layer0-oracle flashnext-layer0-oracle.cpp)
+    target_link_libraries(llama-flashnext-layer0-oracle PRIVATE llama ${CMAKE_THREAD_LIBS_INIT})
+    target_include_directories(llama-flashnext-layer0-oracle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+    target_compile_features(llama-flashnext-layer0-oracle PRIVATE cxx_std_17)

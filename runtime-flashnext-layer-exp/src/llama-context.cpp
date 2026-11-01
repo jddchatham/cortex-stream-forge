@@ -2665,6 +2665,7 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
         ggml_status status;
 
         const bool flashnext_two_range = std::getenv("CORTEX_FLASHNEXT_TWO_RANGE") != nullptr;
+        const bool flashnext_layer0_oracle = std::getenv("CORTEX_FLASHNEXT_LAYER0_ORACLE") != nullptr;
         const bool staged_moe_enabled = std::getenv("CORTEX_FLASHNEXT_STAGED_MOE") != nullptr;
         const llm_graph_type graph_type = ctx_type_to_graph_type(cparams.ctx_type);
         const llm_graph_result * res = nullptr;
@@ -2731,7 +2732,7 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
                     status = GGML_STATUS_SUCCESS;
                 }
             }
-        } else if (flashnext_two_range) {
+        } else if (flashnext_two_range && !flashnext_layer0_oracle) {
             if (ubatch.n_tokens == 0 || hparams.n_embd_out() <= 0 || ubatch.data == nullptr) {
                 LLAMA_LOG_ERROR("%s: invalid FlashNext two-range batch\n", __func__);
                 status = GGML_STATUS_FAILED;
