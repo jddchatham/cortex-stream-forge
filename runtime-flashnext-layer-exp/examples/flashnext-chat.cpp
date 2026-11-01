@@ -7,6 +7,7 @@
 #include "../src/flashnext-shared-expert.h"
 #include "../src/flashnext-segment-b.h"
 #include "../src/flashnext-tensor-index.h"
+#include "../include/flashnext-config.h"
 #include "../src/ggml-quants.h"
 
 #include <algorithm>
@@ -452,7 +453,11 @@ int main(int argc, char ** argv) {
         return 2;
     }
     const std::string model_path = argv[1];
-    const std::string index_path = "/home/user/bitnet-cortex/cortex-small-model/flashnext-tensor-index.json";
+    const std::string index_path = flashnext_tensor_index_from_environment();
+    if (index_path.empty()) {
+        std::fprintf(stderr, "FLASHNEXT_TENSOR_INDEX must name the validated tensor index\n");
+        return 2;
+    }
     const int max_generate = argc == 3 ? std::atoi(argv[2]) : 32;
 
     llama_backend_init();
