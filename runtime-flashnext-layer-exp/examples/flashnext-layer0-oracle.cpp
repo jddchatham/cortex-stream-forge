@@ -15,11 +15,14 @@ static bool write_f32(const char * path, const float * data, size_t count) {
 }
 
 int main(int argc, char ** argv) {
-    if (argc != 5 || (std::strcmp(argv[1], "conventional") != 0 && std::strcmp(argv[1], "staged") != 0)) {
-        std::fprintf(stderr, "usage: %s conventional|staged MODEL BOUNDARY.f32 ROUTER.f32\n", argv[0]);
+    const bool sequential = std::strcmp(argv[1], "sequential") == 0 || std::strcmp(argv[1], "sequential-staged") == 0;
+    const bool sequential_staged = std::strcmp(argv[1], "sequential-staged") == 0;
+    if ((argc != 5 && argc != 7) || (!sequential && std::strcmp(argv[1], "conventional") != 0 && std::strcmp(argv[1], "staged") != 0)) {
+        std::fprintf(stderr, "usage: %s conventional|staged MODEL BOUNDARY.f32 ROUTER.f32 [TOKEN POSITION]\n", argv[0]);
+        std::fprintf(stderr, "       %s sequential MODEL BOUNDARY1.f32 ROUTER1.f32 BOUNDARY2.f32 ROUTER2.f32\n", argv[0]);
         return 2;
     }
-    const bool conventional = std::strcmp(argv[1], "conventional") == 0;
+    const bool conventional = !sequential_staged && (sequential || std::strcmp(argv[1], "conventional") == 0);
     unsetenv("CORTEX_FLASHNEXT_SEGMENT_A");
     unsetenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER");
     unsetenv("CORTEX_FLASHNEXT_STAGED_MOE");
@@ -63,21 +66,28 @@ int main(int argc, char ** argv) {
     // to read it as final vocabulary output.
     batch.logits[0] = 0;
     batch.n_tokens = 1;
-    const int status = llama_decode(ctx, batch);
-    if (status != 0) return 5;
-    llama_synchronize(ctx);
-
     llama_context * internal = ctx;
-    std::vector<float> boundary(12804), router(512);
     const char * boundary_name = conventional
         ? "flashnext_conventional_stage_a_boundary-0"
         : "flashnext_segment_a_boundary-0";
     const char * router_name = conventional
         ? "flashnext_conventional_stage_a_router-0"
         : "diag_router_logits-0";
-    if (internal->debug_copy_flashnext_tensor(boundary_name, boundary.data(), boundary.size() * sizeof(float)) != boundary.size() * sizeof(float) ||
-        internal->debug_copy_flashnext_tensor(router_name, router.data(), router.size() * sizeof(float)) != router.size() * sizeof(float)) return 6;
-    if (!write_f32(argv[3], boundary.data(), boundary.size()) || !write_f32(argv[4], router.data(), router.size())) return 7;
+    auto run_capture = [&](int token, int position, const char * boundary_path, const char * router_path) -> bool {
+        batch.token[0] = token;
+        batch.pos[0] = position;
+        const int status = llama_decode(ctx, batch);
+        if (status != 0) return false;
+        llama_synchronize(ctx);
+        std::vector<float> boundary(12804), router(512);
+        if (internal->debug_copy_flashnext_tensor(boundary_name, boundary.data(), boundary.size() * sizeof(float)) != boundary.size() * sizeof(float) ||
+            internal->debug_copy_flashnext_tensor(router_name, router.data(), router.size() * sizeof(float)) != router.size() * sizeof(float)) return false;
+        return write_f32(boundary_path, boundary.data(), boundary.size()) && write_f32(router_path, router.data(), router.size());
+    };
+    const bool ok = sequential
+        ? run_capture(248045, 0, argv[3], argv[4]) && run_capture(248046, 1, argv[5], argv[6])
+        : run_capture(argc == 7 ? std::atoi(argv[5]) : 248045, argc == 7 ? std::atoi(argv[6]) : 0, argv[3], argv[4]);
+    if (!ok) return 5;
     std::printf("FLASHNEXT_ORACLE mode=%s boundary_elements=12804 router_elements=512\n", argv[1]);
 
     llama_batch_free(batch);
