@@ -97,30 +97,43 @@ int main(int argc, char ** argv) {
         std::printf("STOCK_REF_LOGITS n=%d argmax=%d logit=%.9g\n", n_vocab, best, logits0[best]);
     }
 
-    if (std::getenv("STOCK_TWO_TOKEN") != nullptr && !logits0.empty()) {
-        int token1 = 0;
-        for (int i = 1; i < n_vocab; ++i) if (logits0[i] > logits0[token1]) token1 = i;
-        llama_batch batch1 = llama_batch_init(1, 0, 1);
-        batch1.token[0]    = token1;
-        batch1.pos[0]      = 1;
-        batch1.n_seq_id[0] = 1;
-        batch1.seq_id[0][0] = 0;
-        batch1.logits[0]   = 1;
-        batch1.n_tokens    = 1;
-        const int status1 = llama_decode(ctx, batch1);
-        llama_synchronize(ctx);
-        std::printf("STOCK_REF_DECODE_POS1 status=%d token=%d\n", status1, token1);
-        const float * logits1 = status1 == 0 ? llama_get_logits_ith(ctx, 0) : nullptr;
-        if (logits1 && n_vocab > 0) {
+    uint32_t n_tokens_stock = 1;
+    if (std::getenv("STOCK_TWO_TOKEN") != nullptr) n_tokens_stock = 2;
+    if (const char * n_env = std::getenv("STOCK_N_TOKENS")) {
+        n_tokens_stock = (uint32_t) std::strtoul(n_env, nullptr, 10);
+        if (n_tokens_stock < 1) n_tokens_stock = 1;
+    }
+    const uint32_t stop_at = [&]{
+        if (const char * s = std::getenv("STOCK_STOP_AT")) return (uint32_t) std::strtoul(s, nullptr, 10);
+        return n_tokens_stock - 1;
+    }();
+    if (n_tokens_stock > 1 && !logits0.empty()) {
+        llama_token token_cur = 0;
+        for (int i = 1; i < n_vocab; ++i) if (logits0[i] > logits0[token_cur]) token_cur = i;
+        for (uint32_t pos = 1; pos <= stop_at; ++pos) {
+            llama_batch batch1 = llama_batch_init(1, 0, 1);
+            batch1.token[0]    = token_cur;
+            batch1.pos[0]      = (llama_pos) pos;
+            batch1.n_seq_id[0] = 1;
+            batch1.seq_id[0][0] = 0;
+            batch1.logits[0]   = 1;
+            batch1.n_tokens    = 1;
+            const int status1 = llama_decode(ctx, batch1);
+            llama_synchronize(ctx);
+            std::printf("STOCK_REF_DECODE_POS%u status=%d token=%d\n", pos, status1, (int) token_cur);
+            const float * logits1 = status1 == 0 ? llama_get_logits_ith(ctx, 0) : nullptr;
+            if (!logits1 || n_vocab <= 0) { llama_batch_free(batch1); break; }
             const char * out = std::getenv("STOCK_LOGITS_OUT");
-            std::string p1 = out ? std::string(out) + ".p1" : "stock_logits_p1.bin";
-            FILE * f = std::fopen(p1.c_str(), "wb");
+            const std::string pp = out ? std::string(out) + ".p" + std::to_string(pos)
+                                       : "stock_logits_p" + std::to_string(pos) + ".bin";
+            FILE * f = std::fopen(pp.c_str(), "wb");
             if (f) { std::fwrite(logits1, sizeof(float), (size_t) n_vocab, f); std::fclose(f); }
-            int best = 0;
+            llama_token best = 0;
             for (int i = 1; i < n_vocab; ++i) if (logits1[i] > logits1[best]) best = i;
-            std::printf("STOCK_REF_LOGITS_POS1 n=%d argmax=%d logit=%.9g\n", n_vocab, best, logits1[best]);
+            std::printf("STOCK_REF_LOGITS_POS%u n=%d argmax=%d logit=%.9g\n", pos, n_vocab, (int) best, logits1[best]);
+            token_cur = best;
+            llama_batch_free(batch1);
         }
-        llama_batch_free(batch1);
     }
 
     llama_batch_free(batch);
