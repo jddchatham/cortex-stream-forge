@@ -445,6 +445,10 @@ private:
     // synchronized backend readback and then discarded.
     mutable std::map<std::string, ggml_tensor *> flashnext_diag_tensors;
     mutable std::map<std::string, std::vector<uint8_t>> flashnext_diag_owned;
+    // per-context two-print (provisional/final) budget for the host-capture
+    // names; a process-global counter would be exhausted by the first context
+    // and leave every later context (e.g. position-1 reloads) unread
+    mutable std::map<std::string, int> flashnext_diag_print_count;
     mutable uint64_t flashnext_diag_generation = 0;
     const ggml_tensor * flashnext_hc_rms_node = nullptr;
 

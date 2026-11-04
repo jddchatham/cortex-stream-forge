@@ -1823,7 +1823,25 @@ void llm_graph_input_qwen4exp_ple::set_input(const llama_ubatch * ubatch) {
     }
 
     // predecessors come from the KV cells (ext.tok); apply_ubatch() already stored this ubatch, so its own tokens count too
-    mctx->get_prev_tokens(*ubatch, n_prev, prev);
+    // layer-range transactions run each layer in its own context, whose attention
+    // cache never holds the preceding tokens, so the driver can supply them
+    // explicitly (oldest-first, -1 = missing). Only applies to non-zero
+    // positions; position 0 keeps the fresh-sequence behavior.
+    bool pos_is_zero = true;
+    if (ubatch->pos) {
+        for (int64_t i = 0; i < n_tokens; ++i) { pos_is_zero = pos_is_zero && ubatch->pos[i] == 0; }
+    }
+    const char * ple_prev_env = std::getenv("CORTEX_FLASHNEXT_PLE_PREV");
+    if (ple_prev_env != nullptr && !pos_is_zero) {
+        prev.assign((size_t) n_tokens * n_prev, LLAMA_TOKEN_NULL);
+        const char * p = ple_prev_env;
+        for (int64_t k = 0; k < n_tokens * n_prev && p && *p; ++k) {
+            prev[k] = (llama_token) std::strtol(p, (char **) &p, 10);
+            if (p && *p == ',') ++p;
+        }
+    } else {
+        mctx->get_prev_tokens(*ubatch, n_prev, prev);
+    }
 
     for (int64_t i = 0; i < n_tokens; ++i) {
         // an EOS in the window resets everything at or before it

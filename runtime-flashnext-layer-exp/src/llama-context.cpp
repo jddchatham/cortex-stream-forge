@@ -1237,8 +1237,7 @@ void llama_context::synchronize() {
                     // reservation pass would read unwritten storage and mark the name
                     // owned. Allow exactly two prints: a provisional (pre-compute) one
                     // and the final post-compute one.
-                    static std::unordered_map<std::string, int> host_print_count;
-                    int & cnt = host_print_count[it.first];
+                    int & cnt = flashnext_diag_print_count[it.first];
                     if (cnt >= 2) {
                         continue;
                     }

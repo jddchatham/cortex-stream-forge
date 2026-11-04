@@ -108,6 +108,12 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
     if (ubatch->embd && embd) {
         GGML_ASSERT(embd->type == GGML_TYPE_F32);
 
+        if (std::getenv("CORTEX_FLASHNEXT_DEBUG_INPUT") != nullptr) {
+            LLAMA_LOG_INFO("CORTEX_DEBUG_INPUT embd_ne0=%lld n_tokens=%lld first=%g second=%g ub_embd=%p\n",
+                    (long long) embd->ne[0], (long long) ubatch->n_tokens,
+                    ubatch->embd[0], ubatch->n_tokens * embd->ne[0] > 1 ? ubatch->embd[1] : 0.0f, (const void *) ubatch->embd);
+        }
+
         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
             LLAMA_LOG_ERROR("CORTEX final-head unbound embd name=%s data=%p ne0=%lld ne1=%lld\n",
                     embd->name, embd->data, (long long) embd->ne[0], (long long) embd->ne[1]);
