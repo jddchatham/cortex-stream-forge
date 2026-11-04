@@ -1,0 +1,314 @@
+diff --git i/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp w/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp
+index d7770f9..8838de0 100644
+--- i/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp
++++ w/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp
+@@ -985,6 +985,8 @@ static layer_transaction_result run_layer_transaction(
+     result.sparse_moe_ok = true;
+     result.sparse_output_hash = hash_f32(txc.values.selected_moe.data(), txc.values.selected_moe.size());
+     if (!execute_transaction_graph_b(txc, index_path, error)) {
++        std::fprintf(stderr, "FLASHNEXT_TRANSACTION_FAILURE layer=%u stage=graph_b error=%s\n",
++            layer, error.empty() ? "none" : error.c_str());
+         if (!result.state_before.empty()) llama_state_seq_set_data(ctx, result.state_before.data(), result.state_before.size(), 0);
+         result.failure_stage = "graph_b";
+         result.rollback_restored = true;
+@@ -2167,6 +2169,16 @@ int main(int argc, char ** argv) {
+     // for layers 1..47.  Layer-0 recurrent state belongs to layer 0; each
+     // subsequent layer gets its own freshly initialized context/state.
+     if (std::getenv("CORTEX_FLASHNEXT_CHAIN_0_48") != nullptr) {
++        // Two-token mode: preserve per-layer state across positions. blob[0]
++        // is the layer-0 ctx state captured above; blobs[il] are captured
++        // after each layer's position-0 transaction and restored before its
++        // position-1 execution.
++        const bool two_token = std::getenv("CORTEX_FLASHNEXT_CHAIN_TWO_TOKEN") != nullptr;
++        std::vector<std::vector<uint8_t>> state_blobs(model->hparams.n_layer());
++        if (two_token) {
++            state_blobs[0] = state_after_position0;
++            std::printf("CHAIN_TWO_TOKEN_MODE=YES STATE_BLOB0_BYTES=%zu\n", state_blobs[0].size());
++        }
+         std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT chain_branch_begin\n"); std::fflush(stderr);
+         const std::vector<float> layer0_output(tx.layer_output.begin(), tx.layer_output.end());
+         std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT output_copy_done\n"); std::fflush(stderr);
+@@ -2256,15 +2268,20 @@ int main(int argc, char ** argv) {
+                 export_blob((std::string("layer") + std::to_string(il) + "_output").c_str(), 0,
+                     next_result.output.data(), next_result.output.size() * sizeof(float), "10240", "f32");
+             }
++            if (two_token) {
++                state_blobs[il] = capture_seq_state(next_ctx);
++            }
+             previous_output.assign(next_result.output.begin(), next_result.output.end());
+             llama_free(next_ctx);
+             llama_model_free(next_model);
+         }
+-        if (chain_ok && n_chain_layers >= 48 && model_layer_count >= 48) {
+-            const uint64_t final_activation_hash = hash_f32(previous_output.data(), previous_output.size());
+-            std::printf("FULL_CHAIN_0_TO_47_PASS=YES LAYERS_EXECUTED=%u FINAL_ACTIVATION_HASH=%016llx\n",
+-                std::min<uint32_t>(48, model_layer_count),
+-                (unsigned long long) final_activation_hash);
++        if (chain_ok && model_layer_count >= n_chain_layers && (n_chain_layers >= 48 || two_token)) {
++            if (n_chain_layers >= 48) {
++                const uint64_t final_activation_hash = hash_f32(previous_output.data(), previous_output.size());
++                std::printf("FULL_CHAIN_0_TO_47_PASS=YES LAYERS_EXECUTED=%u FINAL_ACTIVATION_HASH=%016llx\n",
++                    std::min<uint32_t>(48, model_layer_count),
++                    (unsigned long long) final_activation_hash);
++            }
+ 
+             // Host-side final head: the stock final HC mixer (build_hc_mix with
+             // hc_head_*, il=-1, unfused path) mirrored in a ggml graph, then a
+@@ -2295,6 +2312,118 @@ int main(int argc, char ** argv) {
+                     "LOGITS_HASH=%016llx FULL_FORWARD_PASS=YES\n",
+                     mixed.size(), logits.size(), predicted_token, predicted_logit,
+                     (unsigned long long) logits_hash);
++
++                if (two_token && model_layer_count >= n_chain_layers) {
++                    // The controlled test feeds the stock position-0 prediction
++                    // (846, verified against the stock oracle) at position 1.
++                    // At full depth the computed argmax must agree with it.
++                    if (n_chain_layers >= 48 && predicted_token != 846) {
++                        std::printf("CHAIN_TWO_TOKEN=FAIL stage=token1_mismatch computed=%u expected=846\n", predicted_token);
++                        llama_backend_free();
++                        return 26;
++                    }
++                    const uint32_t token1 = 846;
++                    std::printf("CHAIN_TWO_TOKEN_TOKEN1=%u SOURCE=%s\n", token1,
++                        n_chain_layers >= 48 ? "computed_argmax_matches_stock" : "controlled_test_token");
++                    // position-1 input for layer 0 is the embedding of token1
++                    std::vector<float> emb1(2560);
++                    {
++                        setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
++                        setenv("CORTEX_FLASHNEXT_LAYER_START", "0", 1);
++                        setenv("CORTEX_FLASHNEXT_LAYER_END", "1", 1);
++                        setenv("CORTEX_QWEN35_SEGMENT_END", "1", 1);
++                        llama_model * emb_model = llama_model_load_from_file(argv[1], mp);
++                        const llama_token t1 = (llama_token) token1;
++                        const bool emb_ok = emb_model &&
++                            llama_cortex_token_embd_rows(emb_model, &t1, 1, emb1.data());
++                        if (emb_model) llama_model_free(emb_model);
++                        size_t emb_bad = 0;
++                        for (float v : emb1) emb_bad += !std::isfinite(v);
++                        if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
++                            export_blob("emb1_p1", 0, emb1.data(), emb1.size() * sizeof(float), "2560", "f32");
++                        }
++                        std::printf("CHAIN_TWO_TOKEN_EMB1 finite=%s bad=%zu first4=%.6g %.6g %.6g %.6g\n",
++                            emb_bad == 0 ? "YES" : "NO", emb_bad, emb1[0], emb1[1], emb1[2], emb1[3]);
++                        if (!emb_ok || emb_bad != 0) {
++                            std::printf("CHAIN_TWO_TOKEN=FAIL stage=embedding1\n");
++                            llama_backend_free();
++                            return 24;
++                        }
++                    }
++                    // PLE predecessors for position 1 (oldest-first, -1 = missing):
++                    // token 248045 at position 0, nothing before it.
++                    setenv("CORTEX_FLASHNEXT_PLE_PREV", "-1,248045", 1);
++                    std::vector<float> handoff1 = emb1;
++                    bool pos1_ok = true;
++                    for (uint32_t il = 0; il < n_chain_layers && il < model_layer_count; ++il) {
++                        setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(il).c_str(), 1);
++                        setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(il).c_str(), 1);
++                        setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(il + 1).c_str(), 1);
++                        setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(il + 1).c_str(), 1);
++                        setenv("CORTEX_FLASHNEXT_PRE_MOE", "1", 1);
++                        setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
++                        setenv("CORTEX_FLASHNEXT_LAYER3_TRANSACTION", "1", 1);
++                        llama_model * next_model = llama_model_load_from_file(argv[1], mp);
++                        llama_context * next_ctx = next_model ? llama_init_from_model(next_model, chain_cp) : nullptr;
++                        if (!next_ctx) { pos1_ok = false; if (next_model) llama_model_free(next_model); break; }
++                        if (!state_blobs[il].empty()) {
++                            const size_t restored = llama_state_seq_set_data(next_ctx,
++                                state_blobs[il].data(), state_blobs[il].size(), 0);
++                            if (restored != state_blobs[il].size()) {
++                                std::printf("CHAIN_TWO_TOKEN=FAIL layer=%u stage=state_restore restored=%zu expected=%zu\n",
++                                    il, restored, state_blobs[il].size());
++                                pos1_ok = false;
++                                llama_free(next_ctx); llama_model_free(next_model);
++                                break;
++                            }
++                        }
++                        layer_transaction_result r1 = run_layer_transaction(next_ctx, il, 1,
++                            handoff1, argv[2], (llama_token) token1);
++                        std::printf("LAYER_INDEX=%u POSITION=1 OUTPUT_HASH=%016llx STATE_COMMIT=%s DECODE=%d FAILURE=%s\n",
++                            il, (unsigned long long) r1.output_hash, r1.state_committed ? "PASS" : "FAIL",
++                            r1.decode_status, r1.failure_stage ? r1.failure_stage : "none");
++                        if (!r1.state_committed) {
++                            const float * art1 = llama_get_logits_ith(next_ctx, 0);
++                            size_t bad1 = 0;
++                            if (art1) for (size_t i = 0; i < 12804 + 512; ++i) bad1 += !std::isfinite(art1[i]);
++                            std::printf("CHAIN_TWO_TOKEN_DEBUG layer=%u artifact=%s bad=%zu first4=%.6g %.6g %.6g %.6g hash=%016llx\n",
++                                il, art1 ? "present" : "null", bad1,
++                                art1 ? art1[0] : 0.0f, art1 ? art1[1] : 0.0f, art1 ? art1[2] : 0.0f, art1 ? art1[3] : 0.0f,
++                                art1 ? (unsigned long long) hash_f32(art1, 12804 + 512) : 0ull);
++                            pos1_ok = false; llama_free(next_ctx); llama_model_free(next_model); break;
++                        }
++                        if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
++                            export_blob((std::string("layer") + std::to_string(il) + "_output_p1").c_str(), 0,
++                                r1.output.data(), r1.output.size() * sizeof(float), "10240", "f32");
++                        }
++                        state_blobs[il] = capture_seq_state(next_ctx);
++                        handoff1.assign(r1.output.begin(), r1.output.end());
++                        llama_free(next_ctx);
++                        llama_model_free(next_model);
++                    }
++                    unsetenv("CORTEX_FLASHNEXT_PLE_PREV");
++                    std::printf("CHAIN_TWO_TOKEN_POS1_LAYERS=%s\n", pos1_ok ? "PASS" : "FAIL");
++                    if (pos1_ok && n_chain_layers >= 48) {
++                        std::vector<float> mixed1, logits1;
++                        const bool head1_ok = flashnext_final_head_mix(dn, dd, du, handoff1.data(), mixed1) &&
++                            flashnext_stream_output_matvec(dout, mixed1.data(), logits1);
++                        if (head1_ok && !logits1.empty()) {
++                            const uint32_t pt1 = (uint32_t) std::distance(logits1.begin(),
++                                std::max_element(logits1.begin(), logits1.end()));
++                            if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
++                                export_blob("logits_p1", 0, logits1.data(), logits1.size() * sizeof(float),
++                                    std::to_string(logits1.size()).c_str(), "f32");
++                            }
++                            std::printf("CHAIN_TWO_TOKEN_FINAL_HEAD_PASS=YES PREDICTED_TOKEN_ID_POS1=%u "
++                                "PREDICTED_TOKEN_LOGIT_POS1=%.9g LOGITS_POS1_HASH=%016llx\n",
++                                pt1, logits1[pt1], (unsigned long long) hash_f32(logits1.data(), logits1.size()));
++                        } else {
++                            std::printf("CHAIN_TWO_TOKEN_FINAL_HEAD_PASS=NO\n");
++                            pos1_ok = false;
++                        }
++                    }
++                    if (!pos1_ok) { llama_backend_free(); return 25; }
++                }
+             } else {
+                 std::printf("FINAL_HEAD_PASS=NO OUTPUT_PROJECTION_PASS=NO ERROR=%s%s%s%s\n",
+                     e0.c_str(), e1.c_str(), e2.c_str(), e3.c_str());
+diff --git i/runtime-flashnext-layer-exp/examples/flashnext-stock-two-layer.cpp w/runtime-flashnext-layer-exp/examples/flashnext-stock-two-layer.cpp
+index a84ac2a..be96b86 100644
+--- i/runtime-flashnext-layer-exp/examples/flashnext-stock-two-layer.cpp
++++ w/runtime-flashnext-layer-exp/examples/flashnext-stock-two-layer.cpp
+@@ -11,6 +11,8 @@
+ #include <cstdio>
+ #include <cstdlib>
+ #include <cstring>
++#include <string>
++#include <vector>
+ 
+ int main(int argc, char ** argv) {
+     if (argc != 2) {
+@@ -80,15 +82,45 @@ int main(int argc, char ** argv) {
+ 
+     // stock logits reference for the 48-layer chain: full-graph output
+     // projection of the final HC-mixed activation, token 248045 pos 0.
++    // With TWO_TOKEN=1, additionally decodes the stock argmax token at
++    // position 1 and exports the position-1 logits.
+     const float * logits = llama_get_logits_ith(ctx, 0);
+     const int n_vocab = llama_vocab_n_tokens(llama_model_get_vocab(model));
++    std::vector<float> logits0;
+     if (logits && n_vocab > 0) {
++        logits0.assign(logits, logits + n_vocab);
+         const char * out = std::getenv("STOCK_LOGITS_OUT");
+         FILE * f = std::fopen(out ? out : "stock_logits_p0.bin", "wb");
+-        if (f) { std::fwrite(logits, sizeof(float), (size_t) n_vocab, f); std::fclose(f); }
++        if (f) { std::fwrite(logits0.data(), sizeof(float), logits0.size(), f); std::fclose(f); }
+         int best = 0;
+-        for (int i = 1; i < n_vocab; ++i) if (logits[i] > logits[best]) best = i;
+-        std::printf("STOCK_REF_LOGITS n=%d argmax=%d logit=%.9g\n", n_vocab, best, logits[best]);
++        for (int i = 1; i < n_vocab; ++i) if (logits0[i] > logits0[best]) best = i;
++        std::printf("STOCK_REF_LOGITS n=%d argmax=%d logit=%.9g\n", n_vocab, best, logits0[best]);
++    }
++
++    if (std::getenv("STOCK_TWO_TOKEN") != nullptr && !logits0.empty()) {
++        int token1 = 0;
++        for (int i = 1; i < n_vocab; ++i) if (logits0[i] > logits0[token1]) token1 = i;
++        llama_batch batch1 = llama_batch_init(1, 0, 1);
++        batch1.token[0]    = token1;
++        batch1.pos[0]      = 1;
++        batch1.n_seq_id[0] = 1;
++        batch1.seq_id[0][0] = 0;
++        batch1.logits[0]   = 1;
++        batch1.n_tokens    = 1;
++        const int status1 = llama_decode(ctx, batch1);
++        llama_synchronize(ctx);
++        std::printf("STOCK_REF_DECODE_POS1 status=%d token=%d\n", status1, token1);
++        const float * logits1 = status1 == 0 ? llama_get_logits_ith(ctx, 0) : nullptr;
++        if (logits1 && n_vocab > 0) {
++            const char * out = std::getenv("STOCK_LOGITS_OUT");
++            std::string p1 = out ? std::string(out) + ".p1" : "stock_logits_p1.bin";
++            FILE * f = std::fopen(p1.c_str(), "wb");
++            if (f) { std::fwrite(logits1, sizeof(float), (size_t) n_vocab, f); std::fclose(f); }
++            int best = 0;
++            for (int i = 1; i < n_vocab; ++i) if (logits1[i] > logits1[best]) best = i;
++            std::printf("STOCK_REF_LOGITS_POS1 n=%d argmax=%d logit=%.9g\n", n_vocab, best, logits1[best]);
++        }
++        llama_batch_free(batch1);
+     }
+ 
+     llama_batch_free(batch);
+diff --git i/runtime-flashnext-layer-exp/src/llama-context.cpp w/runtime-flashnext-layer-exp/src/llama-context.cpp
+index 730dcb0..710dfc7 100644
+--- i/runtime-flashnext-layer-exp/src/llama-context.cpp
++++ w/runtime-flashnext-layer-exp/src/llama-context.cpp
+@@ -1237,8 +1237,7 @@ void llama_context::synchronize() {
+                     // reservation pass would read unwritten storage and mark the name
+                     // owned. Allow exactly two prints: a provisional (pre-compute) one
+                     // and the final post-compute one.
+-                    static std::unordered_map<std::string, int> host_print_count;
+-                    int & cnt = host_print_count[it.first];
++                    int & cnt = flashnext_diag_print_count[it.first];
+                     if (cnt >= 2) {
+                         continue;
+                     }
+diff --git i/runtime-flashnext-layer-exp/src/llama-context.h w/runtime-flashnext-layer-exp/src/llama-context.h
+index 136b273..dd94f84 100644
+--- i/runtime-flashnext-layer-exp/src/llama-context.h
++++ w/runtime-flashnext-layer-exp/src/llama-context.h
+@@ -445,6 +445,10 @@ private:
+     // synchronized backend readback and then discarded.
+     mutable std::map<std::string, ggml_tensor *> flashnext_diag_tensors;
+     mutable std::map<std::string, std::vector<uint8_t>> flashnext_diag_owned;
++    // per-context two-print (provisional/final) budget for the host-capture
++    // names; a process-global counter would be exhausted by the first context
++    // and leave every later context (e.g. position-1 reloads) unread
++    mutable std::map<std::string, int> flashnext_diag_print_count;
+     mutable uint64_t flashnext_diag_generation = 0;
+     const ggml_tensor * flashnext_hc_rms_node = nullptr;
+ 
+diff --git i/runtime-flashnext-layer-exp/src/llama-graph.cpp w/runtime-flashnext-layer-exp/src/llama-graph.cpp
+index f240eef..6b979a6 100644
+--- i/runtime-flashnext-layer-exp/src/llama-graph.cpp
++++ w/runtime-flashnext-layer-exp/src/llama-graph.cpp
+@@ -108,6 +108,12 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
+     if (ubatch->embd && embd) {
+         GGML_ASSERT(embd->type == GGML_TYPE_F32);
+ 
++        if (std::getenv("CORTEX_FLASHNEXT_DEBUG_INPUT") != nullptr) {
++            LLAMA_LOG_INFO("CORTEX_DEBUG_INPUT embd_ne0=%lld n_tokens=%lld first=%g second=%g ub_embd=%p\n",
++                    (long long) embd->ne[0], (long long) ubatch->n_tokens,
++                    ubatch->embd[0], ubatch->n_tokens * embd->ne[0] > 1 ? ubatch->embd[1] : 0.0f, (const void *) ubatch->embd);
++        }
++
+         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
+             LLAMA_LOG_ERROR("CORTEX final-head unbound embd name=%s data=%p ne0=%lld ne1=%lld\n",
+                     embd->name, embd->data, (long long) embd->ne[0], (long long) embd->ne[1]);
+diff --git i/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp w/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp
+index 17895bb..129784f 100644
+--- i/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp
++++ w/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp
+@@ -1823,7 +1823,25 @@ void llm_graph_input_qwen4exp_ple::set_input(const llama_ubatch * ubatch) {
+     }
+ 
+     // predecessors come from the KV cells (ext.tok); apply_ubatch() already stored this ubatch, so its own tokens count too
+-    mctx->get_prev_tokens(*ubatch, n_prev, prev);
++    // layer-range transactions run each layer in its own context, whose attention
++    // cache never holds the preceding tokens, so the driver can supply them
++    // explicitly (oldest-first, -1 = missing). Only applies to non-zero
++    // positions; position 0 keeps the fresh-sequence behavior.
++    bool pos_is_zero = true;
++    if (ubatch->pos) {
++        for (int64_t i = 0; i < n_tokens; ++i) { pos_is_zero = pos_is_zero && ubatch->pos[i] == 0; }
++    }
++    const char * ple_prev_env = std::getenv("CORTEX_FLASHNEXT_PLE_PREV");
++    if (ple_prev_env != nullptr && !pos_is_zero) {
++        prev.assign((size_t) n_tokens * n_prev, LLAMA_TOKEN_NULL);
++        const char * p = ple_prev_env;
++        for (int64_t k = 0; k < n_tokens * n_prev && p && *p; ++k) {
++            prev[k] = (llama_token) std::strtol(p, (char **) &p, 10);
++            if (p && *p == ',') ++p;
++        }
++    } else {
++        mctx->get_prev_tokens(*ubatch, n_prev, prev);
++    }
+ 
+     for (int64_t i = 0; i < n_tokens; ++i) {
+         // an EOS in the window resets everything at or before it
