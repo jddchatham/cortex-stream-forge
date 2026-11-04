@@ -2033,9 +2033,15 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     (std::strcmp(name, "output_hc_norm.weight") == 0 ||
                      std::strcmp(name, "output_hc_down.weight") == 0 ||
                      std::strcmp(name, "output_hc_up.weight") == 0);
-                const bool eligible_global = final_head_tensor ||
+                const bool external_global = std::getenv("CORTEX_EXTERNAL_GLOBAL_TENSORS") != nullptr;
+                const bool excluded_global = external_global &&
+                    (std::strncmp(name, "token_embd", 10) == 0 ||
+                     std::strcmp(name, "output.weight") == 0 ||
+                     std::strncmp(name, "v.", 2) == 0 ||
+                     std::strncmp(name, "mtp.", 4) == 0);
+                const bool eligible_global = !excluded_global && (final_head_tensor ||
                     (flashnext_segment_b || flashnext_layer_range ? false :
-                        (flashnext_router_only ? router_global : global_weight));
+                        (flashnext_router_only ? router_global : global_weight)));
                 // A single segment still needs the model-global embedding,
                 // output norm, and output projection. These are independent
                 // of the reusable transformer-layer working buffer.
@@ -2054,6 +2060,28 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             const auto * weight = ml.get_weight(ggml_get_name(t));
             pimpl->cortex_offsets[ggml_get_name(t)] = { weight->idx, weight->offs };
         }
+        // Calculate the maximum layer byte requirement across all layers in the model
+        size_t max_layer_bytes = layer_total;
+        for (int il = 0; il < (int) hparams.n_layer_all; ++il) {
+            size_t cur_layer_bytes = 0;
+            const auto & l = layers.at(il);
+            std::vector<ggml_tensor *> l_tensors;
+            if (arch == LLM_ARCH_LLAMA) {
+                l_tensors = { l.attn_norm, l.wq, l.wk, l.wv, l.wo,
+                              l.ffn_norm, l.ffn_gate, l.ffn_down, l.ffn_up };
+            } else {
+                l_tensors = { l.attn_norm, l.attn_post_norm, l.wqkv, l.wqkv_gate,
+                              l.wq, l.wk, l.wv, l.wo, l.attn_q_norm, l.attn_k_norm,
+                              l.ssm_conv1d, l.ssm_dt, l.ssm_a, l.ssm_beta, l.ssm_alpha,
+                              l.ssm_norm, l.ssm_out, l.ffn_gate, l.ffn_down, l.ffn_up,
+                              l.nextn.eh_proj, l.nextn.enorm, l.nextn.hnorm,
+                              l.nextn.embed_tokens, l.nextn.shared_head_head,
+                              l.nextn.shared_head_norm };
+            }
+            for (ggml_tensor * lt : l_tensors) if (lt) cur_layer_bytes += ggml_nbytes(lt);
+            if (cur_layer_bytes > max_layer_bytes) max_layer_bytes = cur_layer_bytes;
+        }
+
         const bool flashnext_low_res = flashnext_layer_range ||
                 std::getenv("CORTEX_FLASHNEXT_SEGMENT_B") != nullptr ||
                 std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") != nullptr ||
@@ -2061,29 +2089,29 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
         if (flashnext_low_res && global_total > 1ull*1024ull*1024ull*1024ull) {
             throw std::runtime_error(format("CORTEX low-residency global set unexpectedly large: %zu bytes", global_total));
         }
-        LLAMA_LOG_INFO("CORTEX_GLOBAL_BYTES=%zu CORTEX_LAYER_BYTES=%zu CORTEX_SELECTED_TENSORS=%zu\n",
-                global_total, layer_total, selected.size());
+        LLAMA_LOG_INFO("CORTEX_GLOBAL_BYTES=%zu CORTEX_LAYER_BYTES=%zu CORTEX_MAX_LAYER_BYTES=%zu CORTEX_SELECTED_TENSORS=%zu\n",
+                global_total, layer_total, max_layer_bytes, selected.size());
         const size_t cumulative_budget = 768ull * 1024ull * 1024ull;
-        if (flashnext_layer_range && global_total + layer_total > cumulative_budget) {
+        if (flashnext_layer_range && global_total + max_layer_bytes > cumulative_budget) {
             throw std::runtime_error(format(
                 "CORTEX range residency budget exceeded: %zu > %zu bytes",
-                global_total + layer_total, cumulative_budget));
+                global_total + max_layer_bytes, cumulative_budget));
         }
         pimpl->cortex_global_buffer.resize(global_total);
         if (std::getenv("CORTEX_PREAD_ARENA") != nullptr) {
             if (pimpl->cortex_pread_arena == nullptr) {
                 const size_t alignment = std::max<size_t>(64, ggml_backend_buft_get_alignment(ggml_backend_cpu_buffer_type()));
-                if (posix_memalign(&pimpl->cortex_pread_arena, alignment, layer_total) != 0) {
+                if (posix_memalign(&pimpl->cortex_pread_arena, alignment, max_layer_bytes) != 0) {
                     throw std::runtime_error("CORTEX pread arena allocation failed");
                 }
-                pimpl->cortex_pread_arena_capacity = layer_total;
-            } else if (pimpl->cortex_pread_arena_capacity < layer_total) {
+                pimpl->cortex_pread_arena_capacity = max_layer_bytes;
+            } else if (pimpl->cortex_pread_arena_capacity < max_layer_bytes) {
                 throw std::runtime_error(format("CORTEX pread arena too small: %zu < %zu",
-                    pimpl->cortex_pread_arena_capacity, layer_total));
+                    pimpl->cortex_pread_arena_capacity, max_layer_bytes));
             }
             pimpl->cortex_layer_buffer.clear();
         } else {
-            pimpl->cortex_layer_buffer.resize(layer_total);
+            pimpl->cortex_layer_buffer.resize(max_layer_bytes);
         }
         size_t global_offset = 0;
         size_t layer_offset = 0;
@@ -2190,16 +2218,44 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
 }
 
 bool llama_model_base::flashnext_layer_range_ple_rows(const int32_t * ids, size_t count, float * dst) const {
-    if (!ids || !dst || !per_layer_tok_embd || !std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE")) return false;
+    if (!ids || !dst || !per_layer_tok_embd || !std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE")) {
+        LLAMA_LOG_ERROR("FLASHNEXT_PLE_ROWS_FAIL stage=precond ids=%d dst=%d ple_tensor=%p range_env=%d\n",
+            ids != nullptr, dst != nullptr, (void *) per_layer_tok_embd,
+            std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE") != nullptr);
+        return false;
+    }
     const size_t elems = (size_t) per_layer_tok_embd->ne[0];
     const size_t bytes = ggml_row_size(per_layer_tok_embd->type, elems);
     const auto it = pimpl->cortex_offsets.find("per_layer_token_embd.weight");
-    if (it == pimpl->cortex_offsets.end() || it->second.first >= pimpl->cortex_pread_fds.size()) return false;
+    if (it == pimpl->cortex_offsets.end() || it->second.first >= pimpl->cortex_pread_fds.size()) {
+        LLAMA_LOG_ERROR("FLASHNEXT_PLE_ROWS_FAIL stage=offsets found=%d fds=%zu\n",
+            it != pimpl->cortex_offsets.end(), pimpl->cortex_pread_fds.size());
+        return false;
+    }
     const int fd = pimpl->cortex_pread_fds.at(it->second.first);
     if (!flashnext_read_quantized_rows(fd, (uint64_t) it->second.second,
-            per_layer_tok_embd->type, (int64_t) elems, per_layer_tok_embd->ne[1], ids, count, dst)) return false;
+            per_layer_tok_embd->type, (int64_t) elems, per_layer_tok_embd->ne[1], ids, count, dst)) {
+        LLAMA_LOG_ERROR("FLASHNEXT_PLE_ROWS_FAIL stage=read fd=%d type=%d elems=%zu rows=%lld count=%zu\n",
+            fd, (int) per_layer_tok_embd->type, elems, (long long) per_layer_tok_embd->ne[1], count);
+        return false;
+    }
     LLAMA_LOG_INFO("FLASHNEXT_PLE_ROWS count=%zu row_elems=%zu row_bytes=%zu bytes_read=%zu\n",
             count, elems, bytes, count * bytes);
+    return true;
+}
+
+bool llama_model_base::flashnext_token_embd_rows(const int32_t * ids, size_t count, float * dst) const {
+    if (!ids || !dst || count == 0 || !tok_embd || !std::getenv("CORTEX_PREAD_ARENA")) return false;
+    if (tok_embd->ne[0] <= 0 || tok_embd->ne[1] <= 0 || tok_embd->ne[0] > INT64_MAX) return false;
+    const int64_t elems = tok_embd->ne[0];
+    const int64_t rows = tok_embd->ne[1];
+    if (count > SIZE_MAX / (size_t) elems) return false;
+    const auto it = pimpl->cortex_offsets.find("token_embd.weight");
+    if (it == pimpl->cortex_offsets.end() || it->second.first >= pimpl->cortex_pread_fds.size()) return false;
+    if (!flashnext_read_quantized_rows(pimpl->cortex_pread_fds.at(it->second.first),
+            (uint64_t) it->second.second, tok_embd->type, elems, rows, ids, count, dst)) return false;
+    LLAMA_LOG_INFO("FLASHNEXT_TOKEN_EMBD_ROWS count=%zu row_elems=%lld row_bytes=%zu\n",
+        count, (long long) elems, ggml_row_size(tok_embd->type, elems));
     return true;
 }
 
@@ -3285,6 +3341,11 @@ void llama_model_free(llama_model * model) {
 bool llama_cortex_rebind_layer(llama_model * model, int layer) {
     auto * base = dynamic_cast<llama_model_base *>(model);
     return base != nullptr && base->cortex_rebind_layer(layer);
+}
+
+bool llama_cortex_token_embd_rows(const llama_model * model, const int32_t * ids, size_t count, float * dst) {
+    auto * base = dynamic_cast<const llama_model_base *>(model);
+    return base != nullptr && base->flashnext_token_embd_rows(ids, count, dst);
 }
 
 int32_t llama_model_n_ctx_train(const llama_model * model) {

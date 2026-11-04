@@ -78,6 +78,11 @@ struct llama_context {
 
     size_t debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap);
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
+    // Optional three-component Segment-A payload, 12804 F32 values.
+    size_t debug_copy_flashnext_layer0_boundary(float * dst, size_t capacity) const;
+    size_t debug_copy_flashnext_layer0_router(float * dst, size_t capacity) const;
+    size_t debug_copy_flashnext_layer0_post_segment_b(float * dst, size_t capacity) const;
+    size_t debug_copy_flashnext_layer0_pre_hc(float * dst, size_t capacity) const;
     bool debug_copy_final_head_output(std::vector<uint8_t> & bytes, std::array<int64_t, 4> & ne,
             std::array<size_t, 4> & nb, enum ggml_type & type, std::string & name);
     size_t debug_copy_cpu_operand(const char * name, void * dst, size_t cap) const;

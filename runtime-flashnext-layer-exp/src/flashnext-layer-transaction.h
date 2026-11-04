@@ -19,6 +19,8 @@ struct flashnext_layer_transaction {
 
     std::array<int32_t, experts_used> selected_expert_ids{};
     std::array<double, experts_used> routing_weights{};
+    static constexpr size_t n_expert = 512;
+    std::array<float, n_expert> router_logits{};
 
     std::array<float, hidden> selected_moe{};
     std::array<float, hidden> shared_moe{};

@@ -548,6 +548,13 @@ extern "C" {
 
     // Forge-only: rebind a low-residency Qwen3.8 transformer layer.
     LLAMA_API bool llama_cortex_rebind_layer(struct llama_model * model, int layer);
+    LLAMA_API bool llama_cortex_prefetch_layer(struct llama_model * model, int layer);
+    LLAMA_API bool llama_cortex_wait_prefetch(struct llama_model * model, int layer);
+    // Caller supplies count * llama_model_n_embd_inp(model) floats. The
+    // buffer remains caller-owned and is not retained by the runtime.
+    LLAMA_API bool llama_cortex_token_embd_rows(const struct llama_model * model,
+                                                const int32_t * token_ids,
+                                                size_t count, float * dst);
 
     LLAMA_API struct llama_context * llama_init_from_model(
                      struct llama_model * model,
@@ -1159,6 +1166,23 @@ extern "C" {
     // shape: [n_embd] (1-dimensional)
     // returns NULL for invalid ids.
     LLAMA_API float * llama_get_embeddings_ith(struct llama_context * ctx, int32_t i);
+
+    // Optional diagnostic capture of the three-component Segment-A payload:
+    // [pre_moe:2560][residual_hc:10240][injection:4] = 12804 F32 values.
+    // Canonical order is dimension-0-fastest within each component.
+    LLAMA_API size_t llama_cortex_copy_layer0_boundary(struct llama_context * ctx,
+            float * dst, size_t capacity);
+    // Optional router capture, separate from the graph boundary: 512 F32 values.
+    LLAMA_API size_t llama_cortex_copy_layer0_router(struct llama_context * ctx,
+            float * dst, size_t capacity);
+    // Optional post-Segment-B layer-0 output: [2560,4,1], 10240 F32 values.
+    LLAMA_API size_t llama_cortex_copy_layer0_post_segment_b(struct llama_context * ctx,
+            float * dst, size_t capacity);
+
+    // Diagnostic only: copy the 2,560-element F32 block_out tensor immediately
+    // before layer-0 HC recombination.
+    LLAMA_API size_t llama_cortex_copy_layer0_pre_hc(struct llama_context * ctx,
+            float * dst, size_t capacity);
 
     // Get the embeddings for a sequence id
     // Returns NULL if pooling_type is LLAMA_POOLING_TYPE_NONE

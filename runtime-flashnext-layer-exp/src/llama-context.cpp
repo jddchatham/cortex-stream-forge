@@ -1207,6 +1207,69 @@ void llama_context::synchronize() {
             const size_t span_bytes = ggml_nbytes(t);
             const size_t elements = ggml_nelements(t);
             const size_t bytes = elements * sizeof(float);
+            if (flashnext_diag_is_host_capture(t) && t->data != nullptr && t->type == GGML_TYPE_F32) {
+                // diag-only: tensor copied into host storage owned outside the compute
+                // allocator (see llm_graph_context::cb); read it directly
+                std::vector<float> values(bytes / sizeof(float));
+                bool host_ok = true;
+                for (int64_t i3 = 0; host_ok && i3 < t->ne[3]; ++i3) {
+                    for (int64_t i2 = 0; host_ok && i2 < t->ne[2]; ++i2) {
+                        for (int64_t i1 = 0; host_ok && i1 < t->ne[1]; ++i1) {
+                            for (int64_t i0 = 0; i0 < t->ne[0]; ++i0) {
+                                const size_t index = i0 + t->ne[0] * (i1 + t->ne[1] * (i2 + t->ne[2] * i3));
+                                const size_t offset = i0 * t->nb[0] + i1 * t->nb[1] + i2 * t->nb[2] + i3 * t->nb[3];
+                                if (offset + sizeof(float) > span_bytes) { host_ok = false; break; }
+                                std::memcpy(&values[index], (const char *) t->data + offset, sizeof(float));
+                            }
+                        }
+                    }
+                }
+                if (host_ok) {
+                    // diag-only: optional raw dump for element-wise comparison
+                    if (const char * dump_dir = std::getenv("CORTEX_FLASHNEXT_DIAG_DUMP")) {
+                        const std::string dump_path = format("%s/%s.bin", dump_dir, it.first.c_str());
+                        if (FILE * dumpf = fopen(dump_path.c_str(), "wb")) {
+                            fwrite(values.data(), sizeof(float), values.size(), dumpf);
+                            fclose(dumpf);
+                        }
+                    }
+                    // host captures carry a buffer from birth, so the print after the
+                    // reservation pass would read unwritten storage and mark the name
+                    // owned. Allow exactly two prints: a provisional (pre-compute) one
+                    // and the final post-compute one.
+                    static std::unordered_map<std::string, int> host_print_count;
+                    int & cnt = host_print_count[it.first];
+                    if (cnt >= 2) {
+                        continue;
+                    }
+                    cnt++;
+                    if (cnt == 2) {
+                        flashnext_diag_owned[it.first] = std::vector<uint8_t>(bytes);
+                        std::memcpy(flashnext_diag_owned[it.first].data(), values.data(), bytes);
+                    }
+                    size_t nan = 0, inf = 0;
+                    float minv = INFINITY, maxv = -INFINITY;
+                    uint64_t hash = 1469598103934665603ull;
+                    const uint8_t * raw = reinterpret_cast<const uint8_t *>(values.data());
+                    for (size_t i = 0; i < values.size(); ++i) {
+                        const float x = values[i];
+                        if (std::isnan(x)) ++nan;
+                        else if (std::isinf(x)) ++inf;
+                        else { minv = std::min(minv, x); maxv = std::max(maxv, x); }
+                    }
+                    for (size_t i = 0; i < bytes; ++i) {
+                        hash ^= raw[i]; hash *= 1099511628211ull;
+                    }
+                    LLAMA_LOG_INFO("FLASHNEXT_DIAG name=%s op=%d shape=[%lld,%lld,%lld,%lld] "
+                        "dtype=%d elements=%zu bytes=%zu nan=%zu inf=%zu min=%g max=%g hash=%016llx "
+                        "capture=BACKEND_SYNCED print=%d data=%p buffer=%p\n",
+                        it.first.c_str(), (int) t->op, (long long)t->ne[0], (long long)t->ne[1],
+                        (long long)t->ne[2], (long long)t->ne[3], (int)t->type,
+                        elements, bytes, nan, inf, minv, maxv,
+                        (unsigned long long) hash, cnt, t->data, (void *) t->buffer);
+                    continue;
+                }
+            }
             if (!backend || !t->buffer || bytes == 0 || t->type != GGML_TYPE_F32) {
                 LLAMA_LOG_ERROR("FLASHNEXT_DIAG name=%s capture=NOT_CAPTURED type=%d bytes=%zu buffer=%p\n",
                     it.first.c_str(), (int) t->type, span_bytes, (void *) t->buffer);
@@ -1345,6 +1408,34 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
     if (cap < it->second.size()) return it->second.size();
     if (dst && !it->second.empty()) std::memcpy(dst, it->second.data(), it->second.size());
     return it->second.size();
+}
+
+size_t llama_context::debug_copy_flashnext_layer0_boundary(float * dst, size_t capacity) const {
+    constexpr size_t elements = 2560 + 10240 + 4;
+    constexpr size_t bytes = elements * sizeof(float);
+    if (capacity < elements) return bytes;
+    return debug_copy_flashnext_tensor("flashnext_segment_a_boundary-0", dst, bytes);
+}
+
+size_t llama_context::debug_copy_flashnext_layer0_router(float * dst, size_t capacity) const {
+    constexpr size_t elements = 512;
+    constexpr size_t bytes = elements * sizeof(float);
+    if (capacity < elements) return bytes;
+    return debug_copy_flashnext_tensor("diag_router_logits-0", dst, bytes);
+}
+
+size_t llama_context::debug_copy_flashnext_layer0_post_segment_b(float * dst, size_t capacity) const {
+    constexpr size_t elements = 2560 * 4;
+    constexpr size_t bytes = elements * sizeof(float);
+    if (capacity < elements) return bytes;
+    return debug_copy_flashnext_tensor("diag_hc_post-0", dst, bytes);
+}
+
+size_t llama_context::debug_copy_flashnext_layer0_pre_hc(float * dst, size_t capacity) const {
+    constexpr size_t elements = 2560;
+    constexpr size_t bytes = elements * sizeof(float);
+    if (capacity < elements) return bytes;
+    return debug_copy_flashnext_tensor("diag_hc_block_out-0", dst, bytes);
 }
 
 bool llama_context::debug_copy_final_head_output(std::vector<uint8_t> & bytes,
@@ -3339,10 +3430,13 @@ llm_graph_cb llama_context::graph_get_cb() const {
         }
 
         if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0 &&
-            (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
+            (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_tx_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
              strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "conv_", 5) == 0 ||
              strncmp(name, "hc_", 3) == 0 ||
-             strcmp(name, "linear_attn_qkv_mixed") == 0)) {
+             strncmp(name, "flashnext_segment_a_boundary", 29) == 0 ||
+             strcmp(name, "linear_attn_qkv_mixed") == 0 ||
+             strcmp(name, "linear_attn_qkvz_input") == 0 ||
+             strncmp(name, "diag_ple_", 9) == 0)) {
             flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
             ++flashnext_diag_generation;
         }
@@ -4729,6 +4823,22 @@ float * llama_get_embeddings_ith(llama_context * ctx, int32_t i) {
     ctx->synchronize();
 
     return ctx->get_embeddings_ith(i);
+}
+
+size_t llama_cortex_copy_layer0_boundary(llama_context * ctx, float * dst, size_t capacity) {
+    return ctx ? ctx->debug_copy_flashnext_layer0_boundary(dst, capacity) : 0;
+}
+
+size_t llama_cortex_copy_layer0_router(llama_context * ctx, float * dst, size_t capacity) {
+    return ctx ? ctx->debug_copy_flashnext_layer0_router(dst, capacity) : 0;
+}
+
+size_t llama_cortex_copy_layer0_post_segment_b(llama_context * ctx, float * dst, size_t capacity) {
+    return ctx ? ctx->debug_copy_flashnext_layer0_post_segment_b(dst, capacity) : 0;
+}
+
+size_t llama_cortex_copy_layer0_pre_hc(llama_context * ctx, float * dst, size_t capacity) {
+    return ctx ? ctx->debug_copy_flashnext_layer0_pre_hc(dst, capacity) : 0;
 }
 
 float * llama_get_embeddings_seq(llama_context * ctx, llama_seq_id seq_id) {

@@ -76,3 +76,31 @@ The current Forge chat path uses the verified newer `llama-simple-chat` runtime 
 ## Boundaries
 
 The existing handoffs and source trees are references and remain untouched by Forge. See `CORTEX_STREAM_FORGE_ARCHITECTURE.md` for the lifecycle, ownership model, adapter contract, and extension process.
+
+## FlashNext (Qwen3.8) 48-layer single-token milestone
+
+Branch `milestone/flashnext-48layer-bitexact` validates full 48-layer,
+single-token FlashNext inference through the low-residency streaming engine,
+bit-exact against the stock graph (see `milestone-flashnext-48layer/`).
+
+- **Scope**: one token (248045) at position 0 through all 48 layers
+  (36 recurrent + 12 full-attention at layers 3,7,...,47; PLE at layer 1),
+  final HC mixer, and output projection. All 48 layer outputs and the final
+  248,320-float logits are element-wise bit-identical to the stock reference;
+  predicted token and logit match stock exactly.
+- **Hardware constraints**: validated on a 9.8 GB RAM host against a 44.7 GB
+  IQ4_XS shard. Weights stream through pread tiles (one resident layer at a
+  time); measured peak process RSS ~2.2 MB with the OS page cache carrying the
+  streaming load. ~1.9 s/layer (91 s for 48 layers). REPACK=ON and OFF builds
+  produce bit-identical results.
+- **Numerical validation**: `milestone-flashnext-48layer/regression_check.py`
+  (golden 2-layer), `compare_chain48.py <tag> <N>` (per-layer vs stock
+  captures), checkpoints N=2/4/8/16/32/48 all bit-exact. The host-side sparse
+  MoE and final head mirror the stock ggml op-for-op (see
+  HC_DIVERGENCE_REPORT.md for the corrected HC transaction capture).
+- **Remaining limitations**: multi-token generation is not yet validated - it
+  needs recurrent/KV state carryover across per-layer reloads and PLE
+  predecessor-token metadata. Per-layer reload costs ~0.7 s of the ~1.9 s/layer.
+- **Artifacts**: `FULL_48_LAYER_REPORT.md` (full results), `CHAIN_48LAYER_DIFF.diff`
+  and `HC_TX_FIX_DIFF.diff` (source provenance), `run-chain48.sh` (bounded
+  checkpoint runner), `regression_check.py`, `compare_chain48.py`.

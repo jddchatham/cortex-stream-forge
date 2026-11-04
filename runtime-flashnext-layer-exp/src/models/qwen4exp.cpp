@@ -199,7 +199,11 @@ void llama_model_qwen4exp::load_arch_tensors(llama_model_loader & ml) {
     }
 
     // flat [ple_head_dim, n_rows] gather target
-    if (hparams.ple_n_heads > 0 && std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") == nullptr) {
+    // layer-range transactions materialize PLE rows through the pread provider
+    // in the input binder, outside the GGML graph, so the lazy table is still
+    // required when the graph itself is router-only
+    if (hparams.ple_n_heads > 0 && (std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") == nullptr ||
+                                    std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE") != nullptr)) {
         // the head ranges are what the gather indexes, so they set the minimum row count
         int64_t ple_rows = 0;
         for (uint32_t h = 0; h < hparams.ple_n_heads; ++h) {
@@ -324,6 +328,29 @@ std::unique_ptr<llm_graph_context> llama_model_qwen4exp::build_arch_graph(const 
 
 // Hyper-connections keep hc parallel residual streams [n_embd, hc, T] in place of layer norms.
 // Returns the mixed [n_embd, T] stream; `inject` gets the [hc, T] scatter weights.
+
+// diag-only: hash the raw backing bytes of a weight tensor; reports instead of reading when inaccessible
+static void flashnext_weight_diag(const char * tag, int il, const ggml_tensor * w) {
+    const size_t nbytes = ggml_nbytes(w);
+    uint64_t hash = 1469598103934665603ull;
+    size_t zero = 0;
+    bool readable = w != nullptr && w->data != nullptr && nbytes > 0;
+    if (readable) {
+        const uint8_t * raw = (const uint8_t *) w->data;
+        for (size_t i = 0; i < nbytes; i++) {
+            hash ^= raw[i]; hash *= 1099511621211ull;
+            zero += raw[i] == 0;
+        }
+    }
+    LLAMA_LOG_INFO("FLASHNEXT_WEIGHT_DIAG tag=%s il=%d name=%s type=%d ne=[%lld,%lld,%lld,%lld] "
+        "data=%p buffer=%p nbytes=%zu zero_bytes=%zu readable=%d hash=%016llx\n",
+        tag, il, w ? w->name : "(nil)", w ? (int) w->type : -1,
+        w ? (long long) w->ne[0] : 0, w ? (long long) w->ne[1] : 0,
+        w ? (long long) w->ne[2] : 0, w ? (long long) w->ne[3] : 0,
+        w ? w->data : nullptr, w ? (void *) w->buffer : nullptr,
+        nbytes, zero, (int) readable, (unsigned long long) hash);
+}
+
 ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
         ggml_tensor *  x,
         ggml_tensor *  w_norm,
@@ -371,6 +398,22 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
     ggml_tensor * gate = build_lora_mm(w_up, lo);
     cb(gate, hc_attn_capture ? "hc_attn_gate" : "hc_gate", il);
 
+    // diag-only: materialized (cont + expand) captures so the post-compute
+    // BACKEND_SYNCED reads cannot alias scratch buffers
+    const bool hc_diag = std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0;
+    if (hc_diag) {
+        flashnext_weight_diag("hc_down", il, w_down);
+        flashnext_weight_diag("hc_up",   il, w_up);
+        flashnext_weight_diag("hc_norm_w", il, w_norm);
+        flashnext_weight_diag("hc_inject_w", il, w_inject);
+        ggml_tensor * lo_c = ggml_cont(ctx0, lo);
+        ggml_build_forward_expand(gf, lo_c);
+        cb(lo_c, "diag_hc_down_out", il);
+        ggml_tensor * gate_c = ggml_cont(ctx0, gate);
+        ggml_build_forward_expand(gf, gate_c);
+        cb(gate_c, "diag_hc_gate_out", il);
+    }
+
     ggml_tensor * mixed = nullptr;
     if (cparams.fused_dsv4_hc_pre && il >= 0) {
         // sigmoid gate and mean over the streams in one op
@@ -395,6 +438,11 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
         mixed = ggml_scale(ctx0, mixed, 1.0f / (float) hc);
     }
     cb(mixed, hc_attn_capture ? "hc_attn_mixed" : "hc_mixed", il);
+    if (hc_diag) {
+        ggml_tensor * mixed_c = ggml_cont(ctx0, mixed);
+        ggml_build_forward_expand(gf, mixed_c);
+        cb(mixed_c, "diag_hc_mix_out", il);
+    }
 
     if (inject) {
         *inject = build_lora_mm(w_inject, xn);
@@ -663,7 +711,16 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
     ggml_tensor * inp_out_ids = cut_without_kv_inputs || omit_slice_out_ids ? nullptr : build_inp_out_ids();
 
     ggml_tensor * ple_emb = nullptr;
-    if (hparams.ple_n_heads > 0 && !partial_prefix) {
+    bool range_has_ple = false;
+    if (partial_prefix && hparams.ple_n_heads > 0) {
+        // a layer-range graph that still covers PLE layers must build the PLE
+        // input; in CORTEX_FLASHNEXT_LAYER_RANGE mode it is a caller-owned F32
+        // input materialized by the input binder, not an in-graph gather
+        for (int64_t il = layer_start; il < n_layer; ++il) {
+            range_has_ple = range_has_ple || hparams.is_ple((uint32_t) il);
+        }
+    }
+    if (hparams.ple_n_heads > 0 && (!partial_prefix || range_has_ple)) {
         ple_emb = build_inp_ple(mctx_hyb);
         // make sure ple_emb and build_inp_embd are in the same graph split
         ggml_build_forward_expand(gf, ple_emb);
@@ -679,6 +736,10 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
                 ggml_reshape_3d(ctx0, inpL, n_embd, 1, n_tokens),
                 n_embd, hc, n_tokens, 1);
     cb(res_hc, "hc_init", -1);
+    if (range_input) {
+        // diag-only: integrity-captured copy of the received layer-range input
+        cb(res_hc, "diag_hc_range_in", 0);
+    }
     ggml_tensor * trace_initial_hc = res_hc;
     if (std::getenv("CORTEX_FLASHNEXT_TRACE_RAW_INPUT") != nullptr && layer_start > 0) {
         const int64_t width = ggml_nelements(inpL);
@@ -706,6 +767,12 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
 
     for (int il = layer_start; il < n_layer; ++il) {
         res->t_layer_inp[il] = res_hc;
+        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+            // diag-only: the HC-wide streams entering each layer (handoff tensor)
+            ggml_tensor * streams_c = ggml_cont(ctx0, res_hc);
+            ggml_build_forward_expand(gf, streams_c);
+            cb(streams_c, "diag_hc_streams", il);
+        }
 
         if (hparams.is_ple(il)) {
             res_hc = build_ple(inp->get_recr(), ple_emb, res_hc, il);
@@ -818,6 +885,14 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
                     res_hc->ne[0] * res_hc->ne[1], res_hc->ne[2]);
             ggml_tensor * inj_flat = ggml_reshape_2d(ctx0, inject,
                     inject->ne[0], inject->ne[1] * inject->ne[2]);
+            if (internal_diag && il >= 0) {
+                // The host transaction bridge replicates the FFN combine, so it
+                // must read the FFN-phase residual and inject.  The diag_hc_*
+                // names still refer to the attention combine in this pre-MoE
+                // graph; in a full graph they refer to the FFN combine.
+                cb(res_hc, "diag_tx_residual", il);
+                cb(inject, "diag_tx_inject", il);
+            }
             ggml_tensor * boundary = ggml_concat(ctx0, pre_moe, res_flat, 0);
             boundary = ggml_concat(ctx0, boundary, inj_flat, 0);
             const int64_t boundary_width = boundary->ne[0];
@@ -1050,6 +1125,41 @@ std::pair<ggml_tensor *, ggml_tensor *> llama_model_qwen4exp::graph::build_qkvz(
                         int   il) {
     const int64_t n_seqs       = ubatch.n_seqs;
     const int64_t n_seq_tokens = ubatch.n_seq_tokens;
+
+    // QUORTEX diag: prove, per layer, (1) that the attn-side activation
+    // entering the wqkv projection is nonzero and (2) that the effective
+    // wqkv backing store is materialized, without inferring either from the
+    // zero linear_attn_qkv_mixed output.
+    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+        // Fresh contiguous buffer, so the post-compute BACKEND_SYNCED capture
+        // in llama_context::synchronize cannot alias scratch storage
+        // (same pattern as conv_input_authoritative at the conv_input cb).
+        ggml_tensor * qkvz_in = ggml_cont(ctx0, input);
+        ggml_build_forward_expand(gf, qkvz_in);
+        cb(qkvz_in, "linear_attn_qkvz_input", il);
+
+        // Hash/min/max of the raw backing bytes the mm will actually read.
+        // IQ4_XS weights fail the F32 filter of the synchronize-time capture
+        // path, so the weight has to be dumped here at graph build time.
+        const ggml_tensor * w = model.layers[il].wqkv;
+        const size_t nbytes = ggml_nbytes(w);
+        uint64_t hash = 1469598103934665603ull;
+        size_t zero = 0;
+        bool readable = w->data != nullptr && nbytes > 0;
+        if (readable) {
+            const uint8_t * raw = (const uint8_t *) w->data;
+            for (size_t i = 0; i < nbytes; i++) {
+                hash ^= raw[i]; hash *= 1099511621211ull;
+                zero += raw[i] == 0;
+            }
+        }
+        LLAMA_LOG_INFO("FLASHNEXT_WQKV_DIAG il=%d name=%s type=%d ne=[%lld,%lld,%lld,%lld] "
+            "data=%p buffer=%p nbytes=%zu zero_bytes=%zu readable=%d hash=%016llx\n",
+            il, w->name, (int) w->type, (long long) w->ne[0], (long long) w->ne[1],
+            (long long) w->ne[2], (long long) w->ne[3], w->data, (void *) w->buffer,
+            nbytes, zero, (int) readable,
+            (unsigned long long) hash);
+    }
 
     ggml_tensor * qkv_mixed = build_lora_mm(model.layers[il].wqkv, input, model.layers[il].wqkv_s);
     qkv_mixed = ggml_reshape_3d(ctx0, qkv_mixed, qkv_mixed->ne[0], n_seq_tokens, n_seqs);
@@ -1854,6 +1964,10 @@ ggml_tensor * llama_model_qwen4exp::graph::build_inp_ple(
         emb = ggml_reshape_2d(ctx0, emb, hparams.ple_head_dim * n_heads, n_tokens);
     }
     cb(emb, "ple_embd", -1);
+    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+        // diag-only: integrity-captured copy of the PLE embedding input
+        cb(emb, "diag_ple_embd", 0);
+    }
 
     return emb;
 }

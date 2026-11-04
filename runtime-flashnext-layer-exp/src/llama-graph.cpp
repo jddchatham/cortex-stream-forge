@@ -20,9 +20,11 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <unordered_set>
 
 // dedup helpers
@@ -72,11 +74,11 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
         ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
         ggml_backend_buffer_type_t buft = dev ? ggml_backend_dev_buffer_type(dev) : nullptr;
         if (buft) {
-            final_head_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(tokens)));
-            if (final_head_buf) {
-                tokens->buffer = final_head_buf.get();
-                tokens->data = ggml_backend_buffer_get_base(final_head_buf.get());
-                ggml_backend_buffer_init_tensor(final_head_buf.get(), tokens);
+            final_head_tokens_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(tokens)));
+            if (final_head_tokens_buf) {
+                tokens->buffer = final_head_tokens_buf.get();
+                tokens->data = ggml_backend_buffer_get_base(final_head_tokens_buf.get());
+                ggml_backend_buffer_init_tensor(final_head_tokens_buf.get(), tokens);
             }
         }
     }
@@ -84,21 +86,26 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
         ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
         ggml_backend_buffer_type_t buft = dev ? ggml_backend_dev_buffer_type(dev) : nullptr;
         if (buft) {
-            final_head_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(embd)));
-            if (final_head_buf) {
-                embd->buffer = final_head_buf.get();
-                embd->data = ggml_backend_buffer_get_base(final_head_buf.get());
-                ggml_backend_buffer_init_tensor(final_head_buf.get(), embd);
+            final_head_embd_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(embd)));
+            if (final_head_embd_buf) {
+                embd->buffer = final_head_embd_buf.get();
+                embd->data = ggml_backend_buffer_get_base(final_head_embd_buf.get());
+                ggml_backend_buffer_init_tensor(final_head_embd_buf.get(), embd);
             }
         }
     }
-    if (ubatch->token) {
+    // A rebuilt graph may not use both input variants. Unused graph inputs
+    // are intentionally left unallocated by the scheduler.
+    if (flashnext_range && ubatch->embd == nullptr) {
+        GGML_ABORT("FlashNext range decode missing the required caller-owned HC-wide F32 input");
+    }
+    if (ubatch->token && tokens) {
         const int64_t n_tokens = ubatch->n_tokens;
 
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
     }
 
-    if (ubatch->embd) {
+    if (ubatch->embd && embd) {
         GGML_ASSERT(embd->type == GGML_TYPE_F32);
 
         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
@@ -134,22 +141,25 @@ void llm_graph_input_embd_h::set_input(const llama_ubatch * ubatch) {
         ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
         ggml_backend_buffer_type_t buft = dev ? ggml_backend_dev_buffer_type(dev) : nullptr;
         if (buft) {
-            final_head_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(h)));
-            if (final_head_buf) {
-                h->buffer = final_head_buf.get();
-                h->data = ggml_backend_buffer_get_base(final_head_buf.get());
-                ggml_backend_buffer_init_tensor(final_head_buf.get(), h);
+            final_head_h_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(h)));
+            if (final_head_h_buf) {
+                h->buffer = final_head_h_buf.get();
+                h->data = ggml_backend_buffer_get_base(final_head_h_buf.get());
+                ggml_backend_buffer_init_tensor(final_head_h_buf.get(), h);
             }
         }
     }
     const int64_t n_tokens = ubatch->n_tokens;
 
-    if (ubatch->token) {
+    // Graph reconstruction may omit the token branch when the caller supplies
+    // a hidden-state/embedding input.  Only upload a tensor that belongs to
+    // this graph instance.
+    if (ubatch->token && tokens) {
         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
-    } else {
+    } else if (!ubatch->token) {
         // note: mtmd embedding input goes through here
         GGML_ASSERT(ubatch->embd);
-        if (embd->buffer) {
+        if (embd && embd->buffer) {
             GGML_ASSERT(n_embd == embd->ne[0]);
             ggml_backend_tensor_set(embd, ubatch->embd, 0, n_tokens*n_embd*ggml_element_size(h));
         }
@@ -1583,9 +1593,89 @@ llm_graph_context::llm_graph_context(const llm_graph_params & params) :
         res->set_params(params);
     }
 
+// diag-only: names eligible for integrity-protected capture (mirrors the list in llama_context::graph_get_cb)
+static bool flashnext_diag_whitelisted(const char * name) {
+    return strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_tx_", 8) == 0 || strncmp(name, "diag_ple_", 9) == 0 ||
+           strncmp(name, "diag_moe_", 9) == 0 ||
+           strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "conv_", 5) == 0 ||
+           strncmp(name, "hc_", 3) == 0 ||
+           strncmp(name, "flashnext_segment_a_boundary", 29) == 0 ||
+           strcmp(name, "linear_attn_qkv_mixed") == 0 ||
+           strcmp(name, "linear_attn_qkvz_input") == 0;
+}
+
+// diag-only: copy the tensor into storage owned outside the compute allocator, so the
+// captured bytes cannot be overwritten by later nodes reusing scratch. The cpy node is
+// part of the executable graph and runs with it; the destination buffer is never reused.
+// ggml_cont alone is not enough: a cont output inside the compute context still gets its
+// buffer offset recycled by the allocator once the node is dead.
+struct flashnext_diag_storage {
+    ggml_context_ptr        ctx;
+    ggml_backend_buffer_t   buf = nullptr;
+    ggml_tensor           * dst = nullptr;
+};
+
+// diag-only: registry of tensors whose storage is owned outside the compute allocator
+static std::mutex flashnext_diag_capture_mu;
+static std::vector<flashnext_diag_storage> flashnext_diag_keep;
+static std::unordered_set<const ggml_tensor *> flashnext_diag_host_captures;
+
+static ggml_tensor * flashnext_diag_capture(ggml_context * ctx0, ggml_cgraph * gf, ggml_tensor * src) {
+    ggml_backend_buffer_type_t buft = ggml_backend_cpu_buffer_type();
+    // metadata-only context; the data pointer is bound to the external buffer below
+    ggml_init_params ip = {
+        /*.mem_size   =*/ ggml_tensor_overhead() + 256,
+        /*.mem_buffer =*/ nullptr,
+        /*.no_alloc   =*/ true,
+    };
+    flashnext_diag_storage st;
+    st.ctx = ggml_context_ptr(ggml_init(ip));
+    if (!st.ctx) {
+        return nullptr;
+    }
+    st.dst = ggml_new_tensor(st.ctx.get(), src->type, GGML_MAX_DIMS, src->ne);
+    if (!st.dst) {
+        return nullptr;
+    }
+    st.buf = ggml_backend_buft_alloc_buffer(buft, ggml_backend_buft_get_alloc_size(buft, st.dst));
+    if (!st.buf) {
+        return nullptr;
+    }
+    if (ggml_backend_tensor_alloc(st.buf, st.dst, ggml_backend_buffer_get_base(st.buf)) != GGML_STATUS_SUCCESS) {
+        ggml_backend_buffer_free(st.buf);
+        return nullptr;
+    }
+    ggml_set_name(st.dst, src->name);
+    ggml_tensor * cpy = ggml_cpy(ctx0, src, st.dst);
+    ggml_build_forward_expand(gf, cpy);
+    {
+        ggml_tensor * dst = st.dst;
+        std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
+        flashnext_diag_keep.emplace_back(std::move(st));
+        flashnext_diag_host_captures.insert(dst);
+        return dst;
+    }
+}
+
+bool flashnext_diag_is_host_capture(const ggml_tensor * t) {
+    if (t == nullptr) {
+        return false;
+    }
+    std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
+    return flashnext_diag_host_captures.find(t) != flashnext_diag_host_captures.end();
+}
+
 void llm_graph_context::cb(ggml_tensor * cur, const char * name, int il) const {
     if (cb_func) {
-        cb_func(ubatch, cur, name, il);
+        ggml_tensor * target = cur;
+        if (il >= 0 && ctx0 != nullptr && gf != nullptr &&
+            std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr &&
+            flashnext_diag_whitelisted(name)) {
+            if (ggml_tensor * captured = flashnext_diag_capture(ctx0, gf, cur)) {
+                target = captured;
+            }
+        }
+        cb_func(ubatch, target, name, il);
     }
 }
 
@@ -2479,18 +2569,40 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     const int64_t n_embd_inp = hparams.n_embd_inp();
     const int64_t n_embd     = hparams.n_embd;
-    const bool range_input = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
+    const bool is_flashnext_range = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
                              std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0;
+    const bool external_global = std::getenv("CORTEX_EXTERNAL_GLOBAL_TENSORS") != nullptr;
+    const bool skip_token_branch = is_flashnext_range || external_global;
     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
     // boundary, not a token embedding row.  Keep this input F32 and owned by
     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
-    const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
+    const int64_t n_embd_range = is_flashnext_range ? hparams.n_embd_out() : n_embd_inp;
+
+    if (is_flashnext_range) {
+        const size_t expected = (size_t) n_embd_range * ubatch.n_tokens;
+        const size_t supplied = ubatch.data ? ubatch.data->embd.size() : 0;
+        if (ubatch.embd != nullptr && supplied != expected) {
+            throw std::runtime_error(format(
+                "FlashNext range input requires %zu F32 values, supplied %zu",
+                expected, supplied));
+        }
+        if (ubatch.embd == nullptr) {
+            // graph construction at context init reserves with an empty ubatch;
+            // the real feed is enforced in llm_graph_input_embd::set_input
+            static bool logged = false;
+            if (!logged) {
+                logged = true;
+                LLAMA_LOG_INFO("FLASHNEXT_RANGE_RESERVE graph built with empty ubatch; decode-time feed check active\n");
+            }
+        }
+    }
 
     assert(n_embd_inp >= n_embd);
 
     auto inp = std::make_unique<llm_graph_input_embd>(n_embd_inp);
+    inp->flashnext_range = is_flashnext_range;
 
-    if (!range_input) {
+    if (!skip_token_branch) {
         inp->tokens = ggml_new_tensor_1d(ctx0, GGML_TYPE_I32, ubatch.n_tokens);
         cb(inp->tokens, "inp_tokens", -1);
         ggml_set_input(inp->tokens);
@@ -2508,7 +2620,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     // token embeddings path (ubatch.token != nullptr).  A nonzero layer
     // range must not construct this branch: even an unreachable GET_ROWS
     // keeps token_embd.weight reachable by graph traversal/allocation.
-    if (!range_input) {
+    if (!skip_token_branch) {
         auto & cur = inps[0];
 
         cur = ggml_get_rows(ctx0, tok_embd, inp->tokens);
@@ -2534,7 +2646,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
         if (n_embd_inp != n_embd) {
             cur = ggml_pad(ctx0, cur, hparams.n_embd_inp() - n_embd, 0, 0, 0);
         }
-        if (range_input && n_embd_range != n_embd) {
+        if (is_flashnext_range && n_embd_range != n_embd) {
             cur = ggml_pad(ctx0, cur, n_embd_range - n_embd, 0, 0, 0);
         }
     }
@@ -2547,8 +2659,8 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
     }
 
     ggml_tensor * cur = nullptr;
-    if (range_input) {
-        // A nonzero range consumes only the caller-owned F32 hidden input.
+    if (skip_token_branch) {
+        // A nonzero range or external global path consumes only the caller-owned F32 hidden input.
         // Do not create a select node with an absent token branch.
         cur = inps[1];
     } else {
@@ -2557,7 +2669,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
         cur = ggml_build_forward_select(gf, inps.data(), inps.size(), ubatch.token ? 0 : 1);
     }
 
-    if (!range_input && n_embd_inp != n_embd) {
+    if (!is_flashnext_range && n_embd_inp != n_embd) {
         cur = ggml_view_2d(ctx0, cur, n_embd, n_tokens, cur->nb[1], 0);
     }
 

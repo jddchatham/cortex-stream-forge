@@ -67,11 +67,67 @@ bool tiled_matvec(ggml_backend_t backend, int fd, ggml_type type, int64_t rows,
 }
 }
 
+namespace {
+
+// Mirror of the stock build_moe_ffn weight pipeline (llama-graph.cpp):
+// soft_max over all router logits, gather the selected rows, normalize by the
+// clamped row sum.  Computed in a ggml graph so every rounding matches the
+// stock graph bit-for-bit; n_expert_used is small and fixed.
+bool compute_moe_weights(ggml_backend_t backend, const float * logits, const int32_t * ids,
+                         size_t n_used, float * weights /* [n_used] */) {
+    ggml_init_params ip { 8 * 1024 * 1024, nullptr, true };
+    ggml_context * c = ggml_init(ip);
+    if (!c) return false;
+    ggml_tensor * logits_t = ggml_new_tensor_2d(c, GGML_TYPE_F32, 512, 1);
+    ggml_tensor * probs    = ggml_soft_max(c, logits_t);
+    ggml_tensor * ids_t    = ggml_new_tensor_1d(c, GGML_TYPE_I32, (int64_t) n_used);
+    ggml_tensor * w3 = ggml_get_rows(c, ggml_reshape_3d(c, probs, 1, 512, 1), ids_t); // [1, n_used, 1]
+    ggml_tensor * w2 = ggml_reshape_2d(c, w3, (int64_t) n_used, 1);
+    ggml_tensor * wsum = ggml_clamp(c, ggml_sum_rows(c, w2), 6.103515625e-5f, INFINITY);
+    ggml_tensor * wn = ggml_div(c, w2, wsum); // [n_used, 1]
+    ggml_cgraph * graph = ggml_new_graph(c);
+    ggml_build_forward_expand(graph, wn);
+    ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(c, backend);
+    if (!buf) { ggml_free(c); return false; }
+    ggml_backend_tensor_set(logits_t, logits, 0, 512 * sizeof(float));
+    ggml_backend_tensor_set(ids_t, ids, 0, n_used * sizeof(int32_t));
+    const bool ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
+    if (ok) ggml_backend_tensor_get(wn, weights, 0, n_used * sizeof(float));
+    ggml_backend_buffer_free(buf);
+    ggml_free(c);
+    return ok;
+}
+
+// Mirror of the stock ggml_swiglu_split gate*silu(up).. silu(gate)*up fused
+// kernel, computed per expert in a ggml graph so the exp approximation and
+// rounding match the stock graph bit-for-bit.
+bool compute_swiglu(ggml_backend_t backend, const float * gate, const float * up,
+                    float * act /* [F] */) {
+    ggml_init_params ip { 4 * 1024 * 1024, nullptr, true };
+    ggml_context * c = ggml_init(ip);
+    if (!c) return false;
+    ggml_tensor * g_t = ggml_new_tensor_2d(c, GGML_TYPE_F32, F, 1);
+    ggml_tensor * u_t = ggml_new_tensor_2d(c, GGML_TYPE_F32, F, 1);
+    ggml_tensor * act_t = ggml_swiglu_split(c, g_t, u_t);
+    ggml_cgraph * graph = ggml_new_graph(c);
+    ggml_build_forward_expand(graph, act_t);
+    ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(c, backend);
+    if (!buf) { ggml_free(c); return false; }
+    ggml_backend_tensor_set(g_t, gate, 0, F * sizeof(float));
+    ggml_backend_tensor_set(u_t, up, 0, F * sizeof(float));
+    const bool ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
+    if (ok) ggml_backend_tensor_get(act_t, act, 0, F * sizeof(float));
+    ggml_backend_buffer_free(buf);
+    ggml_free(c);
+    return ok;
+}
+
+}
+
 bool flashnext_execute_selected_moe(
         const std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> & slices,
         flashnext_layer_transaction & tx, size_t arena_bytes) {
     tx.selected_moe.fill(0.0f);
-    std::array<double, K> accumulated{};
     tx.io.selected_expert_bytes_read = 0;
     tx.io.unselected_expert_reads = 0;
     tx.io.tensor_window_bytes = arena_bytes;
@@ -83,9 +139,26 @@ bool flashnext_execute_selected_moe(
     void * arena = nullptr;
     if (posix_memalign(&arena, 64, arena_bytes) != 0) { ggml_backend_free(backend); return false; }
 
+    // stock build_moe_ffn order: normalized softmax weights for the selected
+    // experts, in the graph's top-k order (tx.selected_expert_ids).  Callers
+    // that never populated router_logits (legacy standalone drivers) keep the
+    // previous unnormalized routing_weights behavior.
+    std::array<float, flashnext_layer_transaction::experts_used> weights{};
+    bool logits_populated = false;
+    for (float v : tx.router_logits) { logits_populated = logits_populated || v != 0.0f; }
+    if (!logits_populated) {
+        for (size_t i = 0; i < weights.size(); ++i) weights[i] = static_cast<float>(tx.routing_weights[i]);
+    } else if (!compute_moe_weights(backend, tx.router_logits.data(), tx.selected_expert_ids.data(),
+                             tx.selected_expert_ids.size(), weights.data())) {
+        std::free(arena);
+        ggml_backend_free(backend);
+        return false;
+    }
+
     std::array<float, F> gate{}, up{}, act{};
     std::array<float, K> down{};
     bool ok = true;
+    bool first = true;
     const size_t gate_bytes = static_cast<size_t>(F) * ggml_row_size(GATE_UP_TYPE, K);
     const size_t down_bytes = static_cast<size_t>(K) * ggml_row_size(DOWN_TYPE, F);
     for (size_t i = 0; i < tx.experts_used && ok; ++i) {
@@ -98,7 +171,9 @@ bool flashnext_execute_selected_moe(
                                 tx.pre_moe_hidden.data(), up.data(), arena, arena_bytes,
                                 tx.io.selected_expert_bytes_read, tx.io.pread_calls);
         if (!ok) break;
-        for (size_t j = 0; j < F; ++j) act[j] = (gate[j] / (1.0f + std::exp(-gate[j]))) * up[j];
+        // stock ggml_swiglu_split: silu(gate) * up through the same ggml kernel
+        ok = compute_swiglu(backend, gate.data(), up.data(), act.data());
+        if (!ok) break;
         ok = tiled_matvec(backend, slice.fds[2], DOWN_TYPE, K, slice.offsets[2],
                           act.data(), down.data(), arena, arena_bytes,
                           tx.io.selected_expert_bytes_read, tx.io.pread_calls);
@@ -109,9 +184,16 @@ bool flashnext_execute_selected_moe(
             fprintf(stderr, "CORTEX_SELECTED_DEBUG expert=%d down_hash=%016llx first=%g\n",
                          tx.selected_expert_ids[i], (unsigned long long) h, down[0]);
         }
-        for (size_t j = 0; j < K; ++j) accumulated[j] += static_cast<double>(tx.routing_weights[i]) * down[j];
+        // stock aggregation: ggml_mul by the per-expert weight, then sequential
+        // ggml_add over experts in top-k order, all in float32
+        const float w_i = weights[i];
+        if (first) {
+            for (size_t j = 0; j < K; ++j) { tx.selected_moe[j] = down[j] * w_i; }
+            first = false;
+        } else {
+            for (size_t j = 0; j < K; ++j) { tx.selected_moe[j] = tx.selected_moe[j] + down[j] * w_i; }
+        }
     }
-    for (size_t j = 0; j < K; ++j) tx.selected_moe[j] = static_cast<float>(accumulated[j]);
     std::free(arena);
     ggml_backend_free(backend);
     return ok;

@@ -139,7 +139,12 @@ public:
     ggml_tensor * tokens = nullptr; // I32 [n_batch]
     ggml_tensor * embd   = nullptr; // F32 [n_embd, n_batch]
 
-    ggml_backend_buffer_ptr final_head_buf;
+    // flashnext nonzero layer-range graphs require the caller-owned HC-wide
+    // F32 feed at decode time; a missing feed is a hard error there
+    bool flashnext_range = false;
+
+    ggml_backend_buffer_ptr final_head_tokens_buf;
+    ggml_backend_buffer_ptr final_head_embd_buf;
 
     const int64_t n_embd = 0;
 };
@@ -158,7 +163,9 @@ public:
     ggml_tensor * embd   = nullptr; // F32 [n_embd, n_batch]
     ggml_tensor * h      = nullptr; // F32 [n_embd, n_batch]
 
-    ggml_backend_buffer_ptr final_head_buf;
+    ggml_backend_buffer_ptr final_head_tokens_buf;
+    ggml_backend_buffer_ptr final_head_embd_buf;
+    ggml_backend_buffer_ptr final_head_h_buf;
 
     const int64_t n_embd = 0;
 };
@@ -1403,3 +1410,7 @@ struct llm_graph_context {
 
 // TODO: better name
 int32_t llama_relative_position_bucket(llama_pos x, llama_pos y, uint64_t n_buckets, bool bidirectional);
+
+// diag-only: true for tensors whose storage is owned outside the compute allocator
+// (see flashnext_diag_capture in llama-graph.cpp)
+bool flashnext_diag_is_host_capture(const ggml_tensor * t);

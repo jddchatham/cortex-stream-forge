@@ -858,7 +858,13 @@ struct llama_model_base : public llama_model {
     // separately and only the selected transformer layer uses the reusable
     // external buffer.
     bool cortex_rebind_layer(int il);
+    bool cortex_prefetch_layer(int il);
+    bool cortex_wait_prefetch(int il);
     bool flashnext_layer_range_ple_rows(const int32_t * ids, size_t count, float * dst) const;
+    // Read primary token_embd.weight rows into caller-owned F32 storage.  The
+    // model must use the Cortex pread/low-residency loader; no weight storage
+    // is retained by this call.
+    bool flashnext_token_embd_rows(const int32_t * ids, size_t count, float * dst) const;
 
     // model must define these
     void load_arch_hparams(llama_model_loader & ml) override = 0;

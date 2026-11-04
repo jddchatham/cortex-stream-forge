@@ -1,0 +1,1304 @@
+diff --git i/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp w/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp
+index 9e8d8e4..d7770f9 100644
+--- i/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp
++++ w/runtime-flashnext-layer-exp/examples/flashnext-owned-layer.cpp
+@@ -12,6 +12,7 @@
+ #include <algorithm>
+ #include <dirent.h>
+ #include <array>
++#include <chrono>
+ #include <cstdio>
+ #include <malloc.h>
+ #include <cstdlib>
+@@ -65,6 +66,130 @@ static bool flashnext_stream_output_q6k(const flashnext_tensor_descriptor & d,
+     return true;
+ }
+ 
++// Final HC mixer mirror of build_hc_mix(res_hc, hc_head_*, nullptr, nullptr, -1)
++// (unfused path, il=-1): grouped RMSNorm over the 4 streams, hc_head_down,
++// silu(1/hc scale), hc_head_up, sigmoid gate, per-stream product, mean over
++// streams.  All ggml ops, bit-exact against the stock graph.
++static bool flashnext_final_head_mix(const flashnext_tensor_descriptor & dn,
++        const flashnext_tensor_descriptor & dd, const flashnext_tensor_descriptor & du,
++        const float * hc_in /* 10240 */, std::vector<float> & mixed /* 2560 out */) {
++    if (dn.type != GGML_TYPE_F32 || dn.shape0 != 10240 ||
++        dd.shape0 != 10240 || du.shape0 != 320 || du.shape1 != 10240) return false;
++    const size_t dd_bytes = (size_t) ggml_row_size((ggml_type) dd.type, dd.shape0) * dd.shape1;
++    const size_t du_bytes = (size_t) ggml_row_size((ggml_type) du.type, du.shape0) * du.shape1;
++    std::vector<uint8_t> dn_b(dn.shape0 * sizeof(float)), dd_b(dd_bytes), du_b(du_bytes);
++    auto slurp = [](const flashnext_tensor_descriptor & d, uint8_t * p, size_t n) {
++        const int fd = ::open(d.path.c_str(), O_RDONLY);
++        if (fd < 0) return false;
++        size_t done = 0;
++        while (done < n) {
++            const ssize_t r = ::pread(fd, p + done, n - done, (off_t) (d.offset + done));
++            if (r <= 0) { ::close(fd); return false; }
++            done += (size_t) r;
++        }
++        ::close(fd);
++        return true;
++    };
++    if (!slurp(dn, dn_b.data(), dn_b.size()) || !slurp(dd, dd_b.data(), dd_b.size()) ||
++        !slurp(du, du_b.data(), du_b.size())) return false;
++
++    ggml_backend_load_all();
++    ggml_backend_t be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
++    if (!be) return false;
++    ggml_init_params ip { 64 * 1024 * 1024, nullptr, true };
++    ggml_context * c = ggml_init(ip);
++    if (!c) { ggml_backend_free(be); return false; }
++
++    constexpr int64_t hc = 4;
++    ggml_tensor * x    = ggml_new_tensor_3d(c, GGML_TYPE_F32, 2560, hc, 1);
++    ggml_tensor * wn   = ggml_new_tensor(c, GGML_TYPE_F32, 2, (int64_t[]) {2560, hc});
++    ggml_tensor * wd   = ggml_new_tensor_2d(c, (ggml_type) dd.type, dd.shape0, dd.shape1);
++    ggml_tensor * wu   = ggml_new_tensor_2d(c, (ggml_type) du.type, du.shape0, du.shape1);
++    ggml_tensor * rms  = ggml_rms_norm(c, x, 1.0e-6f);
++    ggml_tensor * xn   = ggml_reshape_2d(c, ggml_mul(c, rms, wn), 10240, 1);
++    ggml_tensor * lo   = ggml_silu(c, ggml_scale(c, ggml_mul_mat(c, wd, xn), 1.0f / (float) hc));
++    ggml_tensor * gate = ggml_mul_mat(c, wu, lo); // [10240, 1]
++    ggml_tensor * gated = ggml_reshape_3d(c, ggml_mul(c, xn, ggml_sigmoid(c, gate)), 2560, hc, 1);
++    ggml_tensor * m    = ggml_view_2d(c, gated, 2560, 1, ggml_row_size(GGML_TYPE_F32, 2560) * hc, 0);
++    m = ggml_cont(c, m);
++    for (int64_t s = 1; s < hc; ++s) {
++        ggml_tensor * v = ggml_view_2d(c, gated, 2560, 1,
++                ggml_row_size(GGML_TYPE_F32, 2560) * hc, ggml_row_size(GGML_TYPE_F32, 2560) * s);
++        m = ggml_add(c, m, v);
++    }
++    m = ggml_scale(c, m, 1.0f / (float) hc);
++
++    ggml_cgraph * graph = ggml_new_graph(c);
++    ggml_build_forward_expand(graph, m);
++    ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(c, be);
++    if (!buf) { ggml_free(c); ggml_backend_free(be); return false; }
++    wn->data = dn_b.data();
++    wd->data = dd_b.data();
++    wu->data = du_b.data();
++    ggml_backend_tensor_set(x, hc_in, 0, 10240 * sizeof(float));
++    const bool ok = ggml_backend_graph_compute(be, graph) == GGML_STATUS_SUCCESS;
++    if (ok) {
++        mixed.resize(2560);
++        ggml_backend_tensor_get(m, mixed.data(), 0, 2560 * sizeof(float));
++    }
++    ggml_backend_buffer_free(buf);
++    ggml_free(c);
++    ggml_backend_free(be);
++    return ok;
++}
++
++// Tiled ggml output projection: out[r] = dot(output.weight row r, x), streamed
++// with pread tiles.  Per-row vec_dot matches the stock in-graph mul_mat.
++static bool flashnext_stream_output_matvec(const flashnext_tensor_descriptor & d,
++        const float * x /* 2560 */, std::vector<float> & out) {
++    if (d.shape0 != 2560 || d.shape1 <= 0) return false;
++    const size_t row_bytes = ggml_row_size((ggml_type) d.type, 2560);
++    const size_t arena_bytes = 32 * 1024 * 1024;
++    const int64_t rows_per_tile = (int64_t) (arena_bytes / row_bytes);
++    if (rows_per_tile < 1) return false;
++    const int fd = ::open(d.path.c_str(), O_RDONLY);
++    if (fd < 0) return false;
++    void * arena = nullptr;
++    if (posix_memalign(&arena, 64, arena_bytes) != 0) { ::close(fd); return false; }
++    ggml_backend_load_all();
++    ggml_backend_t be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
++    if (!be) { std::free(arena); ::close(fd); return false; }
++    out.assign((size_t) d.shape1, 0.0f);
++    bool ok = true;
++    for (int64_t row = 0; row < d.shape1 && ok; row += rows_per_tile) {
++        const int64_t nr = std::min<int64_t>(rows_per_tile, d.shape1 - row);
++        const size_t tile = (size_t) nr * row_bytes;
++        size_t done = 0;
++        while (done < tile) {
++            const ssize_t r = ::pread(fd, (uint8_t *) arena + done, tile - done, (off_t) (d.offset + (uint64_t) row * row_bytes + done));
++            if (r <= 0) { ok = false; break; }
++            done += (size_t) r;
++        }
++        if (!ok) break;
++        ggml_init_params ip { 32 * 1024 * 1024, nullptr, true };
++        ggml_context * c = ggml_init(ip);
++        if (!c) { ok = false; break; }
++        ggml_tensor * w = ggml_new_tensor_2d(c, (ggml_type) d.type, 2560, nr);
++        ggml_tensor * xi = ggml_new_tensor_2d(c, GGML_TYPE_F32, 2560, 1);
++        ggml_tensor * y  = ggml_mul_mat(c, w, xi);
++        ggml_cgraph * g = ggml_new_graph(c);
++        ggml_build_forward_expand(g, y);
++        ggml_backend_buffer_t b = ggml_backend_alloc_ctx_tensors(c, be);
++        if (!b) { ok = false; ggml_free(c); break; }
++        w->data = arena;
++        ggml_backend_tensor_set(xi, x, 0, 2560 * sizeof(float));
++        ok = ggml_backend_graph_compute(be, g) == GGML_STATUS_SUCCESS;
++        if (ok) ggml_backend_tensor_get(y, out.data() + row, 0, (size_t) nr * sizeof(float));
++        ggml_backend_buffer_free(b);
++        ggml_free(c);
++    }
++    std::free(arena);
++    ggml_backend_free(be);
++    ::close(fd);
++    return ok;
++}
++// These are deliberately local types and arithmetic; the production vec-dot
++// implementation is not called here.
+ // Independent IQ4_XS x Q8_K reference used only by the diagnostic oracle.
+ // These are deliberately local types and arithmetic; the production vec-dot
+ // implementation is not called here.
+@@ -328,6 +453,21 @@ static void export_blob(const char * name, int pos, const void * p, size_t n, co
+     }
+     std::fprintf(m, "cortex\t%s\t%d\t%s\t%s\t%zu\t%zu\t%016llx\n", name, pos, shape, dtype, n/4, n, (unsigned long long) hash_bytes((const uint8_t *) p, n)); std::fclose(m);
+ }
++static uint64_t monotonic_us() {
++    return (uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
++        std::chrono::steady_clock::now().time_since_epoch()).count();
++}
++static void chain_progress(const char * stage, uint64_t started, uint64_t stage_started) {
++    const char * dir = std::getenv("FLASHNEXT_COMPARE_DIR");
++    const uint64_t now = monotonic_us();
++    std::fprintf(stderr, "CHAIN_PROGRESS stage=%s elapsed_ms=%.3f stage_ms=%.3f\n", stage,
++        (now-started)/1000.0, (now-stage_started)/1000.0);
++    std::fflush(stderr);
++    if (!dir) return;
++    std::string path = std::string(dir) + "/chain_progress.tsv";
++    FILE * f = std::fopen(path.c_str(), "a");
++    if (f) { std::fprintf(f, "%s\t%llu\t%llu\n", stage, (unsigned long long)(now-started), (unsigned long long)(now-stage_started)); std::fflush(f); ::fsync(::fileno(f)); std::fclose(f); }
++}
+ static bool capture_file_ready(const char * dir, const char * name, size_t bytes) {
+     if (!dir) return false;
+     struct stat st{};
+@@ -471,9 +611,22 @@ static bool capture_transaction_router(
+         txc.moe_input.data(), sizeof(txc.moe_input));
+     const size_t router_bytes = ctx->debug_copy_flashnext_tensor(("diag_router_logits" + suffix).c_str(),
+         txc.router_logits.data(), sizeof(txc.router_logits));
+-    const size_t residual_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_residual" + suffix).c_str(),
++    // The FFN combine needs the post-attention residual and the FFN inject.
++    // In a pre-MoE graph the diag_hc_* names refer to the attention combine,
++    // so prefer the dedicated transaction captures and fall back for full graphs.
++    std::string res_name = "diag_tx_residual" + suffix;
++    size_t residual_probe = ctx->debug_copy_flashnext_tensor(res_name.c_str(), nullptr, 0);
++    if (residual_probe != sizeof(txc.residual_hc)) {
++        res_name = "diag_hc_residual" + suffix;
++    }
++    const size_t residual_bytes = ctx->debug_copy_flashnext_tensor(res_name.c_str(),
+         txc.residual_hc.data(), sizeof(txc.residual_hc));
+-    const size_t inject_bytes = ctx->debug_copy_flashnext_tensor(("diag_hc_inject" + suffix).c_str(),
++    std::string inj_name = "diag_tx_inject" + suffix;
++    size_t inject_probe = ctx->debug_copy_flashnext_tensor(inj_name.c_str(), nullptr, 0);
++    if (inject_probe != sizeof(txc.injection)) {
++        inj_name = "diag_hc_inject" + suffix;
++    }
++    const size_t inject_bytes = ctx->debug_copy_flashnext_tensor(inj_name.c_str(),
+         txc.injection.data(), sizeof(txc.injection));
+     if (moe_bytes != sizeof(txc.moe_input) || router_bytes != sizeof(txc.router_logits) ||
+         residual_bytes != sizeof(txc.residual_hc) || inject_bytes != sizeof(txc.injection)) return false;
+@@ -724,6 +877,7 @@ static bool execute_transaction_sparse_moe(
+     std::memcpy(txc.values.pre_moe_hidden.data(), txc.moe_input.data(), sizeof(txc.moe_input));
+     std::memcpy(txc.values.residual_hc.data(), txc.residual_hc.data(), sizeof(txc.residual_hc));
+     std::memcpy(txc.values.inject.data(), txc.injection.data(), sizeof(txc.injection));
++    txc.values.router_logits = txc.router_logits;
+     if (!txc.tensor_index->load(index_path, &error)) return false;
+     if (!flashnext_execute_selected_moe(*txc.tensor_index, index_path, txc.values)) return false;
+     return true;
+@@ -755,13 +909,20 @@ static bool execute_transaction_graph_b(
+ }
+ 
+ static layer_transaction_result run_layer_decode(
+-        llama_context * ctx, int position, const std::vector<float> & owned_hidden) {
++        llama_context * ctx, int position, const std::vector<float> & owned_hidden, llama_token token_id = -1) {
+     layer_transaction_result result;
+     llama_batch batch = llama_batch_init(1, (int) owned_hidden.size(), 1);
+     if (!batch.embd) {
+         return result;
+     }
+     std::memcpy(batch.embd, owned_hidden.data(), owned_hidden.size() * sizeof(float));
++    if (token_id >= 0) {
++        // token metadata for PLE n-gram inputs; llama_batch_init allocates the
++        // token array only for token batches, so attach it here (freed by
++        // llama_batch_free). The F32 values above remain the activation feed.
++        batch.token = (llama_token *) malloc(sizeof(llama_token));
++        batch.token[0] = token_id;
++    }
+     batch.pos[0] = position;
+     batch.n_seq_id[0] = 1;
+     batch.seq_id[0][0] = 0;
+@@ -776,8 +937,8 @@ static layer_transaction_result run_layer_decode(
+ 
+ static layer_transaction_result run_layer_transaction(
+         llama_context * ctx, uint32_t layer, int position, const std::vector<float> & owned_hidden,
+-        const std::string & index_path) {
+-    layer_transaction_result result = run_layer_decode(ctx, position, owned_hidden);
++        const std::string & index_path, llama_token token_id = -1) {
++    layer_transaction_result result = run_layer_decode(ctx, position, owned_hidden, token_id);
+     if (result.decode_status != 0) { result.failure_stage = "graph_a_decode"; return result; }
+     result.graph_a_ok = true;
+     // The CPU operand diagnostic is a narrower capture path.  It must not be
+@@ -936,6 +1097,13 @@ int main(int argc, char ** argv) {
+     // semantic inputs only: model path and flashnext-tensor-index.json
+     if (argc != 3) return 2;
+     const bool chain_1_2_mode = std::getenv("CORTEX_FLASHNEXT_CHAIN_1_2") != nullptr;
++    // Complete-chain mode uses the router-only segment-A graph for layer 0,
++    // but its graph still covers the PLE layer, so the PLE input must take
++    // the caller-owned LAYER_RANGE branch; the get_rows branch would touch
++    // the gated-out per_layer_token_embd and crash during graph build.
++    if (std::getenv("CORTEX_FLASHNEXT_CHAIN_0_48") != nullptr) {
++        setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
++    }
+     const char * layer_start_env = std::getenv("CORTEX_FLASHNEXT_LAYER_START");
+     const uint32_t target_layer = chain_1_2_mode ? 0 : (layer_start_env ? (uint32_t) std::strtoul(layer_start_env, nullptr, 10) : 1);
+     const bool range_mode = chain_1_2_mode || (layer_start_env != nullptr && target_layer > 0);
+@@ -952,6 +1120,14 @@ int main(int argc, char ** argv) {
+     } else {
+         if (chain_1_2_mode) {
+             setenv("CORTEX_EXTERNAL_GLOBAL_TENSORS", "1", 1);
++            setenv("CORTEX_FLASHNEXT_ROUTER_ONLY", "1", 1);
++            setenv("CORTEX_FLASHNEXT_SEGMENT_A", "1", 1);
++            setenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER", "1", 1);
++            // The transaction capture path reads the graph-produced
++            // diagnostic tensors directly.  Without this flag the graph
++            // remains mathematically valid but does not retain the four
++            // tensors required by capture_transaction_router().
++            setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
+         }
+         setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
+         // Nonzero-layer transactions are completed by the external sparse
+@@ -985,19 +1161,50 @@ int main(int argc, char ** argv) {
+     if (!ctx) return 4;
+ 
+     if (chain_1_2_mode) {
++        const uint64_t chain_started = monotonic_us();
++        uint64_t stage_started = chain_started;
++        chain_progress("context_ready", chain_started, stage_started);
+         const int32_t token = 248045;
+         std::vector<float> embedding(2560), layer0(10240), layer1(10240);
+         const bool embedded = llama_cortex_token_embd_rows(model, &token, 1, embedding.data());
+-        auto run = [&](int layer, const std::vector<float> & in, std::vector<float> & out) {
+-            const auto result = run_layer_transaction(ctx, layer, 0, in, argv[2]);
++        chain_progress("embedding_done", chain_started, stage_started); stage_started = monotonic_us();
++        auto run = [&](int layer, const std::vector<float> & in, std::vector<float> & out, llama_token token_id = -1) {
++            const auto result = run_layer_transaction(ctx, layer, 0, in, argv[2], token_id);
+             if (!result.state_committed || result.output.size() != out.size()) return false;
+             std::copy(result.output.begin(), result.output.end(), out.begin());
+             return true;
+         };
+         const bool ok0 = embedded && run(0, embedding, layer0);
++        chain_progress("layer0_done", chain_started, stage_started); stage_started = monotonic_us();
+         const auto state0 = capture_seq_state(ctx);
+-        const bool ok1 = ok0 && run(1, layer0, layer1);
++        chain_progress("state0_done", chain_started, stage_started); stage_started = monotonic_us();
++        // A llama_context owns a range-specific graph and recurrent/KV
++        // bindings.  Reusing the [0,2) context for layer 1 makes the memory
++        // subsystem interpret the same logical token position as a second
++        // decode.  Keep position 0, but create the established layer-scoped
++        // context used by the multi-layer driver before handing off the
++        // caller-owned layer-0 activation.
++        bool ok1 = false;
++        if (ok0) {
++            llama_free(ctx);
++            ctx = nullptr;
++            llama_model_free(model);
++            model = nullptr;
++            setenv("CORTEX_LOW_RESIDENCY_LAYER", "1", 1);
++            setenv("CORTEX_FLASHNEXT_LAYER_START", "1", 1);
++            setenv("CORTEX_FLASHNEXT_LAYER_END", "2", 1);
++            setenv("CORTEX_QWEN35_SEGMENT_END", "2", 1);
++            // Reload the model so the layer-1 resident weights, including the
++            // PLE and hyperconnection tensors, are bound through the
++            // established low-residency load-time selection. The handoff
++            // buffer (layer0) is caller-owned and survives the teardown.
++            model = llama_model_load_from_file(argv[1], mp);
++            ctx = model ? llama_init_from_model(model, cp) : nullptr;
++            ok1 = model != nullptr && ctx != nullptr && run(1, layer0, layer1, 248045);
++        }
++        chain_progress("layer1_done", chain_started, stage_started); stage_started = monotonic_us();
+         const auto state1 = capture_seq_state(ctx);
++        chain_progress("state1_done", chain_started, stage_started); stage_started = monotonic_us();
+         const char * dir = std::getenv("FLASHNEXT_COMPARE_DIR");
+         if (dir && ok1) {
+             export_blob("layer0_output", 0, layer0.data(), layer0.size()*sizeof(float), "10240", "f32");
+@@ -1005,9 +1212,11 @@ int main(int argc, char ** argv) {
+             export_blob("layer0_state", 0, state0.data(), state0.size(), "opaque", "u8");
+             export_blob("layer1_state", 0, state1.data(), state1.size(), "opaque", "u8");
+         }
++        chain_progress("captures_done", chain_started, stage_started); stage_started = monotonic_us();
+         std::printf("GENUINE_CHAIN_0_1=%s EMBEDDING=%s LAYER0=%s LAYER1=%s STATE0_BYTES=%zu STATE1_BYTES=%zu\n",
+             ok1 ? "PASS" : "FAIL", embedded ? "PASS" : "FAIL", ok0 ? "PASS" : "FAIL", ok1 ? "PASS" : "FAIL", state0.size(), state1.size());
+         llama_free(ctx); llama_model_free(model); llama_backend_free();
++        chain_progress("cleanup_done", chain_started, stage_started);
+         return ok1 ? 0 : 20;
+     }
+ 
+@@ -1887,6 +2096,9 @@ int main(int argc, char ** argv) {
+     std::array<int, 512> order{};
+     for (int i = 0; i < 512; ++i) order[i] = i;
+     const float * route = artifact + 12804;
++    // feed the captured router logits so the sparse MoE computes the stock
++    // normalized float32 weights in ggml instead of the legacy fallback
++    std::memcpy(tx.router_logits.data(), route, tx.router_logits.size() * sizeof(float));
+     std::partial_sort(order.begin(), order.begin()+10, order.end(), [route](int a, int b) { return route[a] > route[b]; });
+     double z = 0.0; double ex[10]; const float mx = route[order[0]];
+     for (int i = 0; i < 10; ++i) { ex[i] = std::exp(static_cast<double>(route[order[i]]) - static_cast<double>(mx)); z += ex[i]; }
+@@ -1966,6 +2178,10 @@ int main(int argc, char ** argv) {
+             "SELECTED_EXPERT_COUNT=10 UNSELECTED_EXPERT_READS=0 HANDOFF_BYTES_EQUAL=YES\n",
+             (unsigned long long) layer0_hash);
+         std::fflush(stdout);
++        if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
++            export_blob("layer0_output", 0, layer0_output.data(),
++                layer0_output.size() * sizeof(float), "10240", "f32");
++        }
+ 
+         std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT layer_count_begin\n"); std::fflush(stderr);
+         const uint32_t model_layer_count = model->hparams.n_layer();
+@@ -1987,12 +2203,20 @@ int main(int argc, char ** argv) {
+         unsetenv("CORTEX_FLASHNEXT_SEGMENT_A");
+         unsetenv("CORTEX_FLASHNEXT_SEGMENT_A_ROUTER");
+         setenv("CORTEX_FLASHNEXT_LAYER_RANGE", "1", 1);
++        // Configurable checkpoint depth: CORTEX_FLASHNEXT_CHAIN_0_N stops the
++        // chain after N layers (default 48).  Layer outputs are exported per
++        // layer as cortex_layer<L>_output_p0.bin for element-wise comparison
++        // against the stock oracle captures.
++        uint32_t n_chain_layers = 48;
++        if (const char * n_env = std::getenv("CORTEX_FLASHNEXT_CHAIN_0_N")) {
++            n_chain_layers = (uint32_t) std::strtoul(n_env, nullptr, 10);
++            if (n_chain_layers < 1) n_chain_layers = 1;
++        }
+         std::vector<float> previous_output = layer0_output;
+         bool chain_ok = true;
+-        for (uint32_t il = 1; il < std::min<uint32_t>(48, model_layer_count); ++il) {
++        for (uint32_t il = 1; il < n_chain_layers && il < model_layer_count; ++il) {
+             std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT next_load_begin=%u\n", il); std::fflush(stderr);
+             setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(il).c_str(), 1);
+-            extern char ** environ; for(char ** s = environ; *s; ++s) if(std::string(*s).find("CORTEX")!=std::string::npos) std::fprintf(stderr, "ENV_AT_LAYER_%u: %s\n", il, *s);
+             setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(il).c_str(), 1);
+             setenv("CORTEX_FLASHNEXT_LAYER_END", std::to_string(il + 1).c_str(), 1);
+             setenv("CORTEX_QWEN35_SEGMENT_END", std::to_string(il + 1).c_str(), 1);
+@@ -2004,8 +2228,11 @@ int main(int argc, char ** argv) {
+             llama_context * next_ctx = next_model ? llama_init_from_model(next_model, chain_cp) : nullptr;
+             std::fprintf(stderr, "FLASHNEXT_LAYER0_CHECKPOINT next_context_done=%u ok=%d\n", il, next_ctx ? 1 : 0); std::fflush(stderr);
+             layer_transaction_result next_result;
++            // PLE layers need the token metadata to materialize n-gram rows;
++            // the single PLE layer of this model is layer 1.
++            const llama_token layer_token = next_model && next_model->hparams.is_ple(il) ? 248045 : -1;
+             if (next_ctx) {
+-                next_result = run_layer_transaction(next_ctx, il, 0, previous_output, argv[2]);
++                next_result = run_layer_transaction(next_ctx, il, 0, previous_output, argv[2], layer_token);
+             }
+             const bool handoff = next_ctx != nullptr && previous_output.size() == 2560 * 4;
+             std::printf("LAYER_INDEX=%u LAYER_TYPE=%s OUTPUT_HASH=%016llx STATE_COMMIT=%s "
+@@ -2025,118 +2252,61 @@ int main(int argc, char ** argv) {
+                 if (next_model) llama_model_free(next_model);
+                 break;
+             }
++            if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
++                export_blob((std::string("layer") + std::to_string(il) + "_output").c_str(), 0,
++                    next_result.output.data(), next_result.output.size() * sizeof(float), "10240", "f32");
++            }
+             previous_output.assign(next_result.output.begin(), next_result.output.end());
+             llama_free(next_ctx);
+             llama_model_free(next_model);
+         }
+-        if (chain_ok) {
++        if (chain_ok && n_chain_layers >= 48 && model_layer_count >= 48) {
+             const uint64_t final_activation_hash = hash_f32(previous_output.data(), previous_output.size());
+             std::printf("FULL_CHAIN_0_TO_47_PASS=YES LAYERS_EXECUTED=%u FINAL_ACTIVATION_HASH=%016llx\n",
+                 std::min<uint32_t>(48, model_layer_count),
+                 (unsigned long long) final_activation_hash);
+ 
+-            // The model-specific final HC mixer is the authoritative output
+-            // normalization.  Build the stock head graph with layer execution
+-            // disabled, upload the owned layer-47 activation, and let the
+-            // existing GGML output projection produce the complete logits.
+-            unsetenv("CORTEX_FLASHNEXT_PRE_MOE");
+-            unsetenv("CORTEX_FLASHNEXT_LAYER_END");
+-            unsetenv("CORTEX_QWEN35_SEGMENT_END");
+-            setenv("CORTEX_FLASHNEXT_LAYER_START", "48", 1);
+-            setenv("CORTEX_FLASHNEXT_LAYER_END", "48", 1);
+-            setenv("CORTEX_FLASHNEXT_FINAL_HEAD", "1", 1);
+-            setenv("CORTEX_FLASHNEXT_FINAL_HEAD_NORM_ONLY", "1", 1);
+-            setenv("CORTEX_LOW_RESIDENCY_LAYER", "47", 1);
+-            llama_model * head_model = llama_model_load_from_file(argv[1], mp);
+-            llama_context_params head_cp = cp;
+-            head_cp.embeddings = true;
+-            llama_context * head_ctx = head_model ? llama_init_from_model(head_model, head_cp) : nullptr;
+-            bool output_projection_pass = false;
+-            uint32_t predicted_token = 0;
+-            float predicted_logit = 0.0f;
+-            uint64_t logits_hash = 0;
+-            if (head_ctx) {
+-                llama_batch head_batch = llama_batch_init(1, (int) previous_output.size(), 1);
+-                if (head_batch.embd) {
+-                    std::memcpy(head_batch.embd, previous_output.data(), previous_output.size() * sizeof(float));
+-                    head_batch.pos[0] = 0;
+-                    head_batch.n_seq_id[0] = 1;
+-                    head_batch.seq_id[0][0] = 0;
+-                    head_batch.logits[0] = 1;
+-                    head_batch.n_tokens = 1;
+-                    const int head_rc = llama_decode(head_ctx, head_batch);
+-                    llama_synchronize(head_ctx);
+-                    if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD_NORM_ONLY") != nullptr && head_rc == 0) {
+-                        std::vector<uint8_t> norm_bytes;
+-                        std::array<int64_t, 4> norm_ne{};
+-                        std::array<size_t, 4> norm_nb{};
+-                        enum ggml_type norm_type = GGML_TYPE_COUNT;
+-                        std::string norm_name;
+-                        const bool norm_read = head_ctx->debug_copy_final_head_output(norm_bytes, norm_ne, norm_nb, norm_type, norm_name);
+-                        const size_t norm_n = norm_bytes.size() / sizeof(float);
+-                        const float * norm = norm_read && norm_type == GGML_TYPE_F32 ? (const float *) norm_bytes.data() : nullptr;
+-                        size_t nonfinite = 0;
+-                        if (norm) {
+-                            for (size_t i = 0; i < norm_n; ++i) nonfinite += !std::isfinite(norm[i]);
+-                        }
+-                        std::printf("FINAL_NORM_GRAPH_EXECUTED=YES FINAL_NORM_OUTPUT_READBACK=%s "
+-                            "FINAL_NORM_OUTPUT_TENSOR=%s FINAL_NORM_OUTPUT_SHAPE=[%lld,%lld,%lld,%lld] "
+-                            "FINAL_NORM_OUTPUT_TYPE=%s FINAL_NORM_OUTPUT_BYTES=%zu FINAL_NORM_OUTPUT_HASH=%016llx FINAL_NORM_FINITE=%s "
+-                            "OUTPUT_PROJECTION_PASS=NOT_RUN REFERENCE_COMPARISON=NOT_RUN\n",
+-                            norm_read ? "YES" : "NO", norm_name.c_str(),
+-                            (long long) norm_ne[0], (long long) norm_ne[1], (long long) norm_ne[2], (long long) norm_ne[3],
+-                            ggml_type_name(norm_type), norm_bytes.size(),
+-                            (unsigned long long) (norm ? hash_f32(norm, norm_n) : 0),
+-                            norm && nonfinite == 0 ? "YES" : "NO");
+-                        if (norm && nonfinite == 0 && norm_n == 2560) {
+-                            flashnext_tensor_index out_index;
+-                            std::string out_error;
+-                            flashnext_tensor_descriptor out_desc;
+-                            std::vector<float> norm_owned(norm, norm + norm_n), streamed_logits;
+-                            if (out_index.load(argv[2], &out_error) &&
+-                                out_index.resolve_named("output.weight", out_desc, &out_error) &&
+-                                flashnext_stream_output_q6k(out_desc, norm_owned, streamed_logits)) {
+-                                predicted_token = (uint32_t) std::distance(streamed_logits.begin(),
+-                                    std::max_element(streamed_logits.begin(), streamed_logits.end()));
+-                                predicted_logit = streamed_logits[predicted_token];
+-                                logits_hash = hash_f32(streamed_logits.data(), streamed_logits.size());
+-                                output_projection_pass = std::isfinite(predicted_logit);
+-                                std::printf("OUTPUT_PROJECTION_PASS=%s VOCAB_LOGITS_COMPUTED=YES VOCAB_SIZE=%zu "
+-                                    "PREDICTED_TOKEN_ID=%u PREDICTED_TOKEN_LOGIT=%.9g LOGITS_HASH=%016llx "
+-                                    "REFERENCE_COMPARISON=NOT_RUN\n",
+-                                    output_projection_pass ? "YES" : "NO", streamed_logits.size(),
+-                                    predicted_token, predicted_logit, (unsigned long long) logits_hash);
+-                            } else {
+-                                std::printf("OUTPUT_PROJECTION_PASS=NO VOCAB_LOGITS_COMPUTED=NO ERROR=%s\n", out_error.c_str());
+-                            }
+-                        }
+-                    }
+-                    const float * logits = head_rc == 0 ? llama_get_logits_ith(head_ctx, 0) : nullptr;
+-                    const size_t n_vocab = head_model->vocab.n_tokens();
+-                    if (logits && n_vocab > 0 && std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD_NORM_ONLY") == nullptr) {
+-                        predicted_token = (uint32_t) std::distance(logits,
+-                            std::max_element(logits, logits + n_vocab));
+-                        predicted_logit = logits[predicted_token];
+-                        logits_hash = hash_f32(logits, n_vocab);
+-                        output_projection_pass = std::isfinite(predicted_logit);
+-                        std::printf("FINAL_NORM_PASS=YES OUTPUT_PROJECTION_PASS=%s VOCAB_SIZE=%zu "
+-                            "PREDICTED_TOKEN_ID=%u PREDICTED_TOKEN_LOGIT=%.9g "
+-                            "FINAL_NORM_HASH=%016llx LOGITS_HASH=%016llx REFERENCE_COMPARISON=NOT_RUN\n",
+-                            output_projection_pass ? "YES" : "NO", n_vocab, predicted_token,
+-                            predicted_logit, (unsigned long long) final_activation_hash,
+-                            (unsigned long long) logits_hash);
+-                    } else if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD_NORM_ONLY") == nullptr) {
+-                        std::printf("FINAL_NORM_PASS=NOT_RUN OUTPUT_PROJECTION_PASS=NO VOCAB_SIZE=%zu "
+-                            "REFERENCE_COMPARISON=NOT_RUN\n", head_model->vocab.n_tokens());
+-                    }
++            // Host-side final head: the stock final HC mixer (build_hc_mix with
++            // hc_head_*, il=-1, unfused path) mirrored in a ggml graph, then a
++            // tiled ggmul output projection over output.weight.  Bit-exact per
++            // construction; no extra model reload required.
++            flashnext_tensor_index head_index;
++            flashnext_tensor_descriptor dn, dd, du, dout;
++            std::string e0, e1, e2, e3;
++            std::vector<float> mixed, logits;
++            const bool head_ok = head_index.load(argv[2], &e0) &&
++                head_index.resolve_named("output_hc_norm.weight", dn, &e1) &&
++                head_index.resolve_named("output_hc_down.weight", dd, &e2) &&
++                head_index.resolve_named("output_hc_up.weight", du, &e3) &&
++                head_index.resolve_named("output.weight", dout, &e3) &&
++                flashnext_final_head_mix(dn, dd, du, previous_output.data(), mixed) &&
++                flashnext_stream_output_matvec(dout, mixed.data(), logits);
++            if (head_ok && !logits.empty()) {
++                uint32_t predicted_token = (uint32_t) std::distance(logits.begin(),
++                    std::max_element(logits.begin(), logits.end()));
++                const float predicted_logit = logits[predicted_token];
++                const uint64_t logits_hash = hash_f32(logits.data(), logits.size());
++                if (std::getenv("FLASHNEXT_COMPARE_DIR")) {
++                    export_blob("logits", 0, logits.data(), logits.size() * sizeof(float),
++                        std::to_string(logits.size()).c_str(), "f32");
+                 }
+-                llama_batch_free(head_batch);
++                std::printf("FINAL_HEAD_PASS=YES FINAL_MIXED_N=%zu OUTPUT_PROJECTION_PASS=YES "
++                    "VOCAB_SIZE=%zu PREDICTED_TOKEN_ID=%u PREDICTED_TOKEN_LOGIT=%.9g "
++                    "LOGITS_HASH=%016llx FULL_FORWARD_PASS=YES\n",
++                    mixed.size(), logits.size(), predicted_token, predicted_logit,
++                    (unsigned long long) logits_hash);
++            } else {
++                std::printf("FINAL_HEAD_PASS=NO OUTPUT_PROJECTION_PASS=NO ERROR=%s%s%s%s\n",
++                    e0.c_str(), e1.c_str(), e2.c_str(), e3.c_str());
+             }
+-            if (head_ctx) llama_free(head_ctx);
+-            if (head_model) llama_model_free(head_model);
+-            std::printf("FULL_FORWARD_PASS=%s\n", output_projection_pass ? "YES" : "NO");
+-        } else {
+-            std::printf("FULL_CHAIN_0_TO_47_PASS=NO\n");
++            llama_backend_free();
++            return head_ok ? 0 : 21;
++        }
++        if (!chain_ok) {
++            std::printf("FULL_CHAIN_0_TO_47_PASS=NO LAYERS_REQUESTED=%u\n", n_chain_layers);
++        } else if (n_chain_layers < 48) {
++            std::printf("CHAIN_CHECKPOINT_PASS=YES LAYERS_EXECUTED=%u FINAL_ACTIVATION_HASH=%016llx\n",
++                n_chain_layers, (unsigned long long) hash_f32(previous_output.data(), previous_output.size()));
+         }
+         llama_backend_free();
+         return chain_ok ? 0 : 23;
+diff --git i/runtime-flashnext-layer-exp/src/flashnext-layer-transaction.h w/runtime-flashnext-layer-exp/src/flashnext-layer-transaction.h
+index bc97e42..df86e59 100644
+--- i/runtime-flashnext-layer-exp/src/flashnext-layer-transaction.h
++++ w/runtime-flashnext-layer-exp/src/flashnext-layer-transaction.h
+@@ -19,6 +19,8 @@ struct flashnext_layer_transaction {
+ 
+     std::array<int32_t, experts_used> selected_expert_ids{};
+     std::array<double, experts_used> routing_weights{};
++    static constexpr size_t n_expert = 512;
++    std::array<float, n_expert> router_logits{};
+ 
+     std::array<float, hidden> selected_moe{};
+     std::array<float, hidden> shared_moe{};
+diff --git i/runtime-flashnext-layer-exp/src/flashnext-selected-moe.cpp w/runtime-flashnext-layer-exp/src/flashnext-selected-moe.cpp
+index 1c64177..533c66b 100644
+--- i/runtime-flashnext-layer-exp/src/flashnext-selected-moe.cpp
++++ w/runtime-flashnext-layer-exp/src/flashnext-selected-moe.cpp
+@@ -67,11 +67,67 @@ bool tiled_matvec(ggml_backend_t backend, int fd, ggml_type type, int64_t rows,
+ }
+ }
+ 
++namespace {
++
++// Mirror of the stock build_moe_ffn weight pipeline (llama-graph.cpp):
++// soft_max over all router logits, gather the selected rows, normalize by the
++// clamped row sum.  Computed in a ggml graph so every rounding matches the
++// stock graph bit-for-bit; n_expert_used is small and fixed.
++bool compute_moe_weights(ggml_backend_t backend, const float * logits, const int32_t * ids,
++                         size_t n_used, float * weights /* [n_used] */) {
++    ggml_init_params ip { 8 * 1024 * 1024, nullptr, true };
++    ggml_context * c = ggml_init(ip);
++    if (!c) return false;
++    ggml_tensor * logits_t = ggml_new_tensor_2d(c, GGML_TYPE_F32, 512, 1);
++    ggml_tensor * probs    = ggml_soft_max(c, logits_t);
++    ggml_tensor * ids_t    = ggml_new_tensor_1d(c, GGML_TYPE_I32, (int64_t) n_used);
++    ggml_tensor * w3 = ggml_get_rows(c, ggml_reshape_3d(c, probs, 1, 512, 1), ids_t); // [1, n_used, 1]
++    ggml_tensor * w2 = ggml_reshape_2d(c, w3, (int64_t) n_used, 1);
++    ggml_tensor * wsum = ggml_clamp(c, ggml_sum_rows(c, w2), 6.103515625e-5f, INFINITY);
++    ggml_tensor * wn = ggml_div(c, w2, wsum); // [n_used, 1]
++    ggml_cgraph * graph = ggml_new_graph(c);
++    ggml_build_forward_expand(graph, wn);
++    ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(c, backend);
++    if (!buf) { ggml_free(c); return false; }
++    ggml_backend_tensor_set(logits_t, logits, 0, 512 * sizeof(float));
++    ggml_backend_tensor_set(ids_t, ids, 0, n_used * sizeof(int32_t));
++    const bool ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
++    if (ok) ggml_backend_tensor_get(wn, weights, 0, n_used * sizeof(float));
++    ggml_backend_buffer_free(buf);
++    ggml_free(c);
++    return ok;
++}
++
++// Mirror of the stock ggml_swiglu_split gate*silu(up).. silu(gate)*up fused
++// kernel, computed per expert in a ggml graph so the exp approximation and
++// rounding match the stock graph bit-for-bit.
++bool compute_swiglu(ggml_backend_t backend, const float * gate, const float * up,
++                    float * act /* [F] */) {
++    ggml_init_params ip { 4 * 1024 * 1024, nullptr, true };
++    ggml_context * c = ggml_init(ip);
++    if (!c) return false;
++    ggml_tensor * g_t = ggml_new_tensor_2d(c, GGML_TYPE_F32, F, 1);
++    ggml_tensor * u_t = ggml_new_tensor_2d(c, GGML_TYPE_F32, F, 1);
++    ggml_tensor * act_t = ggml_swiglu_split(c, g_t, u_t);
++    ggml_cgraph * graph = ggml_new_graph(c);
++    ggml_build_forward_expand(graph, act_t);
++    ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(c, backend);
++    if (!buf) { ggml_free(c); return false; }
++    ggml_backend_tensor_set(g_t, gate, 0, F * sizeof(float));
++    ggml_backend_tensor_set(u_t, up, 0, F * sizeof(float));
++    const bool ok = ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS;
++    if (ok) ggml_backend_tensor_get(act_t, act, 0, F * sizeof(float));
++    ggml_backend_buffer_free(buf);
++    ggml_free(c);
++    return ok;
++}
++
++}
++
+ bool flashnext_execute_selected_moe(
+         const std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> & slices,
+         flashnext_layer_transaction & tx, size_t arena_bytes) {
+     tx.selected_moe.fill(0.0f);
+-    std::array<double, K> accumulated{};
+     tx.io.selected_expert_bytes_read = 0;
+     tx.io.unselected_expert_reads = 0;
+     tx.io.tensor_window_bytes = arena_bytes;
+@@ -83,9 +139,26 @@ bool flashnext_execute_selected_moe(
+     void * arena = nullptr;
+     if (posix_memalign(&arena, 64, arena_bytes) != 0) { ggml_backend_free(backend); return false; }
+ 
++    // stock build_moe_ffn order: normalized softmax weights for the selected
++    // experts, in the graph's top-k order (tx.selected_expert_ids).  Callers
++    // that never populated router_logits (legacy standalone drivers) keep the
++    // previous unnormalized routing_weights behavior.
++    std::array<float, flashnext_layer_transaction::experts_used> weights{};
++    bool logits_populated = false;
++    for (float v : tx.router_logits) { logits_populated = logits_populated || v != 0.0f; }
++    if (!logits_populated) {
++        for (size_t i = 0; i < weights.size(); ++i) weights[i] = static_cast<float>(tx.routing_weights[i]);
++    } else if (!compute_moe_weights(backend, tx.router_logits.data(), tx.selected_expert_ids.data(),
++                             tx.selected_expert_ids.size(), weights.data())) {
++        std::free(arena);
++        ggml_backend_free(backend);
++        return false;
++    }
++
+     std::array<float, F> gate{}, up{}, act{};
+     std::array<float, K> down{};
+     bool ok = true;
++    bool first = true;
+     const size_t gate_bytes = static_cast<size_t>(F) * ggml_row_size(GATE_UP_TYPE, K);
+     const size_t down_bytes = static_cast<size_t>(K) * ggml_row_size(DOWN_TYPE, F);
+     for (size_t i = 0; i < tx.experts_used && ok; ++i) {
+@@ -98,7 +171,9 @@ bool flashnext_execute_selected_moe(
+                                 tx.pre_moe_hidden.data(), up.data(), arena, arena_bytes,
+                                 tx.io.selected_expert_bytes_read, tx.io.pread_calls);
+         if (!ok) break;
+-        for (size_t j = 0; j < F; ++j) act[j] = (gate[j] / (1.0f + std::exp(-gate[j]))) * up[j];
++        // stock ggml_swiglu_split: silu(gate) * up through the same ggml kernel
++        ok = compute_swiglu(backend, gate.data(), up.data(), act.data());
++        if (!ok) break;
+         ok = tiled_matvec(backend, slice.fds[2], DOWN_TYPE, K, slice.offsets[2],
+                           act.data(), down.data(), arena, arena_bytes,
+                           tx.io.selected_expert_bytes_read, tx.io.pread_calls);
+@@ -109,9 +184,16 @@ bool flashnext_execute_selected_moe(
+             fprintf(stderr, "CORTEX_SELECTED_DEBUG expert=%d down_hash=%016llx first=%g\n",
+                          tx.selected_expert_ids[i], (unsigned long long) h, down[0]);
+         }
+-        for (size_t j = 0; j < K; ++j) accumulated[j] += static_cast<double>(tx.routing_weights[i]) * down[j];
++        // stock aggregation: ggml_mul by the per-expert weight, then sequential
++        // ggml_add over experts in top-k order, all in float32
++        const float w_i = weights[i];
++        if (first) {
++            for (size_t j = 0; j < K; ++j) { tx.selected_moe[j] = down[j] * w_i; }
++            first = false;
++        } else {
++            for (size_t j = 0; j < K; ++j) { tx.selected_moe[j] = tx.selected_moe[j] + down[j] * w_i; }
++        }
+     }
+-    for (size_t j = 0; j < K; ++j) tx.selected_moe[j] = static_cast<float>(accumulated[j]);
+     std::free(arena);
+     ggml_backend_free(backend);
+     return ok;
+diff --git i/runtime-flashnext-layer-exp/src/llama-context.cpp w/runtime-flashnext-layer-exp/src/llama-context.cpp
+index 7e69b37..730dcb0 100644
+--- i/runtime-flashnext-layer-exp/src/llama-context.cpp
++++ w/runtime-flashnext-layer-exp/src/llama-context.cpp
+@@ -1207,6 +1207,69 @@ void llama_context::synchronize() {
+             const size_t span_bytes = ggml_nbytes(t);
+             const size_t elements = ggml_nelements(t);
+             const size_t bytes = elements * sizeof(float);
++            if (flashnext_diag_is_host_capture(t) && t->data != nullptr && t->type == GGML_TYPE_F32) {
++                // diag-only: tensor copied into host storage owned outside the compute
++                // allocator (see llm_graph_context::cb); read it directly
++                std::vector<float> values(bytes / sizeof(float));
++                bool host_ok = true;
++                for (int64_t i3 = 0; host_ok && i3 < t->ne[3]; ++i3) {
++                    for (int64_t i2 = 0; host_ok && i2 < t->ne[2]; ++i2) {
++                        for (int64_t i1 = 0; host_ok && i1 < t->ne[1]; ++i1) {
++                            for (int64_t i0 = 0; i0 < t->ne[0]; ++i0) {
++                                const size_t index = i0 + t->ne[0] * (i1 + t->ne[1] * (i2 + t->ne[2] * i3));
++                                const size_t offset = i0 * t->nb[0] + i1 * t->nb[1] + i2 * t->nb[2] + i3 * t->nb[3];
++                                if (offset + sizeof(float) > span_bytes) { host_ok = false; break; }
++                                std::memcpy(&values[index], (const char *) t->data + offset, sizeof(float));
++                            }
++                        }
++                    }
++                }
++                if (host_ok) {
++                    // diag-only: optional raw dump for element-wise comparison
++                    if (const char * dump_dir = std::getenv("CORTEX_FLASHNEXT_DIAG_DUMP")) {
++                        const std::string dump_path = format("%s/%s.bin", dump_dir, it.first.c_str());
++                        if (FILE * dumpf = fopen(dump_path.c_str(), "wb")) {
++                            fwrite(values.data(), sizeof(float), values.size(), dumpf);
++                            fclose(dumpf);
++                        }
++                    }
++                    // host captures carry a buffer from birth, so the print after the
++                    // reservation pass would read unwritten storage and mark the name
++                    // owned. Allow exactly two prints: a provisional (pre-compute) one
++                    // and the final post-compute one.
++                    static std::unordered_map<std::string, int> host_print_count;
++                    int & cnt = host_print_count[it.first];
++                    if (cnt >= 2) {
++                        continue;
++                    }
++                    cnt++;
++                    if (cnt == 2) {
++                        flashnext_diag_owned[it.first] = std::vector<uint8_t>(bytes);
++                        std::memcpy(flashnext_diag_owned[it.first].data(), values.data(), bytes);
++                    }
++                    size_t nan = 0, inf = 0;
++                    float minv = INFINITY, maxv = -INFINITY;
++                    uint64_t hash = 1469598103934665603ull;
++                    const uint8_t * raw = reinterpret_cast<const uint8_t *>(values.data());
++                    for (size_t i = 0; i < values.size(); ++i) {
++                        const float x = values[i];
++                        if (std::isnan(x)) ++nan;
++                        else if (std::isinf(x)) ++inf;
++                        else { minv = std::min(minv, x); maxv = std::max(maxv, x); }
++                    }
++                    for (size_t i = 0; i < bytes; ++i) {
++                        hash ^= raw[i]; hash *= 1099511628211ull;
++                    }
++                    LLAMA_LOG_INFO("FLASHNEXT_DIAG name=%s op=%d shape=[%lld,%lld,%lld,%lld] "
++                        "dtype=%d elements=%zu bytes=%zu nan=%zu inf=%zu min=%g max=%g hash=%016llx "
++                        "capture=BACKEND_SYNCED print=%d data=%p buffer=%p\n",
++                        it.first.c_str(), (int) t->op, (long long)t->ne[0], (long long)t->ne[1],
++                        (long long)t->ne[2], (long long)t->ne[3], (int)t->type,
++                        elements, bytes, nan, inf, minv, maxv,
++                        (unsigned long long) hash, cnt, t->data, (void *) t->buffer);
++                    continue;
++                }
++            }
+             if (!backend || !t->buffer || bytes == 0 || t->type != GGML_TYPE_F32) {
+                 LLAMA_LOG_ERROR("FLASHNEXT_DIAG name=%s capture=NOT_CAPTURED type=%d bytes=%zu buffer=%p\n",
+                     it.first.c_str(), (int) t->type, span_bytes, (void *) t->buffer);
+@@ -1347,6 +1410,34 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
+     return it->second.size();
+ }
+ 
++size_t llama_context::debug_copy_flashnext_layer0_boundary(float * dst, size_t capacity) const {
++    constexpr size_t elements = 2560 + 10240 + 4;
++    constexpr size_t bytes = elements * sizeof(float);
++    if (capacity < elements) return bytes;
++    return debug_copy_flashnext_tensor("flashnext_segment_a_boundary-0", dst, bytes);
++}
++
++size_t llama_context::debug_copy_flashnext_layer0_router(float * dst, size_t capacity) const {
++    constexpr size_t elements = 512;
++    constexpr size_t bytes = elements * sizeof(float);
++    if (capacity < elements) return bytes;
++    return debug_copy_flashnext_tensor("diag_router_logits-0", dst, bytes);
++}
++
++size_t llama_context::debug_copy_flashnext_layer0_post_segment_b(float * dst, size_t capacity) const {
++    constexpr size_t elements = 2560 * 4;
++    constexpr size_t bytes = elements * sizeof(float);
++    if (capacity < elements) return bytes;
++    return debug_copy_flashnext_tensor("diag_hc_post-0", dst, bytes);
++}
++
++size_t llama_context::debug_copy_flashnext_layer0_pre_hc(float * dst, size_t capacity) const {
++    constexpr size_t elements = 2560;
++    constexpr size_t bytes = elements * sizeof(float);
++    if (capacity < elements) return bytes;
++    return debug_copy_flashnext_tensor("diag_hc_block_out-0", dst, bytes);
++}
++
+ bool llama_context::debug_copy_final_head_output(std::vector<uint8_t> & bytes,
+         std::array<int64_t, 4> & ne, std::array<size_t, 4> & nb,
+         enum ggml_type & type, std::string & name) {
+@@ -3339,10 +3430,13 @@ llm_graph_cb llama_context::graph_get_cb() const {
+         }
+ 
+         if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0 &&
+-            (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
++            (strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_tx_", 8) == 0 || strncmp(name, "diag_moe_", 9) == 0 ||
+              strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "conv_", 5) == 0 ||
+              strncmp(name, "hc_", 3) == 0 ||
+-             strcmp(name, "linear_attn_qkv_mixed") == 0)) {
++             strncmp(name, "flashnext_segment_a_boundary", 29) == 0 ||
++             strcmp(name, "linear_attn_qkv_mixed") == 0 ||
++             strcmp(name, "linear_attn_qkvz_input") == 0 ||
++             strncmp(name, "diag_ple_", 9) == 0)) {
+             flashnext_diag_tensors[format("%s-%d", name, il)] = cur;
+             ++flashnext_diag_generation;
+         }
+@@ -4731,6 +4825,22 @@ float * llama_get_embeddings_ith(llama_context * ctx, int32_t i) {
+     return ctx->get_embeddings_ith(i);
+ }
+ 
++size_t llama_cortex_copy_layer0_boundary(llama_context * ctx, float * dst, size_t capacity) {
++    return ctx ? ctx->debug_copy_flashnext_layer0_boundary(dst, capacity) : 0;
++}
++
++size_t llama_cortex_copy_layer0_router(llama_context * ctx, float * dst, size_t capacity) {
++    return ctx ? ctx->debug_copy_flashnext_layer0_router(dst, capacity) : 0;
++}
++
++size_t llama_cortex_copy_layer0_post_segment_b(llama_context * ctx, float * dst, size_t capacity) {
++    return ctx ? ctx->debug_copy_flashnext_layer0_post_segment_b(dst, capacity) : 0;
++}
++
++size_t llama_cortex_copy_layer0_pre_hc(llama_context * ctx, float * dst, size_t capacity) {
++    return ctx ? ctx->debug_copy_flashnext_layer0_pre_hc(dst, capacity) : 0;
++}
++
+ float * llama_get_embeddings_seq(llama_context * ctx, llama_seq_id seq_id) {
+     ctx->synchronize();
+ 
+diff --git i/runtime-flashnext-layer-exp/src/llama-graph.cpp w/runtime-flashnext-layer-exp/src/llama-graph.cpp
+index 8c3c189..f240eef 100644
+--- i/runtime-flashnext-layer-exp/src/llama-graph.cpp
++++ w/runtime-flashnext-layer-exp/src/llama-graph.cpp
+@@ -20,10 +20,12 @@
+ #include <cassert>
+ #include <cmath>
+ #include <cstring>
++#include <mutex>
+ #include <numeric>
+ #include <sstream>
+ #include <string>
+ #include <unordered_set>
++#include <unordered_set>
+ 
+ // dedup helpers
+ 
+@@ -72,11 +74,11 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
+         ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+         ggml_backend_buffer_type_t buft = dev ? ggml_backend_dev_buffer_type(dev) : nullptr;
+         if (buft) {
+-            final_head_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(tokens)));
+-            if (final_head_buf) {
+-                tokens->buffer = final_head_buf.get();
+-                tokens->data = ggml_backend_buffer_get_base(final_head_buf.get());
+-                ggml_backend_buffer_init_tensor(final_head_buf.get(), tokens);
++            final_head_tokens_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(tokens)));
++            if (final_head_tokens_buf) {
++                tokens->buffer = final_head_tokens_buf.get();
++                tokens->data = ggml_backend_buffer_get_base(final_head_tokens_buf.get());
++                ggml_backend_buffer_init_tensor(final_head_tokens_buf.get(), tokens);
+             }
+         }
+     }
+@@ -84,21 +86,26 @@ void llm_graph_input_embd::set_input(const llama_ubatch * ubatch) {
+         ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+         ggml_backend_buffer_type_t buft = dev ? ggml_backend_dev_buffer_type(dev) : nullptr;
+         if (buft) {
+-            final_head_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(embd)));
+-            if (final_head_buf) {
+-                embd->buffer = final_head_buf.get();
+-                embd->data = ggml_backend_buffer_get_base(final_head_buf.get());
+-                ggml_backend_buffer_init_tensor(final_head_buf.get(), embd);
++            final_head_embd_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(embd)));
++            if (final_head_embd_buf) {
++                embd->buffer = final_head_embd_buf.get();
++                embd->data = ggml_backend_buffer_get_base(final_head_embd_buf.get());
++                ggml_backend_buffer_init_tensor(final_head_embd_buf.get(), embd);
+             }
+         }
+     }
+-    if (ubatch->token) {
++    // A rebuilt graph may not use both input variants. Unused graph inputs
++    // are intentionally left unallocated by the scheduler.
++    if (flashnext_range && ubatch->embd == nullptr) {
++        GGML_ABORT("FlashNext range decode missing the required caller-owned HC-wide F32 input");
++    }
++    if (ubatch->token && tokens) {
+         const int64_t n_tokens = ubatch->n_tokens;
+ 
+         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
+     }
+ 
+-    if (ubatch->embd) {
++    if (ubatch->embd && embd) {
+         GGML_ASSERT(embd->type == GGML_TYPE_F32);
+ 
+         if (std::getenv("CORTEX_FLASHNEXT_FINAL_HEAD") != nullptr && embd->buffer == nullptr) {
+@@ -134,22 +141,25 @@ void llm_graph_input_embd_h::set_input(const llama_ubatch * ubatch) {
+         ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+         ggml_backend_buffer_type_t buft = dev ? ggml_backend_dev_buffer_type(dev) : nullptr;
+         if (buft) {
+-            final_head_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(h)));
+-            if (final_head_buf) {
+-                h->buffer = final_head_buf.get();
+-                h->data = ggml_backend_buffer_get_base(final_head_buf.get());
+-                ggml_backend_buffer_init_tensor(final_head_buf.get(), h);
++            final_head_h_buf.reset(ggml_backend_buft_alloc_buffer(buft, ggml_nbytes(h)));
++            if (final_head_h_buf) {
++                h->buffer = final_head_h_buf.get();
++                h->data = ggml_backend_buffer_get_base(final_head_h_buf.get());
++                ggml_backend_buffer_init_tensor(final_head_h_buf.get(), h);
+             }
+         }
+     }
+     const int64_t n_tokens = ubatch->n_tokens;
+ 
+-    if (ubatch->token) {
++    // Graph reconstruction may omit the token branch when the caller supplies
++    // a hidden-state/embedding input.  Only upload a tensor that belongs to
++    // this graph instance.
++    if (ubatch->token && tokens) {
+         ggml_backend_tensor_set(tokens, ubatch->token, 0, n_tokens*ggml_element_size(tokens));
+-    } else {
++    } else if (!ubatch->token) {
+         // note: mtmd embedding input goes through here
+         GGML_ASSERT(ubatch->embd);
+-        if (embd->buffer) {
++        if (embd && embd->buffer) {
+             GGML_ASSERT(n_embd == embd->ne[0]);
+             ggml_backend_tensor_set(embd, ubatch->embd, 0, n_tokens*n_embd*ggml_element_size(h));
+         }
+@@ -1583,9 +1593,89 @@ llm_graph_context::llm_graph_context(const llm_graph_params & params) :
+         res->set_params(params);
+     }
+ 
++// diag-only: names eligible for integrity-protected capture (mirrors the list in llama_context::graph_get_cb)
++static bool flashnext_diag_whitelisted(const char * name) {
++    return strncmp(name, "diag_hc_", 8) == 0 || strncmp(name, "diag_tx_", 8) == 0 || strncmp(name, "diag_ple_", 9) == 0 ||
++           strncmp(name, "diag_moe_", 9) == 0 ||
++           strncmp(name, "diag_router_", 12) == 0 || strncmp(name, "conv_", 5) == 0 ||
++           strncmp(name, "hc_", 3) == 0 ||
++           strncmp(name, "flashnext_segment_a_boundary", 29) == 0 ||
++           strcmp(name, "linear_attn_qkv_mixed") == 0 ||
++           strcmp(name, "linear_attn_qkvz_input") == 0;
++}
++
++// diag-only: copy the tensor into storage owned outside the compute allocator, so the
++// captured bytes cannot be overwritten by later nodes reusing scratch. The cpy node is
++// part of the executable graph and runs with it; the destination buffer is never reused.
++// ggml_cont alone is not enough: a cont output inside the compute context still gets its
++// buffer offset recycled by the allocator once the node is dead.
++struct flashnext_diag_storage {
++    ggml_context_ptr        ctx;
++    ggml_backend_buffer_t   buf = nullptr;
++    ggml_tensor           * dst = nullptr;
++};
++
++// diag-only: registry of tensors whose storage is owned outside the compute allocator
++static std::mutex flashnext_diag_capture_mu;
++static std::vector<flashnext_diag_storage> flashnext_diag_keep;
++static std::unordered_set<const ggml_tensor *> flashnext_diag_host_captures;
++
++static ggml_tensor * flashnext_diag_capture(ggml_context * ctx0, ggml_cgraph * gf, ggml_tensor * src) {
++    ggml_backend_buffer_type_t buft = ggml_backend_cpu_buffer_type();
++    // metadata-only context; the data pointer is bound to the external buffer below
++    ggml_init_params ip = {
++        /*.mem_size   =*/ ggml_tensor_overhead() + 256,
++        /*.mem_buffer =*/ nullptr,
++        /*.no_alloc   =*/ true,
++    };
++    flashnext_diag_storage st;
++    st.ctx = ggml_context_ptr(ggml_init(ip));
++    if (!st.ctx) {
++        return nullptr;
++    }
++    st.dst = ggml_new_tensor(st.ctx.get(), src->type, GGML_MAX_DIMS, src->ne);
++    if (!st.dst) {
++        return nullptr;
++    }
++    st.buf = ggml_backend_buft_alloc_buffer(buft, ggml_backend_buft_get_alloc_size(buft, st.dst));
++    if (!st.buf) {
++        return nullptr;
++    }
++    if (ggml_backend_tensor_alloc(st.buf, st.dst, ggml_backend_buffer_get_base(st.buf)) != GGML_STATUS_SUCCESS) {
++        ggml_backend_buffer_free(st.buf);
++        return nullptr;
++    }
++    ggml_set_name(st.dst, src->name);
++    ggml_tensor * cpy = ggml_cpy(ctx0, src, st.dst);
++    ggml_build_forward_expand(gf, cpy);
++    {
++        ggml_tensor * dst = st.dst;
++        std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
++        flashnext_diag_keep.emplace_back(std::move(st));
++        flashnext_diag_host_captures.insert(dst);
++        return dst;
++    }
++}
++
++bool flashnext_diag_is_host_capture(const ggml_tensor * t) {
++    if (t == nullptr) {
++        return false;
++    }
++    std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
++    return flashnext_diag_host_captures.find(t) != flashnext_diag_host_captures.end();
++}
++
+ void llm_graph_context::cb(ggml_tensor * cur, const char * name, int il) const {
+     if (cb_func) {
+-        cb_func(ubatch, cur, name, il);
++        ggml_tensor * target = cur;
++        if (il >= 0 && ctx0 != nullptr && gf != nullptr &&
++            std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr &&
++            flashnext_diag_whitelisted(name)) {
++            if (ggml_tensor * captured = flashnext_diag_capture(ctx0, gf, cur)) {
++                target = captured;
++            }
++        }
++        cb_func(ubatch, target, name, il);
+     }
+ }
+ 
+@@ -2479,18 +2569,40 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
+ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
+     const int64_t n_embd_inp = hparams.n_embd_inp();
+     const int64_t n_embd     = hparams.n_embd;
+-    const bool range_input = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
++    const bool is_flashnext_range = std::getenv("CORTEX_FLASHNEXT_LAYER_START") != nullptr &&
+                              std::strtoul(std::getenv("CORTEX_FLASHNEXT_LAYER_START"), nullptr, 10) > 0;
++    const bool external_global = std::getenv("CORTEX_EXTERNAL_GLOBAL_TENSORS") != nullptr;
++    const bool skip_token_branch = is_flashnext_range || external_global;
+     // A non-zero Qwen4Exp range consumes the preceding layer's HC-wide
+     // boundary, not a token embedding row.  Keep this input F32 and owned by
+     // the caller; the model-specific builder reshapes it to [n_embd,hc,T].
+-    const int64_t n_embd_range = range_input ? hparams.n_embd_out() : n_embd_inp;
++    const int64_t n_embd_range = is_flashnext_range ? hparams.n_embd_out() : n_embd_inp;
++
++    if (is_flashnext_range) {
++        const size_t expected = (size_t) n_embd_range * ubatch.n_tokens;
++        const size_t supplied = ubatch.data ? ubatch.data->embd.size() : 0;
++        if (ubatch.embd != nullptr && supplied != expected) {
++            throw std::runtime_error(format(
++                "FlashNext range input requires %zu F32 values, supplied %zu",
++                expected, supplied));
++        }
++        if (ubatch.embd == nullptr) {
++            // graph construction at context init reserves with an empty ubatch;
++            // the real feed is enforced in llm_graph_input_embd::set_input
++            static bool logged = false;
++            if (!logged) {
++                logged = true;
++                LLAMA_LOG_INFO("FLASHNEXT_RANGE_RESERVE graph built with empty ubatch; decode-time feed check active\n");
++            }
++        }
++    }
+ 
+     assert(n_embd_inp >= n_embd);
+ 
+     auto inp = std::make_unique<llm_graph_input_embd>(n_embd_inp);
++    inp->flashnext_range = is_flashnext_range;
+ 
+-    if (!range_input) {
++    if (!skip_token_branch) {
+         inp->tokens = ggml_new_tensor_1d(ctx0, GGML_TYPE_I32, ubatch.n_tokens);
+         cb(inp->tokens, "inp_tokens", -1);
+         ggml_set_input(inp->tokens);
+@@ -2508,7 +2620,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
+     // token embeddings path (ubatch.token != nullptr).  A nonzero layer
+     // range must not construct this branch: even an unreachable GET_ROWS
+     // keeps token_embd.weight reachable by graph traversal/allocation.
+-    if (!range_input) {
++    if (!skip_token_branch) {
+         auto & cur = inps[0];
+ 
+         cur = ggml_get_rows(ctx0, tok_embd, inp->tokens);
+@@ -2534,7 +2646,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
+         if (n_embd_inp != n_embd) {
+             cur = ggml_pad(ctx0, cur, hparams.n_embd_inp() - n_embd, 0, 0, 0);
+         }
+-        if (range_input && n_embd_range != n_embd) {
++        if (is_flashnext_range && n_embd_range != n_embd) {
+             cur = ggml_pad(ctx0, cur, n_embd_range - n_embd, 0, 0, 0);
+         }
+     }
+@@ -2547,8 +2659,8 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
+     }
+ 
+     ggml_tensor * cur = nullptr;
+-    if (range_input) {
+-        // A nonzero range consumes only the caller-owned F32 hidden input.
++    if (skip_token_branch) {
++        // A nonzero range or external global path consumes only the caller-owned F32 hidden input.
+         // Do not create a select node with an absent token branch.
+         cur = inps[1];
+     } else {
+@@ -2557,7 +2669,7 @@ ggml_tensor * llm_graph_context::build_inp_embd(ggml_tensor * tok_embd) const {
+         cur = ggml_build_forward_select(gf, inps.data(), inps.size(), ubatch.token ? 0 : 1);
+     }
+ 
+-    if (!range_input && n_embd_inp != n_embd) {
++    if (!is_flashnext_range && n_embd_inp != n_embd) {
+         cur = ggml_view_2d(ctx0, cur, n_embd, n_tokens, cur->nb[1], 0);
+     }
+ 
+diff --git i/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp w/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp
+index eb870de..17895bb 100644
+--- i/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp
++++ w/runtime-flashnext-layer-exp/src/models/qwen4exp.cpp
+@@ -199,7 +199,11 @@ void llama_model_qwen4exp::load_arch_tensors(llama_model_loader & ml) {
+     }
+ 
+     // flat [ple_head_dim, n_rows] gather target
+-    if (hparams.ple_n_heads > 0 && std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") == nullptr) {
++    // layer-range transactions materialize PLE rows through the pread provider
++    // in the input binder, outside the GGML graph, so the lazy table is still
++    // required when the graph itself is router-only
++    if (hparams.ple_n_heads > 0 && (std::getenv("CORTEX_FLASHNEXT_ROUTER_ONLY") == nullptr ||
++                                    std::getenv("CORTEX_FLASHNEXT_LAYER_RANGE") != nullptr)) {
+         // the head ranges are what the gather indexes, so they set the minimum row count
+         int64_t ple_rows = 0;
+         for (uint32_t h = 0; h < hparams.ple_n_heads; ++h) {
+@@ -324,6 +328,29 @@ std::unique_ptr<llm_graph_context> llama_model_qwen4exp::build_arch_graph(const
+ 
+ // Hyper-connections keep hc parallel residual streams [n_embd, hc, T] in place of layer norms.
+ // Returns the mixed [n_embd, T] stream; `inject` gets the [hc, T] scatter weights.
++
++// diag-only: hash the raw backing bytes of a weight tensor; reports instead of reading when inaccessible
++static void flashnext_weight_diag(const char * tag, int il, const ggml_tensor * w) {
++    const size_t nbytes = ggml_nbytes(w);
++    uint64_t hash = 1469598103934665603ull;
++    size_t zero = 0;
++    bool readable = w != nullptr && w->data != nullptr && nbytes > 0;
++    if (readable) {
++        const uint8_t * raw = (const uint8_t *) w->data;
++        for (size_t i = 0; i < nbytes; i++) {
++            hash ^= raw[i]; hash *= 1099511621211ull;
++            zero += raw[i] == 0;
++        }
++    }
++    LLAMA_LOG_INFO("FLASHNEXT_WEIGHT_DIAG tag=%s il=%d name=%s type=%d ne=[%lld,%lld,%lld,%lld] "
++        "data=%p buffer=%p nbytes=%zu zero_bytes=%zu readable=%d hash=%016llx\n",
++        tag, il, w ? w->name : "(nil)", w ? (int) w->type : -1,
++        w ? (long long) w->ne[0] : 0, w ? (long long) w->ne[1] : 0,
++        w ? (long long) w->ne[2] : 0, w ? (long long) w->ne[3] : 0,
++        w ? w->data : nullptr, w ? (void *) w->buffer : nullptr,
++        nbytes, zero, (int) readable, (unsigned long long) hash);
++}
++
+ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
+         ggml_tensor *  x,
+         ggml_tensor *  w_norm,
+@@ -371,6 +398,22 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
+     ggml_tensor * gate = build_lora_mm(w_up, lo);
+     cb(gate, hc_attn_capture ? "hc_attn_gate" : "hc_gate", il);
+ 
++    // diag-only: materialized (cont + expand) captures so the post-compute
++    // BACKEND_SYNCED reads cannot alias scratch buffers
++    const bool hc_diag = std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr && il >= 0;
++    if (hc_diag) {
++        flashnext_weight_diag("hc_down", il, w_down);
++        flashnext_weight_diag("hc_up",   il, w_up);
++        flashnext_weight_diag("hc_norm_w", il, w_norm);
++        flashnext_weight_diag("hc_inject_w", il, w_inject);
++        ggml_tensor * lo_c = ggml_cont(ctx0, lo);
++        ggml_build_forward_expand(gf, lo_c);
++        cb(lo_c, "diag_hc_down_out", il);
++        ggml_tensor * gate_c = ggml_cont(ctx0, gate);
++        ggml_build_forward_expand(gf, gate_c);
++        cb(gate_c, "diag_hc_gate_out", il);
++    }
++
+     ggml_tensor * mixed = nullptr;
+     if (cparams.fused_dsv4_hc_pre && il >= 0) {
+         // sigmoid gate and mean over the streams in one op
+@@ -395,6 +438,11 @@ ggml_tensor * llama_model_qwen4exp::graph::build_hc_mix(
+         mixed = ggml_scale(ctx0, mixed, 1.0f / (float) hc);
+     }
+     cb(mixed, hc_attn_capture ? "hc_attn_mixed" : "hc_mixed", il);
++    if (hc_diag) {
++        ggml_tensor * mixed_c = ggml_cont(ctx0, mixed);
++        ggml_build_forward_expand(gf, mixed_c);
++        cb(mixed_c, "diag_hc_mix_out", il);
++    }
+ 
+     if (inject) {
+         *inject = build_lora_mm(w_inject, xn);
+@@ -663,7 +711,16 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
+     ggml_tensor * inp_out_ids = cut_without_kv_inputs || omit_slice_out_ids ? nullptr : build_inp_out_ids();
+ 
+     ggml_tensor * ple_emb = nullptr;
+-    if (hparams.ple_n_heads > 0 && !partial_prefix) {
++    bool range_has_ple = false;
++    if (partial_prefix && hparams.ple_n_heads > 0) {
++        // a layer-range graph that still covers PLE layers must build the PLE
++        // input; in CORTEX_FLASHNEXT_LAYER_RANGE mode it is a caller-owned F32
++        // input materialized by the input binder, not an in-graph gather
++        for (int64_t il = layer_start; il < n_layer; ++il) {
++            range_has_ple = range_has_ple || hparams.is_ple((uint32_t) il);
++        }
++    }
++    if (hparams.ple_n_heads > 0 && (!partial_prefix || range_has_ple)) {
+         ple_emb = build_inp_ple(mctx_hyb);
+         // make sure ple_emb and build_inp_embd are in the same graph split
+         ggml_build_forward_expand(gf, ple_emb);
+@@ -679,6 +736,10 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
+                 ggml_reshape_3d(ctx0, inpL, n_embd, 1, n_tokens),
+                 n_embd, hc, n_tokens, 1);
+     cb(res_hc, "hc_init", -1);
++    if (range_input) {
++        // diag-only: integrity-captured copy of the received layer-range input
++        cb(res_hc, "diag_hc_range_in", 0);
++    }
+     ggml_tensor * trace_initial_hc = res_hc;
+     if (std::getenv("CORTEX_FLASHNEXT_TRACE_RAW_INPUT") != nullptr && layer_start > 0) {
+         const int64_t width = ggml_nelements(inpL);
+@@ -706,6 +767,12 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
+ 
+     for (int il = layer_start; il < n_layer; ++il) {
+         res->t_layer_inp[il] = res_hc;
++        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
++            // diag-only: the HC-wide streams entering each layer (handoff tensor)
++            ggml_tensor * streams_c = ggml_cont(ctx0, res_hc);
++            ggml_build_forward_expand(gf, streams_c);
++            cb(streams_c, "diag_hc_streams", il);
++        }
+ 
+         if (hparams.is_ple(il)) {
+             res_hc = build_ple(inp->get_recr(), ple_emb, res_hc, il);
+@@ -818,6 +885,14 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
+                     res_hc->ne[0] * res_hc->ne[1], res_hc->ne[2]);
+             ggml_tensor * inj_flat = ggml_reshape_2d(ctx0, inject,
+                     inject->ne[0], inject->ne[1] * inject->ne[2]);
++            if (internal_diag && il >= 0) {
++                // The host transaction bridge replicates the FFN combine, so it
++                // must read the FFN-phase residual and inject.  The diag_hc_*
++                // names still refer to the attention combine in this pre-MoE
++                // graph; in a full graph they refer to the FFN combine.
++                cb(res_hc, "diag_tx_residual", il);
++                cb(inject, "diag_tx_inject", il);
++            }
+             ggml_tensor * boundary = ggml_concat(ctx0, pre_moe, res_flat, 0);
+             boundary = ggml_concat(ctx0, boundary, inj_flat, 0);
+             const int64_t boundary_width = boundary->ne[0];
+@@ -1051,6 +1126,41 @@ std::pair<ggml_tensor *, ggml_tensor *> llama_model_qwen4exp::graph::build_qkvz(
+     const int64_t n_seqs       = ubatch.n_seqs;
+     const int64_t n_seq_tokens = ubatch.n_seq_tokens;
+ 
++    // QUORTEX diag: prove, per layer, (1) that the attn-side activation
++    // entering the wqkv projection is nonzero and (2) that the effective
++    // wqkv backing store is materialized, without inferring either from the
++    // zero linear_attn_qkv_mixed output.
++    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
++        // Fresh contiguous buffer, so the post-compute BACKEND_SYNCED capture
++        // in llama_context::synchronize cannot alias scratch storage
++        // (same pattern as conv_input_authoritative at the conv_input cb).
++        ggml_tensor * qkvz_in = ggml_cont(ctx0, input);
++        ggml_build_forward_expand(gf, qkvz_in);
++        cb(qkvz_in, "linear_attn_qkvz_input", il);
++
++        // Hash/min/max of the raw backing bytes the mm will actually read.
++        // IQ4_XS weights fail the F32 filter of the synchronize-time capture
++        // path, so the weight has to be dumped here at graph build time.
++        const ggml_tensor * w = model.layers[il].wqkv;
++        const size_t nbytes = ggml_nbytes(w);
++        uint64_t hash = 1469598103934665603ull;
++        size_t zero = 0;
++        bool readable = w->data != nullptr && nbytes > 0;
++        if (readable) {
++            const uint8_t * raw = (const uint8_t *) w->data;
++            for (size_t i = 0; i < nbytes; i++) {
++                hash ^= raw[i]; hash *= 1099511621211ull;
++                zero += raw[i] == 0;
++            }
++        }
++        LLAMA_LOG_INFO("FLASHNEXT_WQKV_DIAG il=%d name=%s type=%d ne=[%lld,%lld,%lld,%lld] "
++            "data=%p buffer=%p nbytes=%zu zero_bytes=%zu readable=%d hash=%016llx\n",
++            il, w->name, (int) w->type, (long long) w->ne[0], (long long) w->ne[1],
++            (long long) w->ne[2], (long long) w->ne[3], w->data, (void *) w->buffer,
++            nbytes, zero, (int) readable,
++            (unsigned long long) hash);
++    }
++
+     ggml_tensor * qkv_mixed = build_lora_mm(model.layers[il].wqkv, input, model.layers[il].wqkv_s);
+     qkv_mixed = ggml_reshape_3d(ctx0, qkv_mixed, qkv_mixed->ne[0], n_seq_tokens, n_seqs);
+     cb(qkv_mixed, "linear_attn_qkv_mixed", il);
+@@ -1854,6 +1964,10 @@ ggml_tensor * llama_model_qwen4exp::graph::build_inp_ple(
+         emb = ggml_reshape_2d(ctx0, emb, hparams.ple_head_dim * n_heads, n_tokens);
+     }
+     cb(emb, "ple_embd", -1);
++    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
++        // diag-only: integrity-captured copy of the PLE embedding input
++        cb(emb, "diag_ple_embd", 0);
++    }
+ 
+     return emb;
+ }

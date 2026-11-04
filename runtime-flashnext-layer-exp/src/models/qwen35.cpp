@@ -201,8 +201,9 @@ llama_model_qwen35::graph::graph(const llama_model & model, const llm_graph_para
         has_full_attention = has_full_attention || !hparams.is_recr(il);
     }
 
+    const bool external_global = std::getenv("CORTEX_EXTERNAL_GLOBAL_TENSORS") != nullptr;
     ggml_tensor * inp_pos     = has_full_attention ? build_inp_pos() : nullptr;
-    ggml_tensor * inp_out_ids = build_inp_out_ids();
+    ggml_tensor * inp_out_ids = external_global ? nullptr : build_inp_out_ids();
 
     if (!has_full_attention) {
         // A recurrent-only segment has no attention-cache inputs. Leave the
@@ -270,6 +271,9 @@ llama_model_qwen35::graph::graph(const llama_model & model, const llm_graph_para
         LLAMA_LOG_INFO("CORTEX_Q35_GRAPH_OUTPUT layer=%d tensor=%p\n", layer_end, (void *) inpL);
         cb(res->t_layer_inp[layer_end], "layer_inp", layer_end);
         ggml_build_forward_expand(gf, res->t_layer_inp[layer_end]);
+    }
+    if (external_global) {
+        return;
     }
     cur = inpL;
 
