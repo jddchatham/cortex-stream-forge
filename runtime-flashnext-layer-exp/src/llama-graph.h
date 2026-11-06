@@ -1414,3 +1414,9 @@ int32_t llama_relative_position_bucket(llama_pos x, llama_pos y, uint64_t n_buck
 // diag-only: true for tensors whose storage is owned outside the compute allocator
 // (see flashnext_diag_capture in llama-graph.cpp)
 bool flashnext_diag_is_host_capture(const ggml_tensor * t);
+// Release diagnostic storage associated with a graph result when its owning
+// llama_context is destroyed. The caller must have synchronized the context.
+void flashnext_diag_release_owner(const llm_graph_result * owner);
+// Optional QIES lifecycle probe. It is inert unless
+// CORTEX_FLASHNEXT_LIFECYCLE_CSV names an output file.
+void flashnext_diag_lifecycle_sample(const char * phase);

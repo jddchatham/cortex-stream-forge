@@ -205,3 +205,6 @@ private:
     struct impl;
     std::unique_ptr<impl> pimpl;
 };
+
+// Clears immutable vocabulary snapshots used by the opt-in low-residency loader cache.
+void llama_vocab_cache_clear();

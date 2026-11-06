@@ -129,13 +129,15 @@ struct llama_model_loader {
     std::unordered_map<std::string, llama_model_kv_override> kv_overrides;
     const llama_model_tensor_buft_override * tensor_buft_overrides;
 
-    gguf_context_ptr metadata_ptr;
+    std::shared_ptr<gguf_context> metadata_ptr;
     struct gguf_context * metadata; // either metadata_ptr.get() or externally set
     llama_model_set_tensor_data_t set_tensor_data;
     void * set_tensor_data_ud;
-    std::vector<ggml_context_ptr> contexts;
+    std::vector<std::shared_ptr<ggml_context>> contexts;
 
     std::string arch_name;
+    // Stable source/config identity used by the opt-in immutable metadata cache.
+    std::string cache_identity;
     LLM_KV      llm_kv    = LLM_KV(LLM_ARCH_UNKNOWN);
 
     size_t size_done = 0;
@@ -265,3 +267,7 @@ struct llama_model_loader {
 
     void print_info() const;
 };
+
+// Drops the process-local immutable source-metadata cache. Active loaders keep
+// their backing contexts alive through shared ownership.
+void llama_model_loader_cache_clear();

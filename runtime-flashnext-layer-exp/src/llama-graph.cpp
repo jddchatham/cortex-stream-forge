@@ -18,14 +18,20 @@
 #include "ggml-cpu.h"
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <mutex>
 #include <numeric>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <unordered_set>
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
 
 // dedup helpers
 
@@ -1616,17 +1622,76 @@ static bool flashnext_diag_whitelisted(const char * name) {
 // ggml_cont alone is not enough: a cont output inside the compute context still gets its
 // buffer offset recycled by the allocator once the node is dead.
 struct flashnext_diag_storage {
+    const llm_graph_result * owner = nullptr;
+    int32_t layer = -1;
+    llama_pos position = -1;
     ggml_context_ptr        ctx;
     ggml_backend_buffer_t   buf = nullptr;
     ggml_tensor           * dst = nullptr;
+
+    flashnext_diag_storage() = default;
+    flashnext_diag_storage(const flashnext_diag_storage &) = delete;
+    flashnext_diag_storage & operator=(const flashnext_diag_storage &) = delete;
+    flashnext_diag_storage(flashnext_diag_storage && other) noexcept
+        : owner(other.owner), layer(other.layer), position(other.position), ctx(std::move(other.ctx)), buf(other.buf), dst(other.dst) {
+        other.owner = nullptr;
+        other.layer = -1;
+        other.position = -1;
+        other.buf = nullptr;
+        other.dst = nullptr;
+    }
+    flashnext_diag_storage & operator=(flashnext_diag_storage && other) noexcept {
+        if (this != &other) {
+            if (buf != nullptr) {
+                ggml_backend_buffer_free(buf);
+            }
+            owner = other.owner;
+            layer = other.layer;
+            position = other.position;
+            ctx = std::move(other.ctx);
+            buf = other.buf;
+            dst = other.dst;
+            other.owner = nullptr;
+            other.layer = -1;
+            other.position = -1;
+            other.buf = nullptr;
+            other.dst = nullptr;
+        }
+        return *this;
+    }
+    ~flashnext_diag_storage() {
+        if (buf != nullptr) {
+            ggml_backend_buffer_free(buf);
+        }
+    }
 };
 
 // diag-only: registry of tensors whose storage is owned outside the compute allocator
 static std::mutex flashnext_diag_capture_mu;
 static std::vector<flashnext_diag_storage> flashnext_diag_keep;
 static std::unordered_set<const ggml_tensor *> flashnext_diag_host_captures;
+static int32_t flashnext_diag_last_layer = -1;
+static llama_pos flashnext_diag_last_position = -1;
 
-static ggml_tensor * flashnext_diag_capture(ggml_context * ctx0, ggml_cgraph * gf, ggml_tensor * src) {
+// Read-only lifecycle probe hooks used by the external QIES-055 sampler.
+extern "C" size_t flashnext_diag_capture_registry_count(void) {
+    std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
+    return flashnext_diag_keep.size();
+}
+
+extern "C" size_t flashnext_diag_host_pointer_count(void) {
+    std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
+    return flashnext_diag_host_captures.size();
+}
+
+extern "C" void flashnext_diag_last_context_info(int32_t * layer, llama_pos * position) {
+    std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
+    if (layer) *layer = flashnext_diag_last_layer;
+    if (position) *position = flashnext_diag_last_position;
+}
+
+static ggml_tensor * flashnext_diag_capture(const llm_graph_result * owner, int32_t layer, llama_pos position,
+        ggml_context * ctx0, ggml_cgraph * gf, ggml_tensor * src) {
     ggml_backend_buffer_type_t buft = ggml_backend_cpu_buffer_type();
     // metadata-only context; the data pointer is bound to the external buffer below
     ggml_init_params ip = {
@@ -1635,6 +1700,9 @@ static ggml_tensor * flashnext_diag_capture(ggml_context * ctx0, ggml_cgraph * g
         /*.no_alloc   =*/ true,
     };
     flashnext_diag_storage st;
+    st.owner = owner;
+    st.layer = layer;
+    st.position = position;
     st.ctx = ggml_context_ptr(ggml_init(ip));
     if (!st.ctx) {
         return nullptr;
@@ -1649,6 +1717,7 @@ static ggml_tensor * flashnext_diag_capture(ggml_context * ctx0, ggml_cgraph * g
     }
     if (ggml_backend_tensor_alloc(st.buf, st.dst, ggml_backend_buffer_get_base(st.buf)) != GGML_STATUS_SUCCESS) {
         ggml_backend_buffer_free(st.buf);
+        st.buf = nullptr;
         return nullptr;
     }
     ggml_set_name(st.dst, src->name);
@@ -1671,13 +1740,159 @@ bool flashnext_diag_is_host_capture(const ggml_tensor * t) {
     return flashnext_diag_host_captures.find(t) != flashnext_diag_host_captures.end();
 }
 
+void flashnext_diag_release_owner(const llm_graph_result * owner) {
+    if (owner == nullptr) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(flashnext_diag_capture_mu);
+    size_t removed = 0;
+    auto it = flashnext_diag_keep.begin();
+    while (it != flashnext_diag_keep.end()) {
+        if (it->owner != owner) {
+            ++it;
+            continue;
+        }
+        flashnext_diag_last_layer = it->layer;
+        flashnext_diag_last_position = it->position;
+        // Remove the pointer from the lookup registry before releasing either
+        // the external backend storage or the metadata context that owns dst.
+        flashnext_diag_host_captures.erase(it->dst);
+        it = flashnext_diag_keep.erase(it);
+        ++removed;
+    }
+    if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+        LLAMA_LOG_INFO("flashnext_diag_release owner=%p removed=%zu remaining=%zu\n",
+                (const void *) owner, removed, flashnext_diag_keep.size());
+    }
+}
+
+void flashnext_diag_lifecycle_sample(const char * phase) {
+    const char * path = std::getenv("CORTEX_FLASHNEXT_LIFECYCLE_CSV");
+    if (path == nullptr || *path == '\0') {
+        return;
+    }
+    struct sample {
+        uint64_t uord = 0, ford = 0, rss = 0, anon = 0, file = 0, swap = 0;
+        uint64_t cg_mem = 0, cg_anon = 0, cg_file = 0, cg_swap = 0;
+        uint64_t majflt = 0, psi_ms = 0, psi_mf = 0, psi_is = 0, psi_if = 0;
+    } s;
+#if defined(__GLIBC__)
+    const struct mallinfo2 mi = mallinfo2();
+    s.uord = mi.uordblks;
+    s.ford = mi.fordblks;
+#endif
+    auto read_status = [&](const char * key, uint64_t & out) {
+        std::ifstream f("/proc/self/status");
+        std::string k, v, unit;
+        while (f >> k >> v >> unit) {
+            if (k == key) {
+                out = std::strtoull(v.c_str(), nullptr, 10);
+                return;
+            }
+        }
+    };
+    read_status("VmRSS:", s.rss);
+    read_status("RssAnon:", s.anon);
+    read_status("RssFile:", s.file);
+    read_status("VmSwap:", s.swap);
+    {
+        std::ifstream f("/proc/self/stat");
+        std::string line;
+        if (std::getline(f, line)) {
+            const size_t close = line.rfind(')');
+            if (close != std::string::npos) {
+                std::istringstream fields(line.substr(close + 2));
+                std::string value;
+                for (int i = 0; i <= 9 && fields >> value; ++i) {
+                    if (i == 9) s.majflt = std::strtoull(value.c_str(), nullptr, 10);
+                }
+            }
+        }
+    }
+    auto read_psi = [](const char * file, const char * row) -> uint64_t {
+        std::ifstream f(file);
+        std::string line;
+        while (std::getline(f, line)) {
+            std::istringstream fields(line);
+            std::string name, key, value;
+            fields >> name;
+            if (name != row) continue;
+            while (fields >> key) {
+                if (key.rfind("total=", 0) == 0) return std::strtoull(key.c_str() + 6, nullptr, 10);
+            }
+        }
+        return 0;
+    };
+    s.psi_ms = read_psi("/proc/pressure/memory", "some");
+    s.psi_mf = read_psi("/proc/pressure/memory", "full");
+    s.psi_is = read_psi("/proc/pressure/io", "some");
+    s.psi_if = read_psi("/proc/pressure/io", "full");
+    {
+        std::ifstream f("/proc/self/cgroup");
+        std::string line;
+        while (std::getline(f, line)) {
+            if (line.rfind("0::", 0) != 0) continue;
+            const std::string base = "/sys/fs/cgroup" + line.substr(3);
+            auto read_cg = [&](const char * name) -> uint64_t {
+                std::ifstream cf(base + "/" + name);
+                uint64_t v = 0;
+                cf >> v;
+                return v;
+            };
+            s.cg_mem = read_cg("memory.current");
+            s.cg_swap = read_cg("memory.swap.current");
+            std::ifstream sf(base + "/memory.stat");
+            std::string key;
+            uint64_t value;
+            while (sf >> key >> value) {
+                if (key == "anon") s.cg_anon = value;
+                else if (key == "file") s.cg_file = value;
+            }
+            break;
+        }
+    }
+    static std::mutex sample_mu;
+    static const auto start = std::chrono::steady_clock::now();
+    static uint64_t prev_majflt = 0, prev_psi_ms = 0, prev_psi_mf = 0, prev_psi_is = 0, prev_psi_if = 0;
+    std::lock_guard<std::mutex> guard(sample_mu);
+    const uint64_t dmaj = s.majflt >= prev_majflt ? s.majflt - prev_majflt : 0;
+    const uint64_t dms = s.psi_ms >= prev_psi_ms ? s.psi_ms - prev_psi_ms : 0;
+    const uint64_t dmf = s.psi_mf >= prev_psi_mf ? s.psi_mf - prev_psi_mf : 0;
+    const uint64_t dis = s.psi_is >= prev_psi_is ? s.psi_is - prev_psi_is : 0;
+    const uint64_t dif = s.psi_if >= prev_psi_if ? s.psi_if - prev_psi_if : 0;
+    prev_majflt = s.majflt; prev_psi_ms = s.psi_ms; prev_psi_mf = s.psi_mf; prev_psi_is = s.psi_is; prev_psi_if = s.psi_if;
+    size_t records, pointers;
+    {
+        std::lock_guard<std::mutex> registry_guard(flashnext_diag_capture_mu);
+        records = flashnext_diag_keep.size();
+        pointers = flashnext_diag_host_captures.size();
+    }
+    FILE * out = std::fopen(path, "a+");
+    if (out == nullptr) return;
+    std::fseek(out, 0, SEEK_END);
+    if (std::ftell(out) == 0) {
+        std::fprintf(out, "phase,elapsed_ms,uordblks,fordblks,rss_kib,anon_kib,file_kib,swap_kib,cgroup_mem_bytes,cgroup_anon_bytes,cgroup_file_bytes,cgroup_swap_bytes,major_faults,major_fault_delta,psi_mem_some_us_delta,psi_mem_full_us_delta,psi_io_some_us_delta,psi_io_full_us_delta,capture_records,capture_pointers\n");
+    }
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+    std::fprintf(out, "%s,%lld,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%zu,%zu\n",
+        phase ? phase : "unknown", (long long) elapsed,
+        (unsigned long long) s.uord, (unsigned long long) s.ford,
+        (unsigned long long) s.rss, (unsigned long long) s.anon, (unsigned long long) s.file, (unsigned long long) s.swap,
+        (unsigned long long) s.cg_mem, (unsigned long long) s.cg_anon, (unsigned long long) s.cg_file, (unsigned long long) s.cg_swap,
+        (unsigned long long) s.majflt, (unsigned long long) dmaj,
+        (unsigned long long) dms, (unsigned long long) dmf, (unsigned long long) dis, (unsigned long long) dif,
+        records, pointers);
+    std::fclose(out);
+}
+
 void llm_graph_context::cb(ggml_tensor * cur, const char * name, int il) const {
     if (cb_func) {
         ggml_tensor * target = cur;
         if (il >= 0 && ctx0 != nullptr && gf != nullptr &&
             std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr &&
             flashnext_diag_whitelisted(name)) {
-            if (ggml_tensor * captured = flashnext_diag_capture(ctx0, gf, cur)) {
+            const llama_pos position = ubatch.n_tokens > 0 ? ubatch.pos[0] : -1;
+            if (ggml_tensor * captured = flashnext_diag_capture(res, il, position, ctx0, gf, cur)) {
                 target = captured;
             }
         }

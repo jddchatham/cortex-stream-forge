@@ -14,11 +14,106 @@
 #include <future>
 #include <regex>
 #include <cerrno>
+#include <atomic>
+#include <mutex>
+#include <sstream>
+#include <sys/stat.h>
+#include <unordered_map>
 #include <unistd.h>
 
 static const size_t kiB = 1024;
 static const size_t MiB = 1024*kiB;
 static const size_t GiB = 1024*MiB;
+
+using loader_weights_map = decltype(std::declval<llama_model_loader>().weights_map);
+
+struct loader_metadata_cache_entry {
+    std::string key;
+    std::string identity;
+    std::vector<std::string> paths;
+    std::vector<std::string> signatures;
+    std::shared_ptr<gguf_context> metadata;
+    std::vector<std::shared_ptr<ggml_context>> contexts;
+    loader_weights_map weights;
+    std::string arch_name;
+    llama_ftype ftype = LLAMA_FTYPE_ALL_F32;
+    int n_kv = 0;
+    int n_tensors = 0;
+    uint64_t n_elements = 0;
+    size_t n_bytes = 0;
+    size_t estimated_bytes = 0;
+};
+
+static std::mutex loader_metadata_cache_mutex;
+static std::shared_ptr<const loader_metadata_cache_entry> loader_metadata_cache;
+static std::atomic<uint64_t> loader_metadata_cache_hits{0};
+static std::atomic<uint64_t> loader_metadata_cache_misses{0};
+
+static bool loader_cache_enabled() {
+    const char * value = std::getenv("CORTEX_FLASHNEXT_LOADER_CACHE");
+    return value && value[0] == '1' && value[1] == '\0';
+}
+
+static std::string loader_file_signature(const std::string & path) {
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0) return path + "|missing";
+    std::ostringstream out;
+    out << path << '|' << st.st_dev << '|' << st.st_ino << '|' << st.st_size
+        << '|' << st.st_mtim.tv_sec << '.' << st.st_mtim.tv_nsec
+        << '|' << st.st_ctim.tv_sec << '.' << st.st_ctim.tv_nsec;
+    return out.str();
+}
+
+static std::string loader_config_signature(
+        const std::string & fname,
+        llama_load_mode load_mode,
+        bool check_tensors,
+        bool no_alloc,
+        bool load_mtp,
+        const std::unordered_map<std::string, llama_model_kv_override> & overrides,
+        const llama_model_tensor_buft_override * tensor_overrides) {
+    std::ostringstream out;
+    out << "loader-cache-v1|" << static_cast<int>(load_mode) << '|'
+        << check_tensors << '|' << no_alloc << '|' << load_mtp << '|'
+        << (std::getenv("CORTEX_PREAD_ARENA") != nullptr) << '|'
+        << loader_file_signature(fname);
+    std::vector<std::string> override_keys;
+    override_keys.reserve(overrides.size());
+    for (const auto & kv : overrides) override_keys.push_back(kv.first);
+    std::sort(override_keys.begin(), override_keys.end());
+    for (const auto & key : override_keys) {
+        const auto & value = overrides.at(key);
+        out << "|kv:" << key << ':' << value.tag << ':';
+        switch (value.tag) {
+            case LLAMA_KV_OVERRIDE_TYPE_INT:   out << value.val_i64; break;
+            case LLAMA_KV_OVERRIDE_TYPE_FLOAT: out << value.val_f64; break;
+            case LLAMA_KV_OVERRIDE_TYPE_BOOL:  out << value.val_bool; break;
+            case LLAMA_KV_OVERRIDE_TYPE_STR:   out << value.val_str; break;
+        }
+    }
+    if (tensor_overrides) {
+        for (auto p = tensor_overrides; p->pattern; ++p) {
+            out << "|buft:" << p->pattern << ':'
+                << (p->buft ? ggml_backend_buft_name(p->buft) : "null");
+        }
+    }
+    return out.str();
+}
+
+void llama_model_loader_cache_clear() {
+    std::shared_ptr<const loader_metadata_cache_entry> old;
+    {
+        std::lock_guard<std::mutex> lock(loader_metadata_cache_mutex);
+        old.swap(loader_metadata_cache);
+    }
+    if (std::getenv("CORTEX_FLASHNEXT_LOADER_CACHE_STATS")) {
+        LLAMA_LOG_INFO("CORTEX_LOADER_CACHE hits=%" PRIu64 " misses=%" PRIu64 " entries=%d estimated_bytes=%zu\n",
+                loader_metadata_cache_hits.load(), loader_metadata_cache_misses.load(), old ? 1 : 0,
+                old ? old->estimated_bytes : 0);
+    }
+    loader_metadata_cache_hits.store(0);
+    loader_metadata_cache_misses.store(0);
+}
 
 const char * llama_file_version_name(llama_fver version) {
     switch (version) {
@@ -567,6 +662,51 @@ llama_model_loader::llama_model_loader(
         LLAMA_LOG_INFO("CORTEX pread provider enabled: model-weight mmap disabled\n");
     }
 
+    const bool can_cache_source = loader_cache_enabled() && !fname.empty() &&
+        meta == nullptr && file == nullptr && set_tensor_data == nullptr;
+    const std::string cache_base_key = can_cache_source ? loader_config_signature(
+        fname, load_mode, check_tensors, no_alloc, load_mtp, kv_overrides, tensor_buft_overrides) : std::string();
+    std::shared_ptr<const loader_metadata_cache_entry> cached_source;
+    if (can_cache_source) {
+        std::lock_guard<std::mutex> lock(loader_metadata_cache_mutex);
+        if (loader_metadata_cache && loader_metadata_cache->key == cache_base_key) {
+            bool valid = true;
+            for (size_t i = 0; i < loader_metadata_cache->paths.size(); ++i) {
+                if (loader_file_signature(loader_metadata_cache->paths[i]) != loader_metadata_cache->signatures[i]) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid && !splits.empty() && splits != loader_metadata_cache->paths) valid = false;
+            if (valid) cached_source = loader_metadata_cache;
+        }
+        if (cached_source) loader_metadata_cache_hits.fetch_add(1);
+        else loader_metadata_cache_misses.fetch_add(1);
+    }
+    if (cached_source) {
+        metadata_ptr = cached_source->metadata;
+        metadata = metadata_ptr.get();
+        contexts = cached_source->contexts;
+        weights_map = cached_source->weights;
+        arch_name = cached_source->arch_name;
+        cache_identity = cached_source->identity;
+        splits = cached_source->paths;
+        llm_kv = LLM_KV(llm_arch_from_string(arch_name));
+        n_elements = cached_source->n_elements;
+        n_bytes = cached_source->n_bytes;
+        for (const auto & path : cached_source->paths) {
+            files.emplace_back(new llama_file(path.c_str(), "rb", use_direct_io));
+        }
+        n_kv = gguf_get_n_kv(metadata);
+        n_tensors = weights_map.size();
+        fver = (enum llama_fver) gguf_get_version(metadata);
+        ftype = cached_source->ftype;
+        this->check_tensors = check_tensors;
+        this->no_alloc = no_alloc;
+        this->load_mtp = load_mtp;
+        return;
+    }
+
     if (!fname.empty()) {
         // Load the main GGUF
         struct ggml_context * ctx = NULL;
@@ -575,7 +715,7 @@ llama_model_loader::llama_model_loader(
             /*.ctx      = */ &ctx,
         };
 
-        metadata_ptr.reset(gguf_init_from_file(fname.c_str(), params));
+        metadata_ptr = std::shared_ptr<gguf_context>(gguf_init_from_file(fname.c_str(), params), gguf_free);
         metadata = metadata_ptr.get();
         if (metadata == nullptr) {
             throw std::runtime_error(format("%s: failed to load model from %s", __func__, fname.c_str()));
@@ -585,7 +725,7 @@ llama_model_loader::llama_model_loader(
         llm_kv = LLM_KV(llm_arch_from_string(arch_name));
 
         files.emplace_back(new llama_file(fname.c_str(), "rb", use_direct_io));
-        contexts.emplace_back(ctx);
+        contexts.emplace_back(ctx, ggml_free);
 
         // Save tensors data offset of the main file.
         // For subsidiary files, `meta` tensor data offset must not be used,
@@ -653,7 +793,7 @@ llama_model_loader::llama_model_loader(
                 }
 
                 files.emplace_back(new llama_file(fname_split, "rb", use_direct_io));
-                contexts.emplace_back(ctx);
+                contexts.emplace_back(ctx, ggml_free);
 
                 // Save tensors data offset info of the shard.
                 for (ggml_tensor * cur = ggml_get_first_tensor(ctx); cur; cur = ggml_get_next_tensor(ctx, cur)) {
@@ -687,7 +827,7 @@ llama_model_loader::llama_model_loader(
             /*.ctx      = */ &ctx,
         };
 
-        metadata_ptr.reset(gguf_init_from_file_ptr(file, params));
+        metadata_ptr = std::shared_ptr<gguf_context>(gguf_init_from_file_ptr(file, params), gguf_free);
         metadata = metadata_ptr.get();
         if (metadata == nullptr) {
             throw std::runtime_error(format("%s: failed to load model from file pointer", __func__));
@@ -704,7 +844,7 @@ llama_model_loader::llama_model_loader(
         llm_kv = LLM_KV(llm_arch_from_string(arch_name));
 
         files.emplace_back(new llama_file(file));
-        contexts.emplace_back(ctx);
+        contexts.emplace_back(ctx, ggml_free);
 
         // Save tensors data offset info of the main file.
         for (ggml_tensor * cur = ggml_get_first_tensor(ctx); cur; cur = ggml_get_next_tensor(ctx, cur)) {
@@ -842,6 +982,33 @@ llama_model_loader::llama_model_loader(
     this->check_tensors = check_tensors;
     this->no_alloc = no_alloc;
     this->load_mtp = load_mtp;
+
+    if (can_cache_source) {
+        auto entry = std::make_shared<loader_metadata_cache_entry>();
+        entry->key = cache_base_key;
+        entry->paths = splits.empty() ? std::vector<std::string>{fname} : splits;
+        if (entry->paths.empty() || entry->paths.front() != fname) entry->paths.insert(entry->paths.begin(), fname);
+        for (const auto & path : entry->paths) entry->signatures.push_back(loader_file_signature(path));
+        std::ostringstream identity;
+        identity << cache_base_key;
+        for (const auto & signature : entry->signatures) identity << "|shard:" << signature;
+        entry->identity = identity.str();
+        cache_identity = entry->identity;
+        entry->metadata = metadata_ptr;
+        entry->contexts = contexts;
+        entry->weights = weights_map;
+        entry->arch_name = arch_name;
+        entry->ftype = ftype;
+        entry->n_kv = n_kv;
+        entry->n_tensors = n_tensors;
+        entry->n_elements = n_elements;
+        entry->n_bytes = n_bytes;
+        entry->estimated_bytes = gguf_get_meta_size(metadata);
+        for (const auto & ctx : contexts) entry->estimated_bytes += ggml_get_mem_size(ctx.get());
+        for (const auto & kv : weights_map) entry->estimated_bytes += kv.first.capacity() + sizeof(kv);
+        std::lock_guard<std::mutex> lock(loader_metadata_cache_mutex);
+        loader_metadata_cache = std::move(entry);
+    }
 }
 
 std::string llama_model_loader::get_arch_name() const {

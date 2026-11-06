@@ -874,6 +874,14 @@ llama_context::~llama_context() {
     // wait for any pending asynchronous copies into the output buffers before they are freed
     synchronize();
 
+    // Graph results are stable context-owned keys for diagnostic captures.
+    // Release only this context's captures, after post-compute diagnostics and
+    // asynchronous graph work have completed, before their backing storage dies.
+    for (const auto & res : gf_res_prev) {
+        flashnext_diag_release_owner(res.get());
+    }
+    flashnext_diag_release_owner(gf_res_reserve.get());
+
     // when training, ggml_opt allocates extra buffers through the scheduler, so the sizes no longer match the expectation
     if (!model.hparams.no_alloc && !opt_ctx) {
         for (size_t i = 0; i < backend_ptrs.size(); ++i) {

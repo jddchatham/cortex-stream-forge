@@ -10,12 +10,41 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <vector>
+#include <limits>
 
 namespace {
 static constexpr int64_t K = 2560;
 static constexpr int64_t F = 640;
 static constexpr ggml_type GATE_UP_TYPE = (ggml_type) 23;
 static constexpr ggml_type DOWN_TYPE = (ggml_type) 20;
+static constexpr size_t EXPERT_ARENA_MIN = 16 * 1024;
+static constexpr size_t EXPERT_ARENA_MAX = 1024 * 1024;
+
+bool configure_expert_arena(size_t & arena_bytes) {
+    const char * value = std::getenv("CORTEX_FLASHNEXT_EXPERT_ARENA_BYTES");
+    if (value == nullptr) return true;
+
+    auto reject = [](const char * reason) {
+        std::fprintf(stderr, "CORTEX_FLASHNEXT_EXPERT_ARENA_BYTES invalid: %s\n", reason);
+        return false;
+    };
+    if (*value == '\0') return reject("empty value; expected a decimal byte count from 16384 through 1048576");
+
+    uint64_t parsed = 0;
+    for (const unsigned char * p = reinterpret_cast<const unsigned char *>(value); *p; ++p) {
+        if (*p < '0' || *p > '9') return reject("expected unsigned decimal digits only; signs and whitespace are not allowed");
+        const uint64_t digit = *p - '0';
+        if (parsed > (std::numeric_limits<uint64_t>::max() - digit) / 10) {
+            return reject("decimal value overflows uint64");
+        }
+        parsed = parsed * 10 + digit;
+    }
+    if (parsed < EXPERT_ARENA_MIN || parsed > EXPERT_ARENA_MAX) {
+        return reject("value is outside the safe range 16384..1048576 bytes");
+    }
+    arena_bytes = static_cast<size_t>(parsed);
+    return true;
+}
 
 bool pread_all(int fd, void * dst, size_t n, uint64_t off, uint64_t & calls) {
     size_t done = 0;
@@ -127,6 +156,7 @@ bool compute_swiglu(ggml_backend_t backend, const float * gate, const float * up
 bool flashnext_execute_selected_moe(
         const std::array<flashnext_selected_expert_slice, flashnext_layer_transaction::experts_used> & slices,
         flashnext_layer_transaction & tx, size_t arena_bytes) {
+    if (!configure_expert_arena(arena_bytes)) return false;
     tx.selected_moe.fill(0.0f);
     tx.io.selected_expert_bytes_read = 0;
     tx.io.unselected_expert_reads = 0;

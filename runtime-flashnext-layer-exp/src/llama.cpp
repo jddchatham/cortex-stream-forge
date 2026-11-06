@@ -147,6 +147,8 @@ void llama_numa_init(enum ggml_numa_strategy numa) {
 }
 
 void llama_backend_free(void) {
+    llama_model_loader_cache_clear();
+    llama_vocab_cache_clear();
     ggml_quantize_free();
 }
 

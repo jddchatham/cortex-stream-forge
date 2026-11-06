@@ -44,7 +44,9 @@ int main(int argc, char ** argv) {
     for (const char * name : cortex_envs) {
         unsetenv(name);
     }
-    setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
+    if (std::getenv("STOCK_NO_DIAG") == nullptr) {
+        setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
+    }
 
     llama_backend_init();
 
@@ -58,7 +60,11 @@ int main(int argc, char ** argv) {
     }
 
     llama_context_params cp = llama_context_default_params();
-    cp.n_ctx  = 256;
+    uint32_t stock_n_ctx = 256;
+    if (const char * n_env = std::getenv("STOCK_N_TOKENS")) {
+        stock_n_ctx = std::max<uint32_t>(256, (uint32_t) std::strtoul(n_env, nullptr, 10) + 16);
+    }
+    cp.n_ctx  = stock_n_ctx;
     cp.n_batch = 1;
     llama_context * ctx = llama_init_from_model(model, cp);
     if (!ctx) {

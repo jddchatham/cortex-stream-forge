@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cctype>
 #include <cfloat>
+#include <cinttypes>
 #include <cmath>
 #include <cstdarg>
 #include <cstring>
@@ -18,9 +19,18 @@
 #include <forward_list>
 #include <limits>
 #include <map>
+#include <mutex>
 #include <queue>
 #include <set>
+#include <atomic>
+#include <mutex>
 #include <unordered_map>
+
+static std::mutex llama_vocab_cache_mutex;
+static std::unordered_map<std::string, std::shared_ptr<const void>> llama_vocab_cache;
+static std::atomic<uint64_t> llama_vocab_cache_hits{0};
+static std::atomic<uint64_t> llama_vocab_cache_misses{0};
+static size_t llama_vocab_cache_bytes = 0;
 
 //
 // helpers
@@ -1964,7 +1974,76 @@ struct llama_vocab::impl {
 
 private:
     const llama_vocab & vocab;
+
+public:
+    struct immutable_snapshot {
+        uint32_t n_token_types = 0;
+        std::string tokenizer_model, tokenizer_pre;
+        enum llama_vocab_type type = LLAMA_VOCAB_TYPE_SPM;
+        enum llama_vocab_pre_type pre_type = LLAMA_VOCAB_PRE_TYPE_DEFAULT;
+        int max_token_len = 0;
+        llama_token special_bos_id, special_eos_id, special_eot_id, special_eom_id;
+        llama_token special_unk_id, special_sep_id, special_pad_id, special_mask_id, linefeed_id;
+        llama_token special_fim_pre_id, special_fim_suf_id, special_fim_mid_id;
+        llama_token special_fim_pad_id, special_fim_rep_id, special_fim_sep_id;
+        bool add_space_prefix, add_bos, add_eos, add_sep, ignore_merges;
+        bool clean_spaces, remove_extra_whitespaces, escape_whitespaces, treat_whitespace_as_suffix;
+        llama_vocab::normalizer_options normalizer_opts;
+        std::unordered_map<std::string, llama_token> token_to_id;
+        std::vector<llama_vocab::token_data> id_to_token;
+        std::vector<llama_token> cache_special_tokens;
+        std::vector<std::string> cache_token_to_piece;
+        std::unordered_map<std::pair<std::string, std::string>, int, pair_hash> bpe_ranks;
+        std::set<llama_token> special_eog_ids;
+        std::vector<llama_token> suppress_tokens;
+        std::vector<char> precompiled_charsmap;
+        size_t estimated_bytes = 0;
+    };
+
+    immutable_snapshot make_snapshot() const;
+    void apply_snapshot(const immutable_snapshot & snapshot);
 };
+
+llama_vocab::impl::immutable_snapshot llama_vocab::impl::make_snapshot() const {
+    immutable_snapshot s;
+    s.n_token_types = n_token_types; s.tokenizer_model = tokenizer_model; s.tokenizer_pre = tokenizer_pre;
+    s.type = type; s.pre_type = pre_type; s.max_token_len = max_token_len;
+    s.special_bos_id = special_bos_id; s.special_eos_id = special_eos_id; s.special_eot_id = special_eot_id; s.special_eom_id = special_eom_id;
+    s.special_unk_id = special_unk_id; s.special_sep_id = special_sep_id; s.special_pad_id = special_pad_id; s.special_mask_id = special_mask_id; s.linefeed_id = linefeed_id;
+    s.special_fim_pre_id = special_fim_pre_id; s.special_fim_suf_id = special_fim_suf_id; s.special_fim_mid_id = special_fim_mid_id;
+    s.special_fim_pad_id = special_fim_pad_id; s.special_fim_rep_id = special_fim_rep_id; s.special_fim_sep_id = special_fim_sep_id;
+    s.add_space_prefix = add_space_prefix; s.add_bos = add_bos; s.add_eos = add_eos; s.add_sep = add_sep; s.ignore_merges = ignore_merges;
+    s.clean_spaces = clean_spaces; s.remove_extra_whitespaces = remove_extra_whitespaces; s.escape_whitespaces = escape_whitespaces; s.treat_whitespace_as_suffix = treat_whitespace_as_suffix;
+    s.normalizer_opts = normalizer_opts; s.token_to_id = token_to_id; s.id_to_token = id_to_token;
+    s.cache_special_tokens = cache_special_tokens; s.cache_token_to_piece = cache_token_to_piece;
+    s.bpe_ranks = bpe_ranks; s.special_eog_ids = special_eog_ids; s.suppress_tokens = suppress_tokens;
+    s.precompiled_charsmap = precompiled_charsmap;
+    s.estimated_bytes = sizeof(s) + s.tokenizer_model.capacity() + s.tokenizer_pre.capacity() +
+        s.id_to_token.capacity() * sizeof(llama_vocab::token_data) + s.cache_special_tokens.capacity() * sizeof(llama_token) +
+        s.cache_token_to_piece.capacity() * sizeof(std::string) + s.precompiled_charsmap.capacity();
+    for (const auto & t : s.id_to_token) s.estimated_bytes += t.text.capacity();
+    for (const auto & t : s.cache_token_to_piece) s.estimated_bytes += t.capacity();
+    for (const auto & kv : s.token_to_id) s.estimated_bytes += kv.first.capacity() + sizeof(kv);
+    for (const auto & kv : s.bpe_ranks) s.estimated_bytes += kv.first.first.capacity() + kv.first.second.capacity() + sizeof(kv);
+    return s;
+}
+
+void llama_vocab::impl::apply_snapshot(const immutable_snapshot & s) {
+    n_token_types = s.n_token_types; tokenizer_model = s.tokenizer_model; tokenizer_pre = s.tokenizer_pre;
+    type = s.type; pre_type = s.pre_type; max_token_len = s.max_token_len;
+    special_bos_id = s.special_bos_id; special_eos_id = s.special_eos_id; special_eot_id = s.special_eot_id; special_eom_id = s.special_eom_id;
+    special_unk_id = s.special_unk_id; special_sep_id = s.special_sep_id; special_pad_id = s.special_pad_id; special_mask_id = s.special_mask_id; linefeed_id = s.linefeed_id;
+    special_fim_pre_id = s.special_fim_pre_id; special_fim_suf_id = s.special_fim_suf_id; special_fim_mid_id = s.special_fim_mid_id;
+    special_fim_pad_id = s.special_fim_pad_id; special_fim_rep_id = s.special_fim_rep_id; special_fim_sep_id = s.special_fim_sep_id;
+    add_space_prefix = s.add_space_prefix; add_bos = s.add_bos; add_eos = s.add_eos; add_sep = s.add_sep; ignore_merges = s.ignore_merges;
+    clean_spaces = s.clean_spaces; remove_extra_whitespaces = s.remove_extra_whitespaces; escape_whitespaces = s.escape_whitespaces; treat_whitespace_as_suffix = s.treat_whitespace_as_suffix;
+    normalizer_opts = s.normalizer_opts; token_to_id = s.token_to_id; id_to_token = s.id_to_token;
+    cache_special_tokens = s.cache_special_tokens; cache_token_to_piece = s.cache_token_to_piece;
+    bpe_ranks = s.bpe_ranks; special_eog_ids = s.special_eog_ids; suppress_tokens = s.suppress_tokens;
+    precompiled_charsmap = s.precompiled_charsmap;
+    tokenizer.reset();
+    init_tokenizer(type);
+}
 
 void llama_vocab::impl::load(llama_model_loader & ml, const LLM_KV & kv) {
     struct gguf_context * ctx = ml.metadata;
@@ -3985,7 +4064,49 @@ llama_vocab::llama_vocab() : pimpl(new impl(*this)) {
 llama_vocab::~llama_vocab() = default;
 
 void llama_vocab::load(llama_model_loader & ml, const LLM_KV & kv) {
+    const char * enabled = std::getenv("CORTEX_FLASHNEXT_LOADER_CACHE");
+    if (enabled && std::strcmp(enabled, "1") == 0 && !ml.cache_identity.empty()) {
+        std::shared_ptr<const impl::immutable_snapshot> snapshot;
+        {
+            std::lock_guard<std::mutex> lock(llama_vocab_cache_mutex);
+            auto it = llama_vocab_cache.find(ml.cache_identity);
+            if (it != llama_vocab_cache.end()) snapshot = std::static_pointer_cast<const impl::immutable_snapshot>(it->second);
+        }
+        if (snapshot) {
+            llama_vocab_cache_hits.fetch_add(1);
+            pimpl->apply_snapshot(*snapshot);
+            return;
+        }
+        llama_vocab_cache_misses.fetch_add(1);
+        pimpl->load(ml, kv);
+        auto stored = std::make_shared<const impl::immutable_snapshot>(pimpl->make_snapshot());
+        {
+            std::lock_guard<std::mutex> lock(llama_vocab_cache_mutex);
+            llama_vocab_cache.clear();
+            llama_vocab_cache.emplace(ml.cache_identity, std::move(stored));
+            // The snapshot includes all owned strings, vectors, and hash nodes;
+            // this estimate intentionally excludes allocator bookkeeping.
+            llama_vocab_cache_bytes = llama_vocab_cache.empty() ? 0 : sizeof(impl::immutable_snapshot);
+            if (!llama_vocab_cache.empty()) {
+                const auto value = std::static_pointer_cast<const impl::immutable_snapshot>(llama_vocab_cache.begin()->second);
+                llama_vocab_cache_bytes = value->estimated_bytes;
+            }
+        }
+        return;
+    }
     pimpl->load(ml, kv);
+}
+
+void llama_vocab_cache_clear() {
+    std::lock_guard<std::mutex> lock(llama_vocab_cache_mutex);
+    if (std::getenv("CORTEX_FLASHNEXT_LOADER_CACHE_STATS")) {
+        LLAMA_LOG_INFO("CORTEX_VOCAB_CACHE hits=%" PRIu64 " misses=%" PRIu64 " entries=%zu estimated_bytes=%zu\n",
+                llama_vocab_cache_hits.load(), llama_vocab_cache_misses.load(), llama_vocab_cache.size(), llama_vocab_cache_bytes);
+    }
+    llama_vocab_cache.clear();
+    llama_vocab_cache_bytes = 0;
+    llama_vocab_cache_hits.store(0);
+    llama_vocab_cache_misses.store(0);
 }
 
 std::string llama_vocab::get_tokenizer_model() const {

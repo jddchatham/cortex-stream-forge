@@ -2265,6 +2265,9 @@ int main(int argc, char ** argv) {
 
         llama_context_params chain_cp = cp;
         chain_cp.embeddings = true;
+        // each position consumes one KV/recurrent cell; size the per-layer
+        // contexts for the full generation length plus margin
+        chain_cp.n_ctx = std::max<uint32_t>(256, gen_positions + 16);
         // The layer-0 stock path uses the router-only segment-A graph.  The
         // following owned-boundary transactions must use the normal range
         // graph; leaving those layer-0 switches set corrupts graph setup.
@@ -2403,37 +2406,15 @@ int main(int argc, char ** argv) {
                         } else {
                             std::printf("CHAIN_GEN_POS%u_TOKEN=%u\n", pos, token_cur);
                         }
-                        // layer-0 input at this position is the token embedding
-                        std::vector<float> emb1(2560);
-                        {
-                            setenv("CORTEX_LOW_RESIDENCY_LAYER", "0", 1);
-                            setenv("CORTEX_FLASHNEXT_LAYER_START", "0", 1);
-                            setenv("CORTEX_FLASHNEXT_LAYER_END", "1", 1);
-                            setenv("CORTEX_QWEN35_SEGMENT_END", "1", 1);
-                            llama_model * emb_model = llama_model_load_from_file(argv[1], mp);
-                            const llama_token t1 = (llama_token) token_cur;
-                            const bool emb_ok = emb_model &&
-                                llama_cortex_token_embd_rows(emb_model, &t1, 1, emb1.data());
-                            if (emb_model) llama_model_free(emb_model);
-                            size_t emb_bad = 0;
-                            for (float v : emb1) emb_bad += !std::isfinite(v);
-                            if (std::getenv("FLASHNEXT_COMPARE_DIR") && pos == 1) {
-                                export_blob("emb1_p1", 0, emb1.data(), emb1.size() * sizeof(float), "2560", "f32");
-                            }
-                            std::printf("CHAIN_GEN_EMB pos=%u token=%u finite=%s bad=%zu\n",
-                                pos, token_cur, emb_bad == 0 ? "YES" : "NO", emb_bad);
-                            if (!emb_ok || emb_bad != 0) {
-                                std::printf("CHAIN_GEN=FAIL stage=embedding pos=%u\n", pos);
-                                llama_backend_free();
-                                return 24;
-                            }
-                        }
+                        // layer-0 input at this position is the token embedding;
+                        // it is fetched from the layer-0 model load below (no
+                        // extra model load)
                         // PLE predecessors (oldest-first, -1 = missing): the two
                         // preceding tokens of this position.
                         const std::string ple_prev = std::string(pos >= 2 ? std::to_string(token_at[pos - 2]) : "-1") +
                                                      "," + std::to_string(token_at[pos - 1]);
                         setenv("CORTEX_FLASHNEXT_PLE_PREV", ple_prev.c_str(), 1);
-                        std::vector<float> handoff1 = emb1;
+                        std::vector<float> handoff1;
                         for (uint32_t il = 0; il < n_chain_layers && il < model_layer_count; ++il) {
                             setenv("CORTEX_LOW_RESIDENCY_LAYER", std::to_string(il).c_str(), 1);
                             setenv("CORTEX_FLASHNEXT_LAYER_START", std::to_string(il).c_str(), 1);
@@ -2443,6 +2424,27 @@ int main(int argc, char ** argv) {
                             setenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS", "1", 1);
                             setenv("CORTEX_FLASHNEXT_LAYER3_TRANSACTION", "1", 1);
                             llama_model * next_model = llama_model_load_from_file(argv[1], mp);
+                            if (il == 0) {
+                                // layer-0 input at this position is the token embedding
+                                std::vector<float> emb1(2560);
+                                const llama_token t1 = (llama_token) token_cur;
+                                const bool emb_ok = next_model &&
+                                    llama_cortex_token_embd_rows(next_model, &t1, 1, emb1.data());
+                                size_t emb_bad = 0;
+                                for (float v : emb1) emb_bad += !std::isfinite(v);
+                                if (std::getenv("FLASHNEXT_COMPARE_DIR") && pos == 1) {
+                                    export_blob("emb1_p1", 0, emb1.data(), emb1.size() * sizeof(float), "2560", "f32");
+                                }
+                                std::printf("CHAIN_GEN_EMB pos=%u token=%u finite=%s bad=%zu\n",
+                                    pos, token_cur, emb_bad == 0 ? "YES" : "NO", emb_bad);
+                                if (!emb_ok || emb_bad != 0) {
+                                    std::printf("CHAIN_GEN=FAIL stage=embedding pos=%u\n", pos);
+                                    gen_ok = false;
+                                    if (next_model) llama_model_free(next_model);
+                                    break;
+                                }
+                                handoff1 = emb1;
+                            }
                             llama_context * next_ctx = next_model ? llama_init_from_model(next_model, chain_cp) : nullptr;
                             if (!next_ctx) { gen_ok = false; if (next_model) llama_model_free(next_model); break; }
                             if (state_store.data(il)) {
