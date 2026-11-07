@@ -78,6 +78,9 @@ struct llama_context {
 
     size_t debug_copy_recurrent_state(int layer, bool convolution, void * dst, size_t cap);
     size_t debug_copy_flashnext_tensor(const char * name, void * dst, size_t cap) const;
+    // Diagnostic-only: allow a long-lived stock context to refresh named
+    // post-compute captures before its next one-token decode.
+    void debug_reset_flashnext_diag_capture_counters();
     // Optional three-component Segment-A payload, 12804 F32 values.
     size_t debug_copy_flashnext_layer0_boundary(float * dst, size_t capacity) const;
     size_t debug_copy_flashnext_layer0_router(float * dst, size_t capacity) const;

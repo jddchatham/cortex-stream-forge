@@ -4,6 +4,42 @@ Cortex Stream Forge is a standalone orchestration layer for the proven Cortex ex
 
 Forge is intentionally separate from the existing Cortex/BitNet source trees. The current adapters bind to those verified runtimes and regression binaries; they do not rewrite their model mathematics or copy architecture-specific behavior into the core.
 
+## QUORTEX FlashNext CPU text generation (QIES-072)
+
+The `feature/flashnext-first-text-generation` milestone adds a low-residency CPU CLI for the 48-layer Qwen3.8 FlashNext model. On the tested model, the CLI applies the GGUF template's native `enable_thinking=false` user-only branch and generated `4` for “What is 2 + 2? Answer with only the number.” Stock llama.cpp and QUORTEX matched all 28 captured full-logit comparisons byte-for-byte, including the native end-of-generation decision. The detailed evidence is in [`docs/QIES072_NONTHINKING_FIRST_ANSWER.md`](docs/QIES072_NONTHINKING_FIRST_ANSWER.md).
+
+Build the CPU-only target with REPACK enabled (the model shards and tensor index must be supplied separately):
+
+```sh
+cmake -S runtime-flashnext-layer-exp -B build-quortex \
+  -DGGML_CUDA=OFF -DGGML_CPU_REPACK=ON \
+  -DLLAMA_BUILD_EXAMPLES=ON -DLLAMA_BUILD_TOOLS=OFF \
+  -DLLAMA_BUILD_SERVER=OFF -DLLAMA_BUILD_APP=OFF -DLLAMA_BUILD_TESTS=OFF \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build build-quortex --target llama-flashnext-chat -j2
+```
+
+Run a single question with a fresh disk-backed state directory:
+
+```sh
+export QUORTEX_MODEL=/path/to/model-00001-of-00003.gguf
+export QUORTEX_TENSOR_INDEX="$PWD/flashnext-tensor-index.json"
+run_dir=$(mktemp -d /tmp/quortex-question.XXXXXX)
+CORTEX_FLASHNEXT_LOADER_CACHE=1 \
+CORTEX_FLASHNEXT_EXPERT_ARENA_BYTES=1048576 \
+CORTEX_FLASHNEXT_LAYER_RANGE=1 \
+OMP_NUM_THREADS=1 \
+  build-quortex/bin/quortex \
+  --model "$QUORTEX_MODEL" \
+  --tensor-index "$QUORTEX_TENSOR_INDEX" \
+  --prompt "What is 2 + 2? Answer with only the number." \
+  --max-tokens 16 \
+  --state-dir "$run_dir/state" \
+  --logits-dir "$run_dir/logits"
+```
+
+The measured reference run used about 5.86 GiB peak process RSS and took roughly 37 minutes, with most time in prompt prefill. This remains a correctness-focused, CPU-only diagnostic CLI; broader chat-template support and faster interactive generation are not claimed. Keep the expert arena at 16 KiB unless explicitly selecting the validated 1 MiB option as above.
+
 ## Current adapter status
 
 | Architecture | Adapter | Evidence |

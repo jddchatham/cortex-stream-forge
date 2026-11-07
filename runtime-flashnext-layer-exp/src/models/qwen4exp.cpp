@@ -793,6 +793,10 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
         } else {
             cur = build_layer_attn(inp->get_attn(), mctx_hyb, inp_kpool, cur, inp_pos, sections, il);
         }
+        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+            cb(cur, "diag_hc_attention_output", il);
+            ggml_build_forward_expand(gf, cur);
+        }
 
         if (il == hparams.n_layer() - 1 && inp_out_ids && (!cparams.embeddings_nextn || cparams.embeddings_nextn_masked)) {
             // everything below is per token, so drop the rows that produce no output
@@ -971,6 +975,10 @@ llama_model_qwen4exp::graph::graph(const llama_model & model, const llm_graph_pa
 
         cur = build_layer_ffn(cur, il);
         cb(cur, "ffn_out", il);
+        if (std::getenv("CORTEX_FLASHNEXT_INTERNAL_TENSOR_DIAGNOSTICS") != nullptr) {
+            cb(cur, "diag_hc_ffn_output", il);
+            ggml_build_forward_expand(gf, cur);
+        }
 
         res_hc = build_hc_combine(res_hc, cur, inject, il);
 

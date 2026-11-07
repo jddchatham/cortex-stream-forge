@@ -7,12 +7,102 @@
 // streamed two-layer equivalence checks.
 
 #include "llama.h"
+#include "../src/llama-context.h"
 
+#include <algorithm>
+#include <fcntl.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <vector>
+
+static bool write_stock_logits(const std::string & dir, size_t index, const float * logits, size_t n, const char * prefix = "logits-select-") {
+    const std::string path = dir + "/" + prefix + std::to_string(index) + ".bin";
+    const int fd = ::open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+    if (fd < 0) { std::perror(("open " + path).c_str()); return false; }
+    const uint8_t * data = reinterpret_cast<const uint8_t *>(logits);
+    size_t bytes = n * sizeof(float), done = 0;
+    while (done < bytes) {
+        const ssize_t w = ::write(fd, data + done, bytes - done);
+        if (w <= 0) { ::close(fd); return false; }
+        done += (size_t) w;
+    }
+    return ::close(fd) == 0;
+}
+
+static bool run_stock_prompt(llama_model * model, llama_context * ctx, const char * text) {
+    const char * out_dir = std::getenv("STOCK_PROMPT_LOGITS_DIR");
+    if (out_dir == nullptr || *out_dir == '\0') {
+        std::fprintf(stderr, "STOCK_PROMPT_LOGITS_DIR must name a new directory\n"); return false;
+    }
+    if (::mkdir(out_dir, 0700) != 0) { std::perror("mkdir stock logits directory"); return false; }
+    const llama_vocab * vocab = llama_model_get_vocab(model);
+    const char * tmpl = llama_model_chat_template(model, nullptr);
+    if (tmpl == nullptr || std::strstr(tmpl, "enable_thinking") == nullptr ||
+            std::strstr(tmpl, "<think>\\n\\n</think>\\n\\n") == nullptr) {
+        std::fprintf(stderr, "stock model template lacks verified non-thinking support\n"); return false;
+    }
+    // Same literal rendering of the GGUF template's enable_thinking=false branch as QUORTEX.
+    const std::string prompt = std::string("<|im_start|>user\n") + text +
+            "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n";
+    std::fprintf(stderr, "QIES072 stock nonthinking_template=GGUF_native enable_thinking=false\n");
+    std::fprintf(stderr, "QIES072 stock formatted_prompt=%s\n", prompt.c_str());
+    const int32_t n_prompt = -llama_tokenize(vocab, prompt.c_str(), (int32_t) prompt.size(), nullptr, 0, false, true);
+    if (n_prompt <= 0 || n_prompt + 16 > (int32_t) llama_n_ctx(ctx)) {
+        std::fprintf(stderr, "stock prompt is empty or exceeds context capacity\n"); return false;
+    }
+    std::vector<llama_token> tokens((size_t) n_prompt);
+    if (llama_tokenize(vocab, prompt.c_str(), (int32_t) prompt.size(), tokens.data(), n_prompt, false, true) != n_prompt) return false;
+    std::printf("STOCK_PROMPT_TOKENS=%d IDS=", n_prompt);
+    for (int32_t i = 0; i < n_prompt; ++i) std::printf("%s%d", i ? "," : "", (int) tokens[i]);
+    std::printf("\n");
+
+    const auto decode_token = [&](llama_token token, llama_pos pos) -> const float * {
+        ctx->debug_reset_flashnext_diag_capture_counters();
+        if (std::getenv("CORTEX_FLASHNEXT_DIAG_DUMP_ROOT")) {
+            const std::string dir = std::string(std::getenv("CORTEX_FLASHNEXT_DIAG_DUMP_ROOT")) + "/p" + std::to_string(pos);
+            if (::mkdir(dir.c_str(), 0700) != 0 && errno != EEXIST) return nullptr;
+            setenv("CORTEX_FLASHNEXT_DIAG_DUMP", dir.c_str(), 1);
+        }
+        llama_batch batch = llama_batch_init(1, 0, 1);
+        batch.token[0] = token; batch.pos[0] = pos; batch.n_seq_id[0] = 1;
+        batch.seq_id[0][0] = 0; batch.logits[0] = 1; batch.n_tokens = 1;
+        const int rc = llama_decode(ctx, batch);
+        llama_synchronize(ctx);
+        llama_batch_free(batch);
+        return rc == 0 ? llama_get_logits_ith(ctx, 0) : nullptr;
+    };
+    const float * logits = nullptr;
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        logits = decode_token(tokens[i], (llama_pos) i);
+        if (!logits) { std::fprintf(stderr, "stock prompt decode failed at %zu\n", i); return false; }
+        if (!write_stock_logits(out_dir, i, logits, (size_t) llama_vocab_n_tokens(vocab))) return false;
+        std::printf("STOCK_PREFIX_COMPLETE=%zu\n", i); std::fflush(stdout);
+    }
+    const int n_vocab = llama_vocab_n_tokens(vocab);
+    uint32_t max_tokens = 1;
+    if (const char * n = std::getenv("STOCK_PROMPT_MAX_TOKENS")) {
+        max_tokens = (uint32_t) std::strtoul(n, nullptr, 10);
+        if (max_tokens == 0 || max_tokens > 16) return false;
+    }
+    std::vector<llama_token> generated;
+    for (uint32_t i = 0; i < max_tokens; ++i) {
+        llama_token best = 0;
+        for (int t = 1; t < n_vocab; ++t) if (logits[t] > logits[best]) best = t;
+        if (llama_vocab_is_eog(vocab, best)) break;
+        generated.push_back(best);
+        if (i + 1 == max_tokens) break;
+        logits = decode_token(best, (llama_pos) (tokens.size() + i));
+        if (!logits || !write_stock_logits(out_dir, i + 1, logits, (size_t) n_vocab, "logits-generated-")) return false;
+    }
+    std::printf("STOCK_GENERATED_TOKENS=%zu IDS=", generated.size());
+    for (size_t i = 0; i < generated.size(); ++i) std::printf("%s%d", i ? "," : "", (int) generated[i]);
+    std::printf("\n");
+    return true;
+}
 
 int main(int argc, char ** argv) {
     if (argc != 2) {
@@ -72,6 +162,14 @@ int main(int argc, char ** argv) {
         llama_model_free(model);
         llama_backend_free();
         return 4;
+    }
+
+    if (const char * prompt = std::getenv("STOCK_PROMPT")) {
+        const bool ok = run_stock_prompt(model, ctx, prompt);
+        llama_free(ctx);
+        llama_model_free(model);
+        llama_backend_free();
+        return ok ? 0 : 5;
     }
 
     llama_batch batch = llama_batch_init(1, 0, 1);

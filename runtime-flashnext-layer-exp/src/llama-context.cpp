@@ -1417,6 +1417,10 @@ size_t llama_context::debug_copy_flashnext_tensor(const char * name, void * dst,
     return it->second.size();
 }
 
+void llama_context::debug_reset_flashnext_diag_capture_counters() {
+    for (auto & entry : flashnext_diag_print_count) entry.second = 0;
+}
+
 size_t llama_context::debug_copy_flashnext_layer0_boundary(float * dst, size_t capacity) const {
     constexpr size_t elements = 2560 + 10240 + 4;
     constexpr size_t bytes = elements * sizeof(float);
