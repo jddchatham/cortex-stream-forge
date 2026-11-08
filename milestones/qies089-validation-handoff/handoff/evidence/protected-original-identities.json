@@ -1,0 +1,260 @@
+{
+  "source_sha": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "sha256": {
+    "qies077-guard.py": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2",
+    "qies079-measure-memory.py": "d2366a50effa359b858186b9acee1aacf19fe4d7f2b041595b33f0b6bd2eddfb",
+    "qies080-run-headless.sh": "133e8f33a52e1856eef27787fd2e727f76aac61a5047e92ce4db297e7ee1ee64",
+    "cortex-stream-forge-qies074/build-quortex/bin/quortex": "329ebd647b04a2d6464461ddd94fc07a2691a948b2918d320ac1eb3703f9c101",
+    "cortex-stream-forge-qies074/flashnext-tensor-index.json": "bc78052954dc3ab6d37ad189a2643c68cc8ad6ecfab5a6bb76361dc0b94f22c7",
+    "qies075-data/models/flashnext-tensor-index.local.json": "e6766dd25a3942216bcac35c4e6731c370836622464b7abb8627d08e8e0f0242",
+    "qies075-data/outputs/20261107-083141-efe63add/logits-select-0.bin": "bb796a4131b858e2a692ab8e7faf2dedc14fcc269272c056bfece80e52dd0cdf",
+    "qies075-data/outputs/20261107-083141-efe63add/logits-select-1.bin": "6d82281115bf3d3a48606bb4f4915c7f2fd252f2c48343306123932820549fdf",
+    "cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3": "77d90abebddc1467fbcd8a31949a9d056c677382c14e9ea32fa0a1027611f449",
+    "cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3": "1c56b25a1d87db8beeb150fb7d1c80f3334f3859a2fd6e6262cd417635e39f54",
+    "cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3": "1f2380dce5820582130cc49e495f72d2f9b4d0e9465233416ef6d6f021c2354c",
+    "cortex-stream-forge-qies074/build-quortex/bin/libllama.so.0.5.0": "ec9aa57e2fdbbd74cf8c82e0ae550fe253a923376f6a991b3c20415645ed5c89"
+  },
+  "state_inventory": [
+    {
+      "file": "state-layer-0.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063177440934005
+    },
+    {
+      "file": "state-layer-1.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063178807940769
+    },
+    {
+      "file": "state-layer-10.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063188161987565
+    },
+    {
+      "file": "state-layer-11.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063188997991790
+    },
+    {
+      "file": "state-layer-12.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063190112997437
+    },
+    {
+      "file": "state-layer-13.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063191182002862
+    },
+    {
+      "file": "state-layer-14.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063192292008507
+    },
+    {
+      "file": "state-layer-15.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063193193013098
+    },
+    {
+      "file": "state-layer-16.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063194273018612
+    },
+    {
+      "file": "state-layer-17.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063195407024414
+    },
+    {
+      "file": "state-layer-18.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063196521030126
+    },
+    {
+      "file": "state-layer-19.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063197431034801
+    },
+    {
+      "file": "state-layer-2.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063179901946196
+    },
+    {
+      "file": "state-layer-20.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063198536040489
+    },
+    {
+      "file": "state-layer-21.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063199669046334
+    },
+    {
+      "file": "state-layer-22.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063200781052082
+    },
+    {
+      "file": "state-layer-23.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063201644056551
+    },
+    {
+      "file": "state-layer-24.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063202729062181
+    },
+    {
+      "file": "state-layer-25.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063203813067816
+    },
+    {
+      "file": "state-layer-26.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063204917073567
+    },
+    {
+      "file": "state-layer-27.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063205780078072
+    },
+    {
+      "file": "state-layer-28.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063206819083505
+    },
+    {
+      "file": "state-layer-29.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063207919089267
+    },
+    {
+      "file": "state-layer-3.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063180798950655
+    },
+    {
+      "file": "state-layer-30.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063209002094952
+    },
+    {
+      "file": "state-layer-31.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063209848099401
+    },
+    {
+      "file": "state-layer-32.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063210958105248
+    },
+    {
+      "file": "state-layer-33.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063212047110996
+    },
+    {
+      "file": "state-layer-34.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063213121116676
+    },
+    {
+      "file": "state-layer-35.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063214004121354
+    },
+    {
+      "file": "state-layer-36.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063215037126837
+    },
+    {
+      "file": "state-layer-37.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063216150132755
+    },
+    {
+      "file": "state-layer-38.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063217192138307
+    },
+    {
+      "file": "state-layer-39.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063218012142682
+    },
+    {
+      "file": "state-layer-4.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063181871956000
+    },
+    {
+      "file": "state-layer-40.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063219102148509
+    },
+    {
+      "file": "state-layer-41.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063220190154336
+    },
+    {
+      "file": "state-layer-42.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063221280160186
+    },
+    {
+      "file": "state-layer-43.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063222216165217
+    },
+    {
+      "file": "state-layer-44.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063223264170861
+    },
+    {
+      "file": "state-layer-45.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063224367176811
+    },
+    {
+      "file": "state-layer-46.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063225399182389
+    },
+    {
+      "file": "state-layer-47.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063226231186893
+    },
+    {
+      "file": "state-layer-5.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063182961961441
+    },
+    {
+      "file": "state-layer-6.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063184042966849
+    },
+    {
+      "file": "state-layer-7.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063184895971125
+    },
+    {
+      "file": "state-layer-8.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063185973976539
+    },
+    {
+      "file": "state-layer-9.bin",
+      "bytes": 118870628,
+      "mtime_ns": 1794063187074982081
+    }
+  ],
+  "note": "Baseline retained in original directories; only read, no overwrite or chmod."
+}

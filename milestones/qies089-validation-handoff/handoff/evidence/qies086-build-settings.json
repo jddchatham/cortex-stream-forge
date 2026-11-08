@@ -1,0 +1,27 @@
+{
+  "cortex-stream-forge-qies074": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+    "GGML_CUDA": "OFF",
+    "GGML_CPU_REPACK": "ON",
+    "LLAMA_BUILD_EXAMPLES": "ON",
+    "LLAMA_BUILD_TOOLS": "OFF",
+    "LLAMA_BUILD_SERVER": "OFF",
+    "LLAMA_BUILD_APP": "OFF",
+    "LLAMA_BUILD_TESTS": "OFF"
+  },
+  "qies086-worktree": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+    "GGML_CUDA": "OFF",
+    "GGML_CPU_REPACK": "ON",
+    "LLAMA_BUILD_EXAMPLES": "ON",
+    "LLAMA_BUILD_TOOLS": "OFF",
+    "LLAMA_BUILD_SERVER": "OFF",
+    "LLAMA_BUILD_APP": "OFF",
+    "LLAMA_BUILD_TESTS": "OFF"
+  },
+  "matching_requested_settings": true,
+  "compiler": "c++ (GCC) 16.2.1 20260810",
+  "cmake": "cmake version 4.4.4"
+}

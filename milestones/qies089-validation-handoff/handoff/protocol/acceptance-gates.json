@@ -1,0 +1,18 @@
+{
+  "source_identity": "PASS_STATIC",
+  "controlled_build_reproduction": "PASS_NO_INFERENCE",
+  "oracle_runtime_qualification": "BLOCKED_NOT_RUN",
+  "original_golden_recovery": "BLOCKED_UNAVAILABLE",
+  "new_golden_generation": "BLOCKED_NOT_RUN",
+  "target_6GiB_admission": "BLOCKED_NOT_OBSERVED_NO_LOCAL_RETRY",
+  "model_identity_on_target": "BLOCKED_REQUIRES_TARGET_HASHES",
+  "guard_adapter": "BLOCKED_NOT_IMPLEMENTED_OR_VALIDATED",
+  "exact_layer_and_logits": "BLOCKED_NO_FIXTURES",
+  "multi_token_continuity": "BLOCKED_NOT_RUN",
+  "checkpoint_resume": "BLOCKED_HARNESS_MISSING",
+  "rollback_retry_invalid_access": "BLOCKED_HARNESS_MISSING",
+  "PSS_phase_observer": "BLOCKED_NOT_VALIDATED",
+  "three_trials_per_build": "BLOCKED_NOT_RUN",
+  "memory_or_performance_acceptance": "BLOCKED_UNMEASURED",
+  "merge": "NO_GO"
+}

@@ -1,0 +1,11 @@
+{
+  "baseline": {
+    "sha256": "329ebd647b04a2d6464461ddd94fc07a2691a948b2918d320ac1eb3703f9c101"
+  },
+  "candidate": {
+    "sha256": "952eb2e92a657fba693b27dc9bd9fd55a86c0003848a0cd2453adc25d92f70e2"
+  },
+  "stock": {
+    "sha256": "6a29bf69f5976e9f4bd0e6df8e351336e4b52ca93d492d7e66bd82ee8cb22963"
+  }
+}

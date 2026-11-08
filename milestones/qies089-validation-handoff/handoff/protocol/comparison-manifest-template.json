@@ -1,0 +1,8 @@
+{
+  "schema": "QIES089-byte-pairs-v1",
+  "oracle_status": "BLOCKED_NOT_QUALIFIED",
+  "oracle_role": "NEW_STOCK_REFERENCE",
+  "oracle_executable_sha256": null,
+  "qualification_receipt_sha256": null,
+  "pairs": []
+}

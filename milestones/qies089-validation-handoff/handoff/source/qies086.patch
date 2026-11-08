@@ -1,0 +1,20 @@
+diff --git i/runtime-flashnext-layer-exp/examples/flashnext-chat.cpp w/runtime-flashnext-layer-exp/examples/flashnext-chat.cpp
+index 99a452b..bf951b6 100644
+--- i/runtime-flashnext-layer-exp/examples/flashnext-chat.cpp
++++ w/runtime-flashnext-layer-exp/examples/flashnext-chat.cpp
+@@ -372,7 +372,6 @@ struct flashnext_transaction_context {
+     llama_context * ctx = nullptr;
+     flashnext_tensor_index * tensor_index = nullptr;
+     flashnext_layer_descriptor layer_desc;
+-    std::vector<uint8_t> staged_state;
+     flashnext_layer_transaction values;
+     std::array<float, 2560 * 4> output{};
+     std::array<int32_t, 10> selected_ids{};
+@@ -533,7 +532,6 @@ static layer_transaction_result run_layer_transaction(
+ 
+     flashnext_transaction_context txc;
+     txc.ctx = ctx;
+-    txc.staged_state = result.state_before;
+     std::string error;
+     if (!resolve_flashnext_layer_descriptor(ctx, layer, txc.layer_desc, error)) {
+         result.failure_stage = "layer_descriptor";

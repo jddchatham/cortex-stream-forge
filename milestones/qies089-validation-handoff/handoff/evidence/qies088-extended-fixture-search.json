@@ -1,0 +1,28 @@
+{
+  "roots": [
+    "/home/user",
+    "/mnt",
+    "/media",
+    "/opt"
+  ],
+  "excluded_names": [
+    ".cargo",
+    ".git",
+    ".npm",
+    ".rustup",
+    "cache",
+    "node_modules",
+    "venv"
+  ],
+  "tensor_hits": [
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies075-data/outputs/20261107-083141-efe63add/logits-select-0.bin",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies075-data/outputs/20261107-083141-efe63add/logits-select-1.bin"
+  ],
+  "archives": [
+    "/home/user/.cache/yay/thorium-browser-bin/thorium-browser-bin-138.0.7204.303-3-x86_64.pkg.tar.zst"
+  ],
+  "historical_stock_binary_hash": "eda8ceefc94f296a66d217b79d0aba64317b5f24295b822e086e7d3736169fb2",
+  "elf_files_hashed": 32,
+  "historical_stock_binary_matches": [],
+  "errors": []
+}

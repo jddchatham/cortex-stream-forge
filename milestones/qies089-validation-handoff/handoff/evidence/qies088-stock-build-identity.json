@@ -1,0 +1,49 @@
+{
+  "source": "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/runtime-flashnext-layer-exp/examples/flashnext-stock-two-layer.cpp",
+  "source_sha256": "e169159b26d68409c178bc8fbe496fc5582e240c8c9ff6804e78ac2385c8b35f",
+  "binary": "/home/user/PandaCode Bots/meatball-84ccea00/qies088-investigation/stock-build/stock-reference-candidate",
+  "binary_sha256": "6a29bf69f5976e9f4bd0e6df8e351336e4b52ca93d492d7e66bd82ee8cb22963",
+  "usage_exit": 2,
+  "commands": [
+    [
+      "/usr/bin/c++",
+      "-DGGML_BACKEND_SHARED",
+      "-DGGML_SHARED",
+      "-DGGML_USE_CPU",
+      "-DLLAMA_SHARED",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/runtime-flashnext-layer-exp/examples/../src",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/runtime-flashnext-layer-exp/src/../include",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/runtime-flashnext-layer-exp/ggml/src/../include",
+      "-O3",
+      "-DNDEBUG",
+      "-Wmissing-declarations",
+      "-Wmissing-noreturn",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wcast-qual",
+      "-Wno-unused-function",
+      "-Wno-array-bounds",
+      "-Wextra-semi",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies088-investigation/stock-build/stock.o",
+      "-c",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/runtime-flashnext-layer-exp/examples/flashnext-stock-two-layer.cpp"
+    ],
+    [
+      "/usr/bin/c++",
+      "-O3",
+      "-DNDEBUG",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies088-investigation/stock-build/stock.o",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies088-investigation/stock-build/stock-reference-candidate",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libllama.so.0.5.0",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3"
+    ]
+  ],
+  "inference_executed": false,
+  "historically_verified_oracle": false
+}
