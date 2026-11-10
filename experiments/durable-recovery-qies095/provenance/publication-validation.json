@@ -1,0 +1,9 @@
+{
+  "base_commit": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "fresh_test_groups": 23,
+  "fresh_fault_outcomes": 557,
+  "original_source_sha256_verified": true,
+  "runtime_qualified": false,
+  "engine_modified": false,
+  "inference_executed": false
+}

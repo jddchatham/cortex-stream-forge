@@ -1,0 +1,994 @@
+{
+  "faults": {
+    "boundaries": 42,
+    "outcomes": 84,
+    "receipts": [
+      {
+        "cut": 1,
+        "boundary": "scan.read:identity",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 1,
+        "boundary": "scan.read:identity",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 2,
+        "boundary": "scan.names",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 2,
+        "boundary": "scan.names",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 3,
+        "boundary": "scan.read:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 3,
+        "boundary": "scan.read:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 4,
+        "boundary": "scan.read:commit-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 4,
+        "boundary": "scan.read:commit-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 5,
+        "boundary": "scan.read:checkpoint-000-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 5,
+        "boundary": "scan.read:checkpoint-000-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 6,
+        "boundary": "before.append",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 6,
+        "boundary": "before.append",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 7,
+        "boundary": "before.write:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 7,
+        "boundary": "before.write:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 8,
+        "boundary": "mid.write:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 8,
+        "boundary": "mid.write:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": false,
+        "torn": true
+      },
+      {
+        "cut": 9,
+        "boundary": "after.write:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 9,
+        "boundary": "after.write:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 10,
+        "boundary": "after.close:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 10,
+        "boundary": "after.close:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 11,
+        "boundary": "before.fsync:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 11,
+        "boundary": "before.fsync:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 12,
+        "boundary": "after.fsync:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 12,
+        "boundary": "after.fsync:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 13,
+        "boundary": "decision.durable",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 13,
+        "boundary": "decision.durable",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 14,
+        "boundary": "scan.read:identity",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 14,
+        "boundary": "scan.read:identity",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 15,
+        "boundary": "scan.names",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 15,
+        "boundary": "scan.names",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 16,
+        "boundary": "scan.read:journal",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 16,
+        "boundary": "scan.read:journal",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 17,
+        "boundary": "scan.frame",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 17,
+        "boundary": "scan.frame",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 18,
+        "boundary": "scan.read:commit-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 18,
+        "boundary": "scan.read:commit-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 19,
+        "boundary": "scan.read:checkpoint-000-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 19,
+        "boundary": "scan.read:checkpoint-000-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 20,
+        "boundary": "scan.names",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 20,
+        "boundary": "scan.names",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 21,
+        "boundary": "before.write:checkpoint-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 21,
+        "boundary": "before.write:checkpoint-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 22,
+        "boundary": "mid.write:checkpoint-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 22,
+        "boundary": "mid.write:checkpoint-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 23,
+        "boundary": "after.write:checkpoint-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 23,
+        "boundary": "after.write:checkpoint-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 24,
+        "boundary": "after.close:checkpoint-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 24,
+        "boundary": "after.close:checkpoint-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 25,
+        "boundary": "before.fsync:checkpoint-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 25,
+        "boundary": "before.fsync:checkpoint-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 26,
+        "boundary": "after.fsync:checkpoint-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 26,
+        "boundary": "after.fsync:checkpoint-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 27,
+        "boundary": "before.rename:checkpoint-001-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 27,
+        "boundary": "before.rename:checkpoint-001-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 28,
+        "boundary": "after.rename:checkpoint-001-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 28,
+        "boundary": "after.rename:checkpoint-001-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 29,
+        "boundary": "before.dirsync",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 29,
+        "boundary": "before.dirsync",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 30,
+        "boundary": "after.dirsync",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 30,
+        "boundary": "after.dirsync",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 31,
+        "boundary": "scan.read:checkpoint-001-000",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 31,
+        "boundary": "scan.read:checkpoint-001-000",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 32,
+        "boundary": "before.write:commit-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 32,
+        "boundary": "before.write:commit-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 33,
+        "boundary": "mid.write:commit-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 33,
+        "boundary": "mid.write:commit-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 34,
+        "boundary": "after.write:commit-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 34,
+        "boundary": "after.write:commit-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 35,
+        "boundary": "after.close:commit-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 35,
+        "boundary": "after.close:commit-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 36,
+        "boundary": "before.fsync:commit-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 36,
+        "boundary": "before.fsync:commit-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 37,
+        "boundary": "after.fsync:commit-001-000.tmp",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 37,
+        "boundary": "after.fsync:commit-001-000.tmp",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 38,
+        "boundary": "before.rename:commit-001",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 38,
+        "boundary": "before.rename:commit-001",
+        "retain_unsynced": true,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 39,
+        "boundary": "after.rename:commit-001",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 39,
+        "boundary": "after.rename:commit-001",
+        "retain_unsynced": true,
+        "position": 1,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 40,
+        "boundary": "before.dirsync",
+        "retain_unsynced": false,
+        "position": 0,
+        "pending": true,
+        "torn": false
+      },
+      {
+        "cut": 40,
+        "boundary": "before.dirsync",
+        "retain_unsynced": true,
+        "position": 1,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 41,
+        "boundary": "after.dirsync",
+        "retain_unsynced": false,
+        "position": 1,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 41,
+        "boundary": "after.dirsync",
+        "retain_unsynced": true,
+        "position": 1,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 42,
+        "boundary": "coordinator.committed",
+        "retain_unsynced": false,
+        "position": 1,
+        "pending": false,
+        "torn": false
+      },
+      {
+        "cut": 42,
+        "boundary": "coordinator.committed",
+        "retain_unsynced": true,
+        "position": 1,
+        "pending": false,
+        "torn": false
+      }
+    ]
+  },
+  "recovery_scan_faults": 8,
+  "capacity": {
+    "max_tokens": 64,
+    "files": 132,
+    "logical_bytes": 113366
+  },
+  "io_errors": 28,
+  "sigkill": [
+    {
+      "cut": 6,
+      "boundary": "before.append",
+      "position": 0,
+      "pending": false,
+      "torn": false
+    },
+    {
+      "cut": 7,
+      "boundary": "before.write:journal",
+      "position": 0,
+      "pending": false,
+      "torn": false
+    },
+    {
+      "cut": 8,
+      "boundary": "mid.write:journal",
+      "position": 0,
+      "pending": false,
+      "torn": true
+    },
+    {
+      "cut": 9,
+      "boundary": "after.write:journal",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 10,
+      "boundary": "after.close:journal",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 11,
+      "boundary": "before.fsync:journal",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 12,
+      "boundary": "after.fsync:journal",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 13,
+      "boundary": "decision.durable",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 21,
+      "boundary": "before.write:checkpoint-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 22,
+      "boundary": "mid.write:checkpoint-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 23,
+      "boundary": "after.write:checkpoint-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 24,
+      "boundary": "after.close:checkpoint-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 25,
+      "boundary": "before.fsync:checkpoint-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 26,
+      "boundary": "after.fsync:checkpoint-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 27,
+      "boundary": "before.rename:checkpoint-001-000",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 28,
+      "boundary": "after.rename:checkpoint-001-000",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 29,
+      "boundary": "before.dirsync",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 30,
+      "boundary": "after.dirsync",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 32,
+      "boundary": "before.write:commit-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 33,
+      "boundary": "mid.write:commit-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 34,
+      "boundary": "after.write:commit-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 35,
+      "boundary": "after.close:commit-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 36,
+      "boundary": "before.fsync:commit-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 37,
+      "boundary": "after.fsync:commit-001-000.tmp",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 38,
+      "boundary": "before.rename:commit-001",
+      "position": 0,
+      "pending": true,
+      "torn": false
+    },
+    {
+      "cut": 39,
+      "boundary": "after.rename:commit-001",
+      "position": 1,
+      "pending": false,
+      "torn": false
+    },
+    {
+      "cut": 40,
+      "boundary": "before.dirsync",
+      "position": 1,
+      "pending": false,
+      "torn": false
+    },
+    {
+      "cut": 41,
+      "boundary": "after.dirsync",
+      "position": 1,
+      "pending": false,
+      "torn": false
+    },
+    {
+      "cut": 42,
+      "boundary": "coordinator.committed",
+      "position": 1,
+      "pending": false,
+      "torn": false
+    }
+  ],
+  "initialization_faults": 76,
+  "mixed_persistence": {
+    "outcomes": 84,
+    "explicit_rejections": 0
+  },
+  "repeated_recovery_memory": {
+    "iterations": 1000,
+    "current": 3066,
+    "peak": 15410,
+    "recorded_hook_events": 0
+  },
+  "benchmark": {
+    "tokens": 32,
+    "journal_prepare_including_recovery": {
+      "min_ms": 3.362804,
+      "median_ms": 23.255215999999997,
+      "max_ms": 47.718281
+    },
+    "checkpoint_publish_including_recovery": {
+      "min_ms": 12.719253,
+      "median_ms": 30.853019500000002,
+      "max_ms": 51.453864
+    },
+    "recovery_scan": {
+      "min_ms": 2.466386,
+      "median_ms": 20.690022499999998,
+      "max_ms": 40.203427
+    },
+    "journal_write_and_sync": {
+      "min_ms": 2.211851,
+      "median_ms": 2.8118675,
+      "max_ms": 3.765659
+    },
+    "checkpoint_publish_only": {
+      "min_ms": 10.349224,
+      "median_ms": 11.485463,
+      "max_ms": 15.844915
+    },
+    "memory_before": {
+      "VmHWM": 24670208,
+      "VmRSS": 24670208,
+      "RssAnon": 13262848,
+      "Pss": 16620544,
+      "Private_Dirty": 13262848,
+      "MemAvailable": 4179337216,
+      "cgroup_memory.current": 4104892416,
+      "cgroup_memory.peak": 4268040192,
+      "cgroup_memory.swap.current": 42606592
+    },
+    "memory_after": {
+      "VmHWM": 24760320,
+      "VmRSS": 24760320,
+      "RssAnon": 13287424,
+      "Pss": 16661504,
+      "Private_Dirty": 13287424,
+      "MemAvailable": 4259774464,
+      "cgroup_memory.current": 4022005760,
+      "cgroup_memory.peak": 4268040192,
+      "cgroup_memory.swap.current": 42606592
+    },
+    "max_observed_RssAnon": 13287424,
+    "max_observed_Pss": 16661504,
+    "tracemalloc_incremental_current": 78410,
+    "tracemalloc_peak": 746443,
+    "logical_growth_per_token": [
+      1659,
+      1661,
+      1663,
+      1666,
+      1668,
+      1670,
+      1672,
+      1674,
+      1676,
+      1681,
+      1686,
+      1689,
+      1692,
+      1695,
+      1698,
+      1701,
+      1704,
+      1707,
+      1710,
+      1713,
+      1716,
+      1719,
+      1722,
+      1725,
+      1728,
+      1731,
+      1734,
+      1737,
+      1740,
+      1743,
+      1746,
+      1749
+    ],
+    "logical_total": 55784,
+    "allocated_total": 286720,
+    "retained_files": 69
+  }
+}

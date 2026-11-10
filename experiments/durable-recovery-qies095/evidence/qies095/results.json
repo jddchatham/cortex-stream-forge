@@ -1,0 +1,2129 @@
+{
+  "restart_points": [
+    {
+      "checkpoint": 0,
+      "replayed": 12,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 1,
+      "replayed": 11,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 2,
+      "replayed": 10,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 3,
+      "replayed": 9,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 4,
+      "replayed": 8,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 5,
+      "replayed": 7,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 6,
+      "replayed": 6,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 7,
+      "replayed": 5,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 8,
+      "replayed": 4,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 9,
+      "replayed": 3,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 10,
+      "replayed": 2,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 11,
+      "replayed": 1,
+      "authoritative_position": 12,
+      "pending_token": 50
+    },
+    {
+      "checkpoint": 12,
+      "replayed": 0,
+      "authoritative_position": 12,
+      "pending_token": 50
+    }
+  ],
+  "coordinator_faults": [
+    {
+      "cut": 1,
+      "boundary": "before.selection",
+      "survive": false,
+      "position": 4,
+      "pending": false,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 1,
+      "boundary": "before.selection",
+      "survive": true,
+      "position": 4,
+      "pending": false,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 2,
+      "boundary": "after.selection",
+      "survive": false,
+      "position": 4,
+      "pending": false,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 2,
+      "boundary": "after.selection",
+      "survive": true,
+      "position": 4,
+      "pending": false,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 3,
+      "boundary": "before.journal_sync",
+      "survive": false,
+      "position": 4,
+      "pending": false,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 3,
+      "boundary": "before.journal_sync",
+      "survive": true,
+      "position": 4,
+      "pending": false,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 4,
+      "boundary": "after.journal_sync",
+      "survive": false,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 4,
+      "boundary": "after.journal_sync",
+      "survive": true,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 5,
+      "boundary": "before.output",
+      "survive": false,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 5,
+      "boundary": "before.output",
+      "survive": true,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 0
+    },
+    {
+      "cut": 6,
+      "boundary": "after.output",
+      "survive": false,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 6,
+      "boundary": "after.output",
+      "survive": true,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 7,
+      "boundary": "before.evaluation",
+      "survive": false,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 7,
+      "boundary": "before.evaluation",
+      "survive": true,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 8,
+      "boundary": "after.evaluation",
+      "survive": false,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 8,
+      "boundary": "after.evaluation",
+      "survive": true,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 9,
+      "boundary": "before.checkpoint_publication",
+      "survive": false,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 9,
+      "boundary": "before.checkpoint_publication",
+      "survive": true,
+      "position": 4,
+      "pending": true,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 10,
+      "boundary": "after.checkpoint_publication",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 10,
+      "boundary": "after.checkpoint_publication",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 11,
+      "boundary": "before.replay",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 11,
+      "boundary": "before.replay",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 12,
+      "boundary": "after.replay_restore",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 12,
+      "boundary": "after.replay_restore",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 13,
+      "boundary": "before.replay_step:0",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 13,
+      "boundary": "before.replay_step:0",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 14,
+      "boundary": "after.replay_step:0",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 14,
+      "boundary": "after.replay_step:0",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 15,
+      "boundary": "before.replay_step:1",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 15,
+      "boundary": "before.replay_step:1",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 16,
+      "boundary": "after.replay_step:1",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 16,
+      "boundary": "after.replay_step:1",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 17,
+      "boundary": "before.replay_step:2",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 17,
+      "boundary": "before.replay_step:2",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 18,
+      "boundary": "after.replay_step:2",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 18,
+      "boundary": "after.replay_step:2",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 19,
+      "boundary": "before.replay_step:3",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 19,
+      "boundary": "before.replay_step:3",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 20,
+      "boundary": "after.replay_step:3",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 20,
+      "boundary": "after.replay_step:3",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 21,
+      "boundary": "before.replay_step:4",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 21,
+      "boundary": "before.replay_step:4",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 22,
+      "boundary": "after.replay_step:4",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 22,
+      "boundary": "after.replay_step:4",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 23,
+      "boundary": "after.replay",
+      "survive": false,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    },
+    {
+      "cut": 23,
+      "boundary": "after.replay",
+      "survive": true,
+      "position": 5,
+      "pending": false,
+      "visible_bytes_before_restart": 5
+    }
+  ],
+  "multi_token_storage_faults": [
+    {
+      "cut": 1,
+      "boundary": "scan.read:identity",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 1,
+      "boundary": "scan.read:identity",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 2,
+      "boundary": "scan.names",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 2,
+      "boundary": "scan.names",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 3,
+      "boundary": "scan.read:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 3,
+      "boundary": "scan.read:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 4,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 4,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 5,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 5,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 6,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 6,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 7,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 7,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 8,
+      "boundary": "scan.read:commit-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 8,
+      "boundary": "scan.read:commit-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 9,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 9,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 10,
+      "boundary": "scan.read:commit-001",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 10,
+      "boundary": "scan.read:commit-001",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 11,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 11,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 12,
+      "boundary": "scan.read:commit-002",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 12,
+      "boundary": "scan.read:commit-002",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 13,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 13,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 14,
+      "boundary": "scan.read:commit-003",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 14,
+      "boundary": "scan.read:commit-003",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 15,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 15,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 16,
+      "boundary": "scan.read:commit-004",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 16,
+      "boundary": "scan.read:commit-004",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 17,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 17,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 18,
+      "boundary": "scan.read:identity",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 18,
+      "boundary": "scan.read:identity",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 19,
+      "boundary": "scan.names",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 19,
+      "boundary": "scan.names",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 20,
+      "boundary": "scan.read:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 20,
+      "boundary": "scan.read:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 21,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 21,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 22,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 22,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 23,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 23,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 24,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 24,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 25,
+      "boundary": "scan.read:commit-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 25,
+      "boundary": "scan.read:commit-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 26,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 26,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 27,
+      "boundary": "scan.read:commit-001",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 27,
+      "boundary": "scan.read:commit-001",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 28,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 28,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 29,
+      "boundary": "scan.read:commit-002",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 29,
+      "boundary": "scan.read:commit-002",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 30,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 30,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 31,
+      "boundary": "scan.read:commit-003",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 31,
+      "boundary": "scan.read:commit-003",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 32,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 32,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 33,
+      "boundary": "scan.read:commit-004",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 33,
+      "boundary": "scan.read:commit-004",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 34,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 34,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 35,
+      "boundary": "before.append",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 35,
+      "boundary": "before.append",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 36,
+      "boundary": "before.write:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 36,
+      "boundary": "before.write:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 37,
+      "boundary": "mid.write:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 37,
+      "boundary": "mid.write:journal",
+      "survive": true,
+      "position": 4,
+      "torn": true
+    },
+    {
+      "cut": 38,
+      "boundary": "after.write:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 38,
+      "boundary": "after.write:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 39,
+      "boundary": "after.close:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 39,
+      "boundary": "after.close:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 40,
+      "boundary": "before.fsync:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 40,
+      "boundary": "before.fsync:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 41,
+      "boundary": "after.fsync:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 41,
+      "boundary": "after.fsync:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 42,
+      "boundary": "decision.durable",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 42,
+      "boundary": "decision.durable",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 43,
+      "boundary": "scan.read:identity",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 43,
+      "boundary": "scan.read:identity",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 44,
+      "boundary": "scan.names",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 44,
+      "boundary": "scan.names",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 45,
+      "boundary": "scan.read:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 45,
+      "boundary": "scan.read:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 46,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 46,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 47,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 47,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 48,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 48,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 49,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 49,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 50,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 50,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 51,
+      "boundary": "scan.read:commit-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 51,
+      "boundary": "scan.read:commit-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 52,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 52,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 53,
+      "boundary": "scan.read:commit-001",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 53,
+      "boundary": "scan.read:commit-001",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 54,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 54,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 55,
+      "boundary": "scan.read:commit-002",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 55,
+      "boundary": "scan.read:commit-002",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 56,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 56,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 57,
+      "boundary": "scan.read:commit-003",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 57,
+      "boundary": "scan.read:commit-003",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 58,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 58,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 59,
+      "boundary": "scan.read:commit-004",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 59,
+      "boundary": "scan.read:commit-004",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 60,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 60,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 61,
+      "boundary": "scan.read:identity",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 61,
+      "boundary": "scan.read:identity",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 62,
+      "boundary": "scan.names",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 62,
+      "boundary": "scan.names",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 63,
+      "boundary": "scan.read:journal",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 63,
+      "boundary": "scan.read:journal",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 64,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 64,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 65,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 65,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 66,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 66,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 67,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 67,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 68,
+      "boundary": "scan.frame",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 68,
+      "boundary": "scan.frame",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 69,
+      "boundary": "scan.read:commit-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 69,
+      "boundary": "scan.read:commit-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 70,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 70,
+      "boundary": "scan.read:checkpoint-000-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 71,
+      "boundary": "scan.read:commit-001",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 71,
+      "boundary": "scan.read:commit-001",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 72,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 72,
+      "boundary": "scan.read:checkpoint-001-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 73,
+      "boundary": "scan.read:commit-002",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 73,
+      "boundary": "scan.read:commit-002",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 74,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 74,
+      "boundary": "scan.read:checkpoint-002-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 75,
+      "boundary": "scan.read:commit-003",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 75,
+      "boundary": "scan.read:commit-003",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 76,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 76,
+      "boundary": "scan.read:checkpoint-003-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 77,
+      "boundary": "scan.read:commit-004",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 77,
+      "boundary": "scan.read:commit-004",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 78,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 78,
+      "boundary": "scan.read:checkpoint-004-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 79,
+      "boundary": "scan.names",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 79,
+      "boundary": "scan.names",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 80,
+      "boundary": "before.write:checkpoint-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 80,
+      "boundary": "before.write:checkpoint-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 81,
+      "boundary": "mid.write:checkpoint-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 81,
+      "boundary": "mid.write:checkpoint-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 82,
+      "boundary": "after.write:checkpoint-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 82,
+      "boundary": "after.write:checkpoint-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 83,
+      "boundary": "after.close:checkpoint-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 83,
+      "boundary": "after.close:checkpoint-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 84,
+      "boundary": "before.fsync:checkpoint-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 84,
+      "boundary": "before.fsync:checkpoint-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 85,
+      "boundary": "after.fsync:checkpoint-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 85,
+      "boundary": "after.fsync:checkpoint-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 86,
+      "boundary": "before.rename:checkpoint-005-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 86,
+      "boundary": "before.rename:checkpoint-005-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 87,
+      "boundary": "after.rename:checkpoint-005-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 87,
+      "boundary": "after.rename:checkpoint-005-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 88,
+      "boundary": "before.dirsync",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 88,
+      "boundary": "before.dirsync",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 89,
+      "boundary": "after.dirsync",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 89,
+      "boundary": "after.dirsync",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 90,
+      "boundary": "scan.read:checkpoint-005-000",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 90,
+      "boundary": "scan.read:checkpoint-005-000",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 91,
+      "boundary": "before.write:commit-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 91,
+      "boundary": "before.write:commit-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 92,
+      "boundary": "mid.write:commit-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 92,
+      "boundary": "mid.write:commit-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 93,
+      "boundary": "after.write:commit-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 93,
+      "boundary": "after.write:commit-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 94,
+      "boundary": "after.close:commit-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 94,
+      "boundary": "after.close:commit-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 95,
+      "boundary": "before.fsync:commit-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 95,
+      "boundary": "before.fsync:commit-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 96,
+      "boundary": "after.fsync:commit-005-000.tmp",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 96,
+      "boundary": "after.fsync:commit-005-000.tmp",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 97,
+      "boundary": "before.rename:commit-005",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 97,
+      "boundary": "before.rename:commit-005",
+      "survive": true,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 98,
+      "boundary": "after.rename:commit-005",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 98,
+      "boundary": "after.rename:commit-005",
+      "survive": true,
+      "position": 5,
+      "torn": false
+    },
+    {
+      "cut": 99,
+      "boundary": "before.dirsync",
+      "survive": false,
+      "position": 4,
+      "torn": false
+    },
+    {
+      "cut": 99,
+      "boundary": "before.dirsync",
+      "survive": true,
+      "position": 5,
+      "torn": false
+    },
+    {
+      "cut": 100,
+      "boundary": "after.dirsync",
+      "survive": false,
+      "position": 5,
+      "torn": false
+    },
+    {
+      "cut": 100,
+      "boundary": "after.dirsync",
+      "survive": true,
+      "position": 5,
+      "torn": false
+    },
+    {
+      "cut": 101,
+      "boundary": "coordinator.committed",
+      "survive": false,
+      "position": 5,
+      "torn": false
+    },
+    {
+      "cut": 101,
+      "boundary": "coordinator.committed",
+      "survive": true,
+      "position": 5,
+      "torn": false
+    }
+  ],
+  "bounded_replay": {
+    "iterations": 100,
+    "tokens_in_store": 64,
+    "tracemalloc_current": 21145,
+    "tracemalloc_peak": 110550,
+    "retained_hook_events": 0
+  },
+  "measurements": [
+    {
+      "tokens": 1,
+      "journal_bytes": 295,
+      "checkpoint_bytes": 2210,
+      "receipt_bytes": 402,
+      "total_logical_bytes": 2974,
+      "total_allocated_bytes": 24576,
+      "replay_times_ms": [
+        3.684876,
+        4.172102,
+        4.907049
+      ],
+      "replay_median_ms": 4.172102,
+      "tracemalloc_current": 6291,
+      "tracemalloc_peak": 670372,
+      "memory_before": {
+        "VmHWM": 24850432,
+        "VmRSS": 24850432,
+        "RssAnon": 13373440,
+        "Pss": 16765952
+      },
+      "memory_observations": [
+        {
+          "VmHWM": 24850432,
+          "VmRSS": 24850432,
+          "RssAnon": 13373440,
+          "Pss": 16765952
+        },
+        {
+          "VmHWM": 24850432,
+          "VmRSS": 24850432,
+          "RssAnon": 13373440,
+          "Pss": 16765952
+        },
+        {
+          "VmHWM": 24850432,
+          "VmRSS": 24850432,
+          "RssAnon": 13373440,
+          "Pss": 16765952
+        }
+      ]
+    },
+    {
+      "tokens": 4,
+      "journal_bytes": 1182,
+      "checkpoint_bytes": 5646,
+      "receipt_bytes": 1098,
+      "total_logical_bytes": 7993,
+      "total_allocated_bytes": 49152,
+      "replay_times_ms": [
+        9.787618,
+        8.521985,
+        11.430968
+      ],
+      "replay_median_ms": 9.787618,
+      "tracemalloc_current": 8018,
+      "tracemalloc_peak": 672222,
+      "memory_before": {
+        "VmHWM": 24858624,
+        "VmRSS": 24858624,
+        "RssAnon": 13381632,
+        "Pss": 16774144
+      },
+      "memory_observations": [
+        {
+          "VmHWM": 24858624,
+          "VmRSS": 24858624,
+          "RssAnon": 13381632,
+          "Pss": 16774144
+        },
+        {
+          "VmHWM": 24858624,
+          "VmRSS": 24858624,
+          "RssAnon": 13381632,
+          "Pss": 16774144
+        },
+        {
+          "VmHWM": 24858624,
+          "VmRSS": 24858624,
+          "RssAnon": 13381632,
+          "Pss": 16774144
+        }
+      ]
+    },
+    {
+      "tokens": 8,
+      "journal_bytes": 2365,
+      "checkpoint_bytes": 10282,
+      "receipt_bytes": 2026,
+      "total_logical_bytes": 14740,
+      "total_allocated_bytes": 81920,
+      "replay_times_ms": [
+        17.332712,
+        15.978329,
+        18.963449
+      ],
+      "replay_median_ms": 17.332712,
+      "tracemalloc_current": 9454,
+      "tracemalloc_peak": 674119,
+      "memory_before": {
+        "VmHWM": 24866816,
+        "VmRSS": 24866816,
+        "RssAnon": 13389824,
+        "Pss": 16782336
+      },
+      "memory_observations": [
+        {
+          "VmHWM": 24866816,
+          "VmRSS": 24866816,
+          "RssAnon": 13389824,
+          "Pss": 16782336
+        },
+        {
+          "VmHWM": 24866816,
+          "VmRSS": 24866816,
+          "RssAnon": 13389824,
+          "Pss": 16782336
+        },
+        {
+          "VmHWM": 24866816,
+          "VmRSS": 24866816,
+          "RssAnon": 13389824,
+          "Pss": 16782336
+        }
+      ]
+    },
+    {
+      "tokens": 16,
+      "journal_bytes": 4743,
+      "checkpoint_bytes": 19734,
+      "receipt_bytes": 3889,
+      "total_logical_bytes": 28433,
+      "total_allocated_bytes": 151552,
+      "replay_times_ms": [
+        31.925177,
+        32.604921,
+        33.485912
+      ],
+      "replay_median_ms": 32.604921,
+      "tracemalloc_current": 12630,
+      "tracemalloc_peak": 678155,
+      "memory_before": {
+        "VmHWM": 24870912,
+        "VmRSS": 24870912,
+        "RssAnon": 13393920,
+        "Pss": 16786432
+      },
+      "memory_observations": [
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        },
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        },
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        }
+      ]
+    },
+    {
+      "tokens": 32,
+      "journal_bytes": 9504,
+      "checkpoint_bytes": 39341,
+      "receipt_bytes": 7617,
+      "total_logical_bytes": 56529,
+      "total_allocated_bytes": 286720,
+      "replay_times_ms": [
+        71.990259,
+        77.048905,
+        72.128025
+      ],
+      "replay_median_ms": 72.128025,
+      "tracemalloc_current": 20005,
+      "tracemalloc_peak": 686713,
+      "memory_before": {
+        "VmHWM": 24870912,
+        "VmRSS": 24870912,
+        "RssAnon": 13393920,
+        "Pss": 16786432
+      },
+      "memory_observations": [
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        },
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        },
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        }
+      ]
+    },
+    {
+      "tokens": 64,
+      "journal_bytes": 19020,
+      "checkpoint_bytes": 81209,
+      "receipt_bytes": 15073,
+      "total_logical_bytes": 115369,
+      "total_allocated_bytes": 557056,
+      "replay_times_ms": [
+        153.196218,
+        164.826912,
+        177.268437
+      ],
+      "replay_median_ms": 164.826912,
+      "tracemalloc_current": 27377,
+      "tracemalloc_peak": 699492,
+      "memory_before": {
+        "VmHWM": 24870912,
+        "VmRSS": 24870912,
+        "RssAnon": 13393920,
+        "Pss": 16786432
+      },
+      "memory_observations": [
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        },
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        },
+        {
+          "VmHWM": 24870912,
+          "VmRSS": 24870912,
+          "RssAnon": 13393920,
+          "Pss": 16786432
+        }
+      ]
+    }
+  ]
+}

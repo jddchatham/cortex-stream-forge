@@ -1,0 +1,15 @@
+test_01_multitoken_all_restart_points (__main__.ReplayTests.test_01_multitoken_all_restart_points) ... ok
+test_02_interrupted_boundary_matrix (__main__.ReplayTests.test_02_interrupted_boundary_matrix) ... ok
+test_03_storage_faults_after_multiple_tokens (__main__.ReplayTests.test_03_storage_faults_after_multiple_tokens) ... ok
+test_04_partial_output (__main__.ReplayTests.test_04_partial_output) ... ok
+test_04b_no_implicit_output_retry (__main__.ReplayTests.test_04b_no_implicit_output_retry) ... ok
+test_05_engine_drift_and_corruption (__main__.ReplayTests.test_05_engine_drift_and_corruption) ... ok
+test_06_replay_does_not_reselect (__main__.ReplayTests.test_06_replay_does_not_reselect) ... ok
+test_07_streaming_and_bounds (__main__.ReplayTests.test_07_streaming_and_bounds) ... ok
+test_08_real_restart (__main__.ReplayTests.test_08_real_restart) ... ok
+test_09_measurements (__main__.ReplayTests.test_09_measurements) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 17.296s
+
+OK

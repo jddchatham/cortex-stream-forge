@@ -1,0 +1,18 @@
+test_01_pending_and_continuation (__main__.RecoveryTests.test_01_pending_and_continuation) ... ok
+test_02_every_crash_boundary (__main__.RecoveryTests.test_02_every_crash_boundary) ... ok
+test_03_recovery_scan_interruption (__main__.RecoveryTests.test_03_recovery_scan_interruption) ... ok
+test_04_corruption_rejected (__main__.RecoveryTests.test_04_corruption_rejected) ... ok
+test_05_torn_tail_refusal (__main__.RecoveryTests.test_05_torn_tail_refusal) ... ok
+test_06_capacity (__main__.RecoveryTests.test_06_capacity) ... ok
+test_07_io_errors (__main__.RecoveryTests.test_07_io_errors) ... ok
+test_08_process_termination (__main__.RecoveryTests.test_08_process_termination) ... ok
+test_09_real_lock_and_writes (__main__.RecoveryTests.test_09_real_lock_and_writes) ... ok
+test_10_initialization_faults (__main__.RecoveryTests.test_10_initialization_faults) ... ok
+test_10b_mixed_persistence (__main__.RecoveryTests.test_10b_mixed_persistence) ... ok
+test_10c_bounded_observers (__main__.RecoveryTests.test_10c_bounded_observers) ... ok
+test_11_benchmark (__main__.RecoveryTests.test_11_benchmark) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 6.146s
+
+OK

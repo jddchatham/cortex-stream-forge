@@ -1,0 +1,35 @@
+{
+  "branch": "development/continuous-generation",
+  "HEAD": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "tracked_engine_diff": "EMPTY",
+  "qies094_original_and_archive_files_verified": 701,
+  "qies094_fault_outcomes": 309,
+  "qies095_fault_outcomes": 248,
+  "test_groups": 23,
+  "successful_combined_run": "complete-wil19L",
+  "protected": {
+    "source_cli": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies090-worktree/runtime-flashnext-layer-exp/examples/flashnext-chat.cpp",
+      "sha256": "62fd09e0bbcd132b9fe04c87a9cb8e73572e8c0c3944db123cff02a9abd4e2b7"
+    },
+    "source_helper": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies090-worktree/runtime-flashnext-layer-exp/examples/flashnext-generation.h",
+      "sha256": "a0998f749bb3d6f826be91d34ded7c0beb1cdd8eb1048f46d5a0f230ccd3a4c4"
+    },
+    "source_tests": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies090-worktree/runtime-flashnext-layer-exp/tests/test-flashnext-generation.cpp",
+      "sha256": "56c4fefd7243f5bb0837e607a5e72413070e35834a6db95aa1bc5def8e681c28"
+    },
+    "guard": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies077-guard.py",
+      "sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2"
+    },
+    "baseline_binary": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/quortex",
+      "sha256": "329ebd647b04a2d6464461ddd94fc07a2691a948b2918d320ac1eb3703f9c101"
+    }
+  },
+  "refs_unchanged": true,
+  "python": "3.14.8",
+  "inference_executed": false
+}

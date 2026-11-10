@@ -1,0 +1,7 @@
+69b527c02bdd543d0ff638e292b7333f426b17d0 refs/heads/archive/qies089-validation-handoff
+8fac93bb2bfc4b2d7069c4044f2f71cd25f80388 refs/heads/development/continuous-generation
+8fac93bb2bfc4b2d7069c4044f2f71cd25f80388 refs/heads/experiment/qies086-minimal-staged-state-removal
+8fac93bb2bfc4b2d7069c4044f2f71cd25f80388 refs/heads/feature/flashnext-first-text-generation
+8fac93bb2bfc4b2d7069c4044f2f71cd25f80388 refs/remotes/origin/feature/flashnext-first-text-generation
+b245000a5b927b14518629c1c91d48a86385e26c refs/tags/cortex-first-token-milestone
+30056c7a93f04d2236c79ea25b3c1614c635fbce refs/tags/qies089-frozen

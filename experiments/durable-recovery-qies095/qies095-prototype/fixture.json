@@ -1,0 +1,21 @@
+{
+  "protocol": "SYNTHETIC-STATE-v1",
+  "evaluated_tokens": [
+    19,
+    94,
+    189,
+    142,
+    49,
+    132,
+    120,
+    155,
+    32,
+    77,
+    134,
+    156
+  ],
+  "pending_token": 50,
+  "position": 12,
+  "serialized_state_sha256": "cdd49f126d1eaaabba88ad7b03418ebe13dd7d50b5ddfbfadc0d408ea57f7188",
+  "provenance": "Fixed synthetic protocol vector, calculated independently of Session/SyntheticEngine; not model golden data."
+}
