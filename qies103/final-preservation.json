@@ -1,0 +1,8 @@
+{
+  "prior_source_and_evidence_manifests_intact": true,
+  "guard_and_baseline_executable_intact": true,
+  "root_run_script_prior_version_preserved": true,
+  "tracked_staged_diffs_empty": true,
+  "real_weight_arithmetic_executed": false,
+  "decision": "NO-GO real execution"
+}

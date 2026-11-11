@@ -1,0 +1,13 @@
+{
+  "source_provenance": "VERIFIED",
+  "stock_model_structure": "VERIFIED_NO_ALLOC_NO_DECODE",
+  "synthetic_F32": "360/360 BYTE_EXACT",
+  "synthetic_quantized_plain_CPU": "360/360 BYTE_EXACT",
+  "synthetic_quantized_extra_buffers": "274/360 BYTE_EXACT; NOT ACCEPTED",
+  "dequantization": "5/5 TYPES BYTE_EXACT",
+  "real_model_layer_reference": "NOT QUALIFIED",
+  "guard_preflight_rejection": "VERIFIED_UNCHANGED_POLICY",
+  "guard_live_lifecycle": "PENDING",
+  "real_adapter": "BLOCKED",
+  "inference_readiness": false
+}

@@ -1,0 +1,14 @@
+{
+  "status": "VERIFIED",
+  "repository": "AtomicChat/Ripple-65B-Preview-GGUF",
+  "revision": "df550a7178a87bbfb6ee2bdbd37603c553d536ee",
+  "filename": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+  "bytes": 40426079712,
+  "sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "expected_sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "elapsed_seconds": 2633.7784886549925,
+  "free_bytes": 72300974080,
+  "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-data/models/Ripple-65B-Preview-AD-Q4_K_M.gguf",
+  "huggingface_hub_version": "2.4.0",
+  "only_one_quantization_downloaded": true
+}

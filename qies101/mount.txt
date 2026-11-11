@@ -1,0 +1,2 @@
+TARGET SOURCE                   FSTYPE OPTIONS
+/home  /dev/mapper/root[/@home] btrfs  rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvolid=257,subvol=/@home

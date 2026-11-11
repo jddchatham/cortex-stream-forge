@@ -1,0 +1,19 @@
+/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/candidate_probe.cpp: In function ‘int main(int, char**)’:
+/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/candidate_probe.cpp:13:2: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+   13 |  if(argc!=3)return 2;Fixture source;source.root=argv[1];std::string root=argv[2];std::filesystem::create_directory(root);std::vector<r99::KV>states(5);
+      |  ^~
+/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/candidate_probe.cpp:13:22: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+   13 |  if(argc!=3)return 2;Fixture source;source.root=argv[1];std::string root=argv[2];std::filesystem::create_directory(root);std::vector<r99::KV>states(5);
+      |                      ^~~~~~~
+{
+  "case": "F32",
+  "comparisons": 360,
+  "missing": 0,
+  "byte_exact": 360
+}
+{
+  "case": "-quantized",
+  "comparisons": 360,
+  "missing": 0,
+  "byte_exact": 274
+}

@@ -1,0 +1,94 @@
+llama_model_loader: loaded meta data with 39 key-value pairs and 1203 tensors from ../qies098-data/models/Ripple-65B-Preview-AD-Q4_K_M.gguf (version GGUF V3 (latest))
+llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+llama_model_loader: - kv   0:                       general.architecture str              = ricursive
+llama_model_loader: - kv   1:                               general.type str              = model
+llama_model_loader: - kv   2:                               general.name str              = Ripple-65B-Preview
+llama_model_loader: - kv   3:                         general.size_label str              = 65B
+llama_model_loader: - kv   4:                            general.license str              = apache-2.0
+llama_model_loader: - kv   5:                      ricursive.block_count u32              = 80
+llama_model_loader: - kv   6:                   ricursive.context_length u32              = 2097152
+llama_model_loader: - kv   7:                 ricursive.embedding_length u32              = 5120
+llama_model_loader: - kv   8:              ricursive.feed_forward_length u32              = 40960
+llama_model_loader: - kv   9:             ricursive.attention.head_count u32              = 80
+llama_model_loader: - kv  10:          ricursive.attention.head_count_kv u32              = 8
+llama_model_loader: - kv  11:                   ricursive.rope.freq_base f32              = 10000.000000
+llama_model_loader: - kv  12: ricursive.attention.layer_norm_rms_epsilon f32              = 0.000001
+llama_model_loader: - kv  13:             ricursive.attention.key_length u32              = 128
+llama_model_loader: - kv  14:           ricursive.attention.value_length u32              = 128
+llama_model_loader: - kv  15:                       ricursive.vocab_size u32              = 100352
+llama_model_loader: - kv  16:             ricursive.rope.dimension_count u32              = 128
+llama_model_loader: - kv  17:         ricursive.attention.sliding_window u32              = 1024
+llama_model_loader: - kv  18: ricursive.attention.sliding_window_pattern arr[bool,80]     = [true, true, true, true, false, true,...
+llama_model_loader: - kv  19:                  ricursive.embedding_scale f32              = 71.554176
+llama_model_loader: - kv  20:                     ricursive.swiglu_clamp f32              = 20.000000
+llama_model_loader: - kv  21:                       tokenizer.ggml.model str              = gpt2
+llama_model_loader: - kv  22:                         tokenizer.ggml.pre str              = dbrx
+llama_model_loader: - kv  23:                      tokenizer.ggml.tokens arr[str,100352]  = ["!", "\"", "#", "$", "%", "&", "'", ...
+llama_model_loader: - kv  24:                  tokenizer.ggml.token_type arr[i32,100352]  = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+llama_model_loader: - kv  25:                      tokenizer.ggml.merges arr[str,100000]  = ["Ġ Ġ", "ĠĠ ĠĠ", "i n", "Ġ t",...
+llama_model_loader: - kv  26:                tokenizer.ggml.bos_token_id u32              = 100257
+llama_model_loader: - kv  27:                tokenizer.ggml.eos_token_id u32              = 100265
+llama_model_loader: - kv  28:            tokenizer.ggml.unknown_token_id u32              = 100257
+llama_model_loader: - kv  29:            tokenizer.ggml.padding_token_id u32              = 100277
+llama_model_loader: - kv  30:                    tokenizer.chat_template str              = {%- if tools %}\n    {{- '<|im_start|>...
+llama_model_loader: - kv  31:                tokenizer.ggml.clean_spaces bool             = false
+llama_model_loader: - kv  32:                tokenizer.ggml.eot_token_id u32              = 100265
+llama_model_loader: - kv  33:               general.quantization_version u32              = 2
+llama_model_loader: - kv  34:                          general.file_type u32              = 15
+llama_model_loader: - kv  35:                      quantize.imatrix.file str              = /work/Ripple-65B-Preview/imatrix/imat...
+llama_model_loader: - kv  36:                   quantize.imatrix.dataset str              = /work/Ripple-65B-Preview/corpus/calib...
+llama_model_loader: - kv  37:             quantize.imatrix.entries_count u32              = 640
+llama_model_loader: - kv  38:              quantize.imatrix.chunks_count u32              = 9144
+llama_model_loader: - type  f32:  561 tensors
+llama_model_loader: - type q8_0:  160 tensors
+llama_model_loader: - type q4_K:  310 tensors
+llama_model_loader: - type q5_K:   90 tensors
+llama_model_loader: - type q6_K:   81 tensors
+llama_model_loader: - type iq4_xs:    1 tensors
+print_info: file format = GGUF V3 (latest)
+print_info: file type   = Q4_K - Medium
+print_info: file size   = 37.65 GiB (4.99 BPW) 
+init_tokenizer: initializing tokenizer for type 2
+load: 0 unused tokens
+load: control token: 100277 '<|pad|>' is not marked as EOG
+load: control token: 100275 '<|extra_id_10|>' is not marked as EOG
+load: control token: 100270 '<|extra_id_5|>' is not marked as EOG
+load: control token: 100269 '<|extra_id_4|>' is not marked as EOG
+load: control token: 100266 '<|extra_id_1|>' is not marked as EOG
+load: control token: 100258 '<|fim_prefix|>' is not marked as EOG
+load: control token: 100274 '<|extra_id_9|>' is not marked as EOG
+load: control token: 100273 '<|extra_id_8|>' is not marked as EOG
+load: control token: 100256 '<|extra_id_0|>' is not marked as EOG
+load: control token: 100259 '<|fim_middle|>' is not marked as EOG
+load: control token: 100264 '<|im_start|>' is not marked as EOG
+load: control token: 100272 '<|extra_id_7|>' is not marked as EOG
+load: control token: 100276 '<|endofprompt|>' is not marked as EOG
+load: control token: 100268 '<|extra_id_3|>' is not marked as EOG
+load: control token: 100260 '<|fim_suffix|>' is not marked as EOG
+load: control token: 100267 '<|extra_id_2|>' is not marked as EOG
+load: control token: 100271 '<|extra_id_6|>' is not marked as EOG
+load: printing all EOG tokens:
+load:   - 100257 ('<|endoftext|>')
+load:   - 100265 ('<|im_end|>')
+load: special tokens cache size = 22
+load: token to piece cache size = 0.6143 MB
+print_info: arch                  = ricursive
+print_info: vocab_only            = 1
+print_info: no_alloc              = 0
+print_info: vocab type            = BPE
+print_info: n_vocab               = 100352
+print_info: n_merges              = 100000
+print_info: BOS token             = 100257 '<|endoftext|>'
+print_info: EOS token             = 100265 '<|im_end|>'
+print_info: EOT token             = 100265 '<|im_end|>'
+print_info: UNK token             = 100257 '<|endoftext|>'
+print_info: PAD token             = 100277 '<|pad|>'
+print_info: LF token              = 198 'Ċ'
+print_info: FIM PRE token         = 100258 '<|fim_prefix|>'
+print_info: FIM SUF token         = 100260 '<|fim_suffix|>'
+print_info: FIM MID token         = 100259 '<|fim_middle|>'
+print_info: EOG token             = 100257 '<|endoftext|>'
+print_info: EOG token             = 100265 '<|im_end|>'
+print_info: max token length      = 256
+llama_model_load: vocab only - skipping tensors
+STOCK_METADATA_ONLY  layers=0 hidden=0 no_decode=true

@@ -1,0 +1,370 @@
+{
+  "model_sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "original_model_identity": [
+    52,
+    193312,
+    40426079712,
+    1794311853881937877,
+    1794312013896042092
+  ],
+  "layer": 0,
+  "tensors": [
+    {
+      "name": "blk.0.attn_gate.weight",
+      "shape": [
+        5120,
+        10240
+      ],
+      "type": 12,
+      "relative_offset": 694456320,
+      "bytes": 29491200,
+      "offset": 698072032,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q4_K",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_gate.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_gate.weight.bin",
+      "identity": [
+        52,
+        274693,
+        29491200,
+        1794374535640422711,
+        1794374535702423604
+      ],
+      "sha256": "71fe9444caf92b7dc8a14c4861abc79e14b07d6628e23fe75fdd3509ac307158",
+      "equal_bytes": 29491200
+    },
+    {
+      "name": "blk.0.attn_k.weight",
+      "shape": [
+        5120,
+        1024
+      ],
+      "type": 8,
+      "relative_offset": 723947520,
+      "bytes": 5570560,
+      "offset": 727563232,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q8_0",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_k.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_k.weight.bin",
+      "identity": [
+        52,
+        274694,
+        5570560,
+        1794374535723423906,
+        1794374535739424137
+      ],
+      "sha256": "05836fa4be027e49d4f31b17486affb0cc86f7b5d051c506265f1adb5f098cbc",
+      "equal_bytes": 5570560
+    },
+    {
+      "name": "blk.0.attn_k_norm.weight",
+      "shape": [
+        128
+      ],
+      "type": 0,
+      "relative_offset": 729518080,
+      "bytes": 512,
+      "offset": 733133792,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_k_norm.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_k_norm.weight.bin",
+      "identity": [
+        52,
+        274695,
+        512,
+        1794374535740424151,
+        1794374535742424180
+      ],
+      "sha256": "2a9cc010c309a2619c992c913b4ad50a46ca761fa9b75f537a924c4fed3faf04",
+      "equal_bytes": 512
+    },
+    {
+      "name": "blk.0.attn_norm.weight",
+      "shape": [
+        5120
+      ],
+      "type": 0,
+      "relative_offset": 729518592,
+      "bytes": 20480,
+      "offset": 733134304,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_norm.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_norm.weight.bin",
+      "identity": [
+        52,
+        274696,
+        20480,
+        1794374535743424194,
+        1794374535746424237
+      ],
+      "sha256": "18e2a026c799cc67e382f6743b42cfab183eae0ee23ced7d38e59261cc806bf9",
+      "equal_bytes": 20480
+    },
+    {
+      "name": "blk.0.attn_output.weight",
+      "shape": [
+        10240,
+        5120
+      ],
+      "type": 14,
+      "relative_offset": 729539072,
+      "bytes": 43008000,
+      "offset": 733154784,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q6_K",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_output.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_output.weight.bin",
+      "identity": [
+        52,
+        274697,
+        43008000,
+        1794374535968427435,
+        1794374536057428717
+      ],
+      "sha256": "6e49416ecadcd3d118e50d9eac192d79fa6b167f55c7548a27d6194383f95394",
+      "equal_bytes": 43008000
+    },
+    {
+      "name": "blk.0.attn_q.weight",
+      "shape": [
+        5120,
+        10240
+      ],
+      "type": 12,
+      "relative_offset": 772547072,
+      "bytes": 29491200,
+      "offset": 776162784,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q4_K",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies101/artifacts/index/blk.0.attn_q.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies101/artifacts/stock/blk.0.attn_q.weight.bin",
+      "identity": [
+        52,
+        274091,
+        29491200,
+        1794372797657259782,
+        1794372797719260893
+      ],
+      "sha256": "2f2dd05d6f246be31c12edd04b0ca9d911115b2364752b888038df625011894f",
+      "equal_bytes": 29491200
+    },
+    {
+      "name": "blk.0.attn_q_norm.weight",
+      "shape": [
+        128
+      ],
+      "type": 0,
+      "relative_offset": 802038272,
+      "bytes": 512,
+      "offset": 805653984,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_q_norm.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_q_norm.weight.bin",
+      "identity": [
+        52,
+        274698,
+        512,
+        1794374536058428731,
+        1794374536060428760
+      ],
+      "sha256": "580f0cbbf6b64a1e40e8991de24903c01d0f377aa0a42e43c403b2b142a0d571",
+      "equal_bytes": 512
+    },
+    {
+      "name": "blk.0.attn_v.weight",
+      "shape": [
+        5120,
+        1024
+      ],
+      "type": 8,
+      "relative_offset": 802038784,
+      "bytes": 5570560,
+      "offset": 805654496,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q8_0",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_v.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_v.weight.bin",
+      "identity": [
+        52,
+        274699,
+        5570560,
+        1794374536096429278,
+        1794374536112429509
+      ],
+      "sha256": "067dc406cee43b7665ce2b0b8278b9d66efffa5a2b4912ab0f6eae841c24bb63",
+      "equal_bytes": 5570560
+    },
+    {
+      "name": "blk.0.attn_vres_lambda.weight",
+      "shape": [
+        1
+      ],
+      "type": 0,
+      "relative_offset": 807609344,
+      "bytes": 4,
+      "offset": 811225056,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.attn_vres_lambda.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.attn_vres_lambda.weight.bin",
+      "identity": [
+        52,
+        274700,
+        4,
+        1794374536112429509,
+        1794374536116429566
+      ],
+      "sha256": "4768da617bd9a19f30c068169fd15579cb8df7424f912902bc244bf8430b6518",
+      "equal_bytes": 4
+    },
+    {
+      "name": "blk.0.ffn_down.weight",
+      "shape": [
+        40960,
+        5120
+      ],
+      "type": 13,
+      "relative_offset": 807609376,
+      "bytes": 144179200,
+      "offset": 811225088,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q5_K",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies101/artifacts/index/blk.0.ffn_down.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies101/artifacts/stock/blk.0.ffn_down.weight.bin",
+      "identity": [
+        52,
+        274092,
+        144179200,
+        1794372798452274015,
+        1794372798571276146
+      ],
+      "sha256": "ca62eb18d1ef4ad486b990b02841c861b99613452c3bd579ca820b344e5b1638",
+      "equal_bytes": 144179200
+    },
+    {
+      "name": "blk.0.ffn_gate.weight",
+      "shape": [
+        5120,
+        40960
+      ],
+      "type": 13,
+      "relative_offset": 951788576,
+      "bytes": 144179200,
+      "offset": 955404288,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q5_K",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.ffn_gate.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.ffn_gate.weight.bin",
+      "identity": [
+        52,
+        274701,
+        144179200,
+        1794374536774439044,
+        1794374536888440686
+      ],
+      "sha256": "7e5be9f493702db4342abbed2cc4b34d501c76dc56c8172b2a071f5dd0663c3e",
+      "equal_bytes": 144179200
+    },
+    {
+      "name": "blk.0.ffn_norm.weight",
+      "shape": [
+        5120
+      ],
+      "type": 0,
+      "relative_offset": 1095967776,
+      "bytes": 20480,
+      "offset": 1099583488,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.ffn_norm.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.ffn_norm.weight.bin",
+      "identity": [
+        52,
+        274702,
+        20480,
+        1794374536889440700,
+        1794374536893440758
+      ],
+      "sha256": "d634bc334cdaf25c3b3961ea0800a92fa6a4508892e3fc89170d88d499ab31af",
+      "equal_bytes": 20480
+    },
+    {
+      "name": "blk.0.ffn_up.weight",
+      "shape": [
+        5120,
+        40960
+      ],
+      "type": 13,
+      "relative_offset": 1095988256,
+      "bytes": 144179200,
+      "offset": 1099603968,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q5_K",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.ffn_up.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.ffn_up.weight.bin",
+      "identity": [
+        52,
+        274703,
+        144179200,
+        1794374537577450610,
+        1794374537717452626
+      ],
+      "sha256": "2a66ac254820110e5c9f28a2f00e9e073078142d3a47131a6a235b0564be70e1",
+      "equal_bytes": 144179200
+    },
+    {
+      "name": "blk.0.post_attention_norm.weight",
+      "shape": [
+        5120
+      ],
+      "type": 0,
+      "relative_offset": 1240167456,
+      "bytes": 20480,
+      "offset": 1243783168,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.post_attention_norm.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.post_attention_norm.weight.bin",
+      "identity": [
+        52,
+        274704,
+        20480,
+        1794374537718452641,
+        1794374537723452713
+      ],
+      "sha256": "19efc7e1c3c898a8bdb60bff52093ab38eea872c9757da65ccc56dcd96bf94cc",
+      "equal_bytes": 20480
+    },
+    {
+      "name": "blk.0.post_ffw_norm.weight",
+      "shape": [
+        5120
+      ],
+      "type": 0,
+      "relative_offset": 1240187936,
+      "bytes": 20480,
+      "offset": 1243803648,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32",
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/index/blk.0.post_ffw_norm.weight.bin",
+      "reference_path": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies102/bundle/stock/blk.0.post_ffw_norm.weight.bin",
+      "identity": [
+        52,
+        274705,
+        20480,
+        1794374537723452713,
+        1794374537727452770
+      ],
+      "sha256": "c26a05a9ef950e47e1f4fd5fd98810572f8dc83153219846c1d22c35f9519b42",
+      "equal_bytes": 20480
+    }
+  ],
+  "reused_qies101_files": 2,
+  "new_tensors": 13,
+  "all_bytes_exact": true,
+  "plan_sha256": "8521a365b87b4591d488f9e95ea5c58396b1c853e8bb09c5f628c374ffc82b11"
+}

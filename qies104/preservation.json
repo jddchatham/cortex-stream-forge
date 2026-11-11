@@ -1,0 +1,98 @@
+{
+  "qies099/checks/ricursive-layer": {
+    "sha256": "23039cee6766ff3c9333d7088027f4f21a6ba13cbea77232009a228936d5fdcf",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies099/checks/test-layer": {
+    "sha256": "6d182f0538fffedd0094b91e9f49f9afa9dc016881ec23eb6395e755bf2b4a24",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies099/checks/test-layer-sanitized": {
+    "sha256": "a223a13ad8dae27a3dd7e38ea9ba8785ff66417ec1c53bfde15ee04cc75e1bd5",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies100/candidate-probe": {
+    "sha256": "9e43fe858f83125d589d2ad88454169cf5f4605fa8c743f33081fcde13184e07",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies100/stock-probe": {
+    "sha256": "3bce6c61af8a1ca42723745fa8be56d637ebb7dcdd8b57ddc84b6fbd2f1c8c89",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies100/stock-probe-repack-original": {
+    "sha256": "9dce0d38049a42541a910f1967e6ee5127388c5535fde0a35a31b7b5256978b7",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies100/stock-dequant": {
+    "sha256": "efdcfd11cccaaf38205d632dcc337eb95d2a6a8dfd129ca6d48737ab1f50c9fa",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies100/quantize-fixture": {
+    "sha256": "f7b08896551b3981758d49c5772c1ea013b591cf0ab5ae9b8c5472c547f19003",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies100/stock-build/bin/llama-simple": {
+    "sha256": "1dea9a07cc9d8b54749206c43fec8c36e8c5eb900c5903fc24f9df18a482ec09",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies102/probe": {
+    "sha256": "99412e5ebfe8b09c0c466761f9441a18a591f32da42fc659a468a43dacd0861b",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies102/test-adapter": {
+    "sha256": "c859e76d357ce9be481e2743cdbce9626c530a1816510d8571e71b6b91e2a58d",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies102/test-adapter-sanitized": {
+    "sha256": "e96a1a6c819a40c8b6d97fa09430626e67e14159f5133f851535497ede278372",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies103/stock-oneblock-probe": {
+    "sha256": "193fe251eee70dfdde27fa8b074f95a054dcfcaa0c6f54186726f3f911f3ab6b",
+    "mode": "0o755",
+    "kind": "worker"
+  },
+  "qies099/build.py": {
+    "sha256": "2748c2192747a470c43932c963a654ecb34e1be2d33673c0995f9d5265bf2c69",
+    "mode": "0o644",
+    "kind": "legacy_builder"
+  },
+  "qies100/run_comparison.py": {
+    "sha256": "2070f1a071705632edecf1bb6c77633594574e6dfc8a743d62a602b196bc62c0",
+    "mode": "0o644",
+    "kind": "legacy_builder"
+  },
+  "qies102/build.py": {
+    "sha256": "be5ca05f0c9e9cd283ebad9be14cd7092d59b131438b9731f18a5ab0226b1879",
+    "mode": "0o644",
+    "kind": "legacy_builder"
+  },
+  "qies102/validate.py": {
+    "sha256": "f50a5c73d9ae97465eb7cc95df626614ca752bd111a9b84a767589cc56330d96",
+    "mode": "0o644",
+    "kind": "legacy_builder"
+  },
+  "qies103/compare_capsule.py": {
+    "sha256": "0ee1210ebe7d46a0f4d868425bc5c1a46ca6d4819d0a4c3131a31cc401d099e3",
+    "mode": "0o644",
+    "kind": "legacy_builder"
+  },
+  "qies100/stock-build/bin/libllama.so.0.9.0": {
+    "sha256": "90fec77df735191dff53184966cd5ed6d0c0ac31d7521d163456267698292846",
+    "mode": "0o755",
+    "kind": "stock_library_compressed",
+    "archive": "stock-sdk.tar.gz"
+  }
+}

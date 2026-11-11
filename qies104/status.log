@@ -1,0 +1,1 @@
+Verified original guard refusal, 1203 independent descriptors without GGML allocation, preserved baseline/source/limits; real runtime remains locked

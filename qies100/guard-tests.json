@@ -1,0 +1,11 @@
+{
+  "pure_contract_checks": 14,
+  "actual_default_policy_rejection": {
+    "ok": false,
+    "reason": "GuardAbort: resource preflight failed",
+    "unit": "quortex-guard-ab7b63cdc1574a44825b78931bf2b0e1.service",
+    "cleanup": true
+  },
+  "live_success_cleanup_qualification": false,
+  "no_policy_overrides": true
+}

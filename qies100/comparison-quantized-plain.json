@@ -1,0 +1,2930 @@
+{
+  "synthetic_only": true,
+  "comparisons": [
+    {
+      "name": "p0-Kcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur_normed-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur_normed-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur_normed-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur_normed-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Kcur_normed-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur_normed-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur_normed-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur_normed-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur_normed-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Qcur_normed-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Vcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Vcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Vcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Vcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-Vcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gate-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gate-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gate-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gate-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gate-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gated-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gated-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gated-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gated-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_gated-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-attn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_inp-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_inp-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_inp-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_inp-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_inp-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_swiglu-0.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_swiglu-1.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_swiglu-2.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_swiglu-3.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-ffn_swiglu-4.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-kq_soft_max-0.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-kq_soft_max-1.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-kq_soft_max-2.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-kq_soft_max-3.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-kq_soft_max-4.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-l_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-l_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-l_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-l_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-l_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-vres_in-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-vres_in-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-vres_in-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-vres_in-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p0-vres_in-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur_normed-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur_normed-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur_normed-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur_normed-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Kcur_normed-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur_normed-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur_normed-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur_normed-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur_normed-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Qcur_normed-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Vcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Vcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Vcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Vcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-Vcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gate-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gate-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gate-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gate-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gate-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gated-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gated-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gated-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gated-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_gated-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-attn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_inp-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_inp-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_inp-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_inp-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_inp-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_swiglu-0.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_swiglu-1.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_swiglu-2.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_swiglu-3.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-ffn_swiglu-4.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-kq_soft_max-0.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-kq_soft_max-1.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-kq_soft_max-2.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-kq_soft_max-3.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-kq_soft_max-4.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-l_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-l_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-l_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-l_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-l_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-vres_in-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-vres_in-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-vres_in-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-vres_in-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p1-vres_in-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur_normed-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur_normed-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur_normed-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur_normed-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Kcur_normed-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur_normed-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur_normed-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur_normed-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur_normed-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Qcur_normed-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Vcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Vcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Vcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Vcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-Vcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gate-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gate-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gate-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gate-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gate-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gated-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gated-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gated-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gated-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_gated-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-attn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_inp-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_inp-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_inp-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_inp-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_inp-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_swiglu-0.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_swiglu-1.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_swiglu-2.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_swiglu-3.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-ffn_swiglu-4.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-kq_soft_max-0.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-kq_soft_max-1.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-kq_soft_max-2.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-kq_soft_max-3.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-kq_soft_max-4.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-l_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-l_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-l_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-l_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-l_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-vres_in-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-vres_in-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-vres_in-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-vres_in-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p2-vres_in-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur_normed-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur_normed-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur_normed-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur_normed-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Kcur_normed-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur_normed-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur_normed-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur_normed-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur_normed-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Qcur_normed-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Vcur-0.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Vcur-1.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Vcur-2.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Vcur-3.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-Vcur-4.bin",
+      "same_size": true,
+      "elements": 128,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gate-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gate-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gate-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gate-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gate-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gated-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gated-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gated-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gated-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_gated-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-attn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_inp-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_inp-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_inp-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_inp-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_inp-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_post_norm-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_post_norm-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_post_norm-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_post_norm-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_post_norm-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_swiglu-0.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_swiglu-1.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_swiglu-2.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_swiglu-3.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-ffn_swiglu-4.bin",
+      "same_size": true,
+      "elements": 512,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-kq_soft_max-0.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-kq_soft_max-1.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-kq_soft_max-2.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-kq_soft_max-3.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-kq_soft_max-4.bin",
+      "same_size": true,
+      "elements": 1024,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-l_out-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-l_out-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-l_out-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-l_out-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-l_out-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-vres_in-0.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-vres_in-1.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-vres_in-2.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-vres_in-3.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    },
+    {
+      "name": "p3-vres_in-4.bin",
+      "same_size": true,
+      "elements": 256,
+      "byte_exact": true,
+      "max_abs": 0.0,
+      "finite": true
+    }
+  ],
+  "missing_stock_taps": [],
+  "documented_aliases": [
+    {
+      "candidate": "p0-Kcur_normed-4.bin",
+      "stock": "p0-Kcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p0-Qcur_normed-4.bin",
+      "stock": "p0-Qcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p1-Kcur_normed-4.bin",
+      "stock": "p1-Kcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p1-Qcur_normed-4.bin",
+      "stock": "p1-Qcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p2-Kcur_normed-4.bin",
+      "stock": "p2-Kcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p2-Qcur_normed-4.bin",
+      "stock": "p2-Qcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p3-Kcur_normed-4.bin",
+      "stock": "p3-Kcur-4.bin",
+      "reason": "global NoPE identity alias"
+    },
+    {
+      "candidate": "p3-Qcur_normed-4.bin",
+      "stock": "p3-Qcur-4.bin",
+      "reason": "global NoPE identity alias"
+    }
+  ],
+  "all_byte_exact": true,
+  "real_model_executed": false
+}

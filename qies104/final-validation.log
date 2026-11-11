@@ -1,0 +1,6 @@
+PASS 40 entry/dispatch/API rejections with allocation trap; model filesystem hidden; rlimits unchanged
+PASS new guarded builds: original 14/16 suites; 720 candidate and 144 independent-reference exact synthetic comparisons
+[{'suite': 'QIES099', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES100', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES101-extract', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES101-stock', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES102', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES103', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}]
+Verified original guard refusal, 1203 independent descriptors without GGML allocation, preserved baseline/source/limits; real runtime remains locked
+PASS independent 1203 descriptors, 15 actual tensor byte comparisons, identical activation/mask/KV contract and 21 output schemas; no arithmetic
+PASS corrected full validation; allocation detector positive control verified; no real-weight arithmetic

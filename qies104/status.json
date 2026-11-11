@@ -1,0 +1,191 @@
+{
+  "branch": "experimental/ripple-65b-q4",
+  "HEAD": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "host": {
+    "available": 4116430848,
+    "swap_free": 15056818176,
+    "disk_free": 64571977728,
+    "psi": 3.98
+  },
+  "original_policy": {
+    "entry_ram": 6442450944,
+    "entry_swap": 4294967296,
+    "entry_disk": 32212254720,
+    "min_ram": 1073741824,
+    "min_swap": 2147483648,
+    "min_disk": 21474836480,
+    "max_rss": 7516192768,
+    "max_seconds": 14400,
+    "interval": 1,
+    "grace": 2
+  },
+  "original_guard_sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2",
+  "rlimit_as": [
+    -1,
+    -1
+  ],
+  "rlimit_rss": [
+    -1,
+    -1
+  ],
+  "cgroup_limits": [
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/app-Hyprland-gtk\\x2dlaunch-4bb56349.scope",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max"
+    }
+  ],
+  "stock_source_files_intact": 4084,
+  "real_execution_enabled": false,
+  "real_numerical_equivalence_qualified": false,
+  "live_positive_guard_qualified": false,
+  "closure_scope": "approved QIES104 workers and normal retired-legacy dispatch; not a security boundary against owner recompilation/dlopen/permission restoration",
+  "preserved_changes": [
+    {
+      "path": "qies099/checks/ricursive-layer",
+      "old_sha256": "23039cee6766ff3c9333d7088027f4f21a6ba13cbea77232009a228936d5fdcf",
+      "current_sha256": "23039cee6766ff3c9333d7088027f4f21a6ba13cbea77232009a228936d5fdcf",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies099/checks/test-layer",
+      "old_sha256": "6d182f0538fffedd0094b91e9f49f9afa9dc016881ec23eb6395e755bf2b4a24",
+      "current_sha256": "6d182f0538fffedd0094b91e9f49f9afa9dc016881ec23eb6395e755bf2b4a24",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies099/checks/test-layer-sanitized",
+      "old_sha256": "a223a13ad8dae27a3dd7e38ea9ba8785ff66417ec1c53bfde15ee04cc75e1bd5",
+      "current_sha256": "a223a13ad8dae27a3dd7e38ea9ba8785ff66417ec1c53bfde15ee04cc75e1bd5",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/candidate-probe",
+      "old_sha256": "9e43fe858f83125d589d2ad88454169cf5f4605fa8c743f33081fcde13184e07",
+      "current_sha256": "9e43fe858f83125d589d2ad88454169cf5f4605fa8c743f33081fcde13184e07",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/stock-probe",
+      "old_sha256": "3bce6c61af8a1ca42723745fa8be56d637ebb7dcdd8b57ddc84b6fbd2f1c8c89",
+      "current_sha256": "3bce6c61af8a1ca42723745fa8be56d637ebb7dcdd8b57ddc84b6fbd2f1c8c89",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/stock-probe-repack-original",
+      "old_sha256": "9dce0d38049a42541a910f1967e6ee5127388c5535fde0a35a31b7b5256978b7",
+      "current_sha256": "9dce0d38049a42541a910f1967e6ee5127388c5535fde0a35a31b7b5256978b7",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/stock-dequant",
+      "old_sha256": "efdcfd11cccaaf38205d632dcc337eb95d2a6a8dfd129ca6d48737ab1f50c9fa",
+      "current_sha256": "efdcfd11cccaaf38205d632dcc337eb95d2a6a8dfd129ca6d48737ab1f50c9fa",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/quantize-fixture",
+      "old_sha256": "f7b08896551b3981758d49c5772c1ea013b591cf0ab5ae9b8c5472c547f19003",
+      "current_sha256": "f7b08896551b3981758d49c5772c1ea013b591cf0ab5ae9b8c5472c547f19003",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/stock-build/bin/llama-simple",
+      "old_sha256": "1dea9a07cc9d8b54749206c43fec8c36e8c5eb900c5903fc24f9df18a482ec09",
+      "current_sha256": "1dea9a07cc9d8b54749206c43fec8c36e8c5eb900c5903fc24f9df18a482ec09",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies102/probe",
+      "old_sha256": "99412e5ebfe8b09c0c466761f9441a18a591f32da42fc659a468a43dacd0861b",
+      "current_sha256": "99412e5ebfe8b09c0c466761f9441a18a591f32da42fc659a468a43dacd0861b",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies102/test-adapter",
+      "old_sha256": "c859e76d357ce9be481e2743cdbce9626c530a1816510d8571e71b6b91e2a58d",
+      "current_sha256": "c859e76d357ce9be481e2743cdbce9626c530a1816510d8571e71b6b91e2a58d",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies102/test-adapter-sanitized",
+      "old_sha256": "e96a1a6c819a40c8b6d97fa09430626e67e14159f5133f851535497ede278372",
+      "current_sha256": "e96a1a6c819a40c8b6d97fa09430626e67e14159f5133f851535497ede278372",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies103/stock-oneblock-probe",
+      "old_sha256": "193fe251eee70dfdde27fa8b074f95a054dcfcaa0c6f54186726f3f911f3ab6b",
+      "current_sha256": "193fe251eee70dfdde27fa8b074f95a054dcfcaa0c6f54186726f3f911f3ab6b",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies099/build.py",
+      "old_sha256": "2748c2192747a470c43932c963a654ecb34e1be2d33673c0995f9d5265bf2c69",
+      "current_sha256": "e2545fcd4a7df9abc765390e07f73b4d72dc5d93927cf4ab5f69bf14c35a243b",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/run_comparison.py",
+      "old_sha256": "2070f1a071705632edecf1bb6c77633594574e6dfc8a743d62a602b196bc62c0",
+      "current_sha256": "d8f9bed076554911109f2c01828608ce6a08b37c303604952e5390936b717a0c",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies102/build.py",
+      "old_sha256": "be5ca05f0c9e9cd283ebad9be14cd7092d59b131438b9731f18a5ab0226b1879",
+      "current_sha256": "21845f208375e303a26dabb0fd7c5317c929d7a9739eb6707730f33534ad8109",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies102/validate.py",
+      "old_sha256": "f50a5c73d9ae97465eb7cc95df626614ca752bd111a9b84a767589cc56330d96",
+      "current_sha256": "8c5291cb268333cb08f6bbf6f79c6797c3d7ab919aa1e3a52f2b9a02ec8f4bb7",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies103/compare_capsule.py",
+      "old_sha256": "0ee1210ebe7d46a0f4d868425bc5c1a46ca6d4819d0a4c3131a31cc401d099e3",
+      "current_sha256": "8971f12df42dd4efede0cac365ccfc7b7f07c4fb0f607ab1b26802570f334462",
+      "current_mode": "0o644"
+    },
+    {
+      "path": "qies100/stock-build/bin/libllama.so.0.9.0",
+      "original_sha256": "90fec77df735191dff53184966cd5ed6d0c0ac31d7521d163456267698292846",
+      "current_mode": "0o0",
+      "preserved_as": "verified compressed SDK archive"
+    }
+  ],
+  "decision": "NO-GO real execution"
+}

@@ -1,0 +1,1015 @@
+{
+  "comparisons": [
+    {
+      "case": "fixture",
+      "name": "p0-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "59772c1783eb71ba25deaa5b6c58fd0a94dc77edd4466a5c1c35ef001f1e80a7"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "4cb57645ac6b0b9cdafcb8c3084ea9206bcebdd64ca9c87b87d3999a4896a4e0"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "e6920576effd66f620fb1719437e7f51492bd98af7545b0eeff2cddc2e85dfa9"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "feb5aa3d86df80f3b64c8e2f410d59f7e9a004139c7291440d5ba608c6bc96af"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "911c1141820f41eeae9f9434c379de01ac2089141e2de6e801d7a6a35fb37d9d"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "feb5aa3d86df80f3b64c8e2f410d59f7e9a004139c7291440d5ba608c6bc96af"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "911c1141820f41eeae9f9434c379de01ac2089141e2de6e801d7a6a35fb37d9d"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "257d28cbaa499128ef640edcd6ba69a8d677b76132406c271ba54e12b6548d51"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "33be4babe245d940b69617e4740b0d5b5939a9142fc9d537023daf9dfccfb54e"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "d9a4ffe09f3cf5f80c7052de4c84fbca1e7093ddff3c0d764f2be6d9dfbcc961"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "50601ba0d3c670f031aca8474c9375bdfb624dea7c2fbb89e5662aacdbecd542"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "b7b5da22ae68608078f7a8d3d65c889401c430a465c348d66459de410d7778f2"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "09da9c80d3bda909f917dc239e3b90ea18349c8e4f8ae631ba02f8ae3ff4aab0"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "716883ee68fa29a20ac033353093bdef8f3443f503e4f71dbd8bdc0f6b7abb5a"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "2b3f67779e0c9fae46ddc1030ad299c1a7cbea09618ffb86961afe4cea4a4b1f"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e7c96177426f9691c280af4a04710c8f7057d5a3c6cb5e54ea82d53d5b138374"
+    },
+    {
+      "case": "fixture",
+      "name": "p0-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "dab05f13ddc055e1429b924417e87761034eae9d5a958278cd601a033e6e5c0f"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "55544d9eae4c5f66fef5c0cb8fd290028ac5c195400cb89efcd7dd10507b6a42"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "3a2225147f3a2124e19bd48efdaa151555f948637a3c776ad68bd5bff499e5c1"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "3e06ecc7cfa66bb63127b1e7564a63219d08a9ff24eba73bf9c3a89c0d0b3862"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "f4cbab52bac388a22df073dd545717074f1393485bbaca5acfcb179818ea1929"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "2db87a8dd8f2f09c0c561546f1505a26ec8ccee89e36219d9a5a9009c4d1bce9"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e090ade545bcb361534a97018fdf1fcd6b85b809c0772884d19e1eac1b4df1f6"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "748e3e02f7c2328dd2bffc91dcbd76f611294e18dca61a0f67375de5c6531096"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "a4ba4774ad5fb957a82aa42422c6bbafc3c345e8b0e085843c68ce28fa3f3ccd"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "dddb6b2848f8aa5f5c4d4426eeeb406ddb3b954075e497cbf0a11b296a687678"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "b01e8bde2c9a604cf8b8fa1717d9199233c26603ae24f604b4e764ebf4534628"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "96d868df411b0cbaa894ed306c96161c855876cd855b116be6f7aedb12ee5393"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "589addcb70abb56b01de914a79f223db00bb3053e3e47f32b40a0e746bbefa3f"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "b01d48d4b9d0490374299cfb3b28e4e08e53925275a59f1ca8ab005c522b6e6b"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "cf679736cdf50be6aa00333370e18b501d594fa2c5b85a2aad70cc5c41fd0809"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "4ecd1e7717ae6b4b16e46608f0ab71ecbb6b5bcf6c3f305ae527e3718eb41376"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "47d5d63c9d7878666bef59cf53494d0500c72678cd35b0e440bc7e96b662ae2d"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e05f0b1413da8ebb3480e0579935ed1f3ebb9a0a28e227cc83dfd87f42328efb"
+    },
+    {
+      "case": "fixture",
+      "name": "p1-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "f9a9b96b02a088fef903d9392563446edf7ed98287b13d52902a61ccf0231cc6"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "fa482e1414362a33ac1260966a051bf851c1eee671e99bbdb8837adbb96d08e8"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "766ee1698f1bfff01e8e65d96ec1bf8fb559259c7fe703158dba30ed852baaae"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "f083c169534a3536970f11ec754c1f608095144542e5c4c40c54e40faaf7bb18"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "5904fa8b9fb98b67bcb3fb233d572dc519c56c63c8aa34e5bb4ee0570a1d6de6"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "396c523cd6ee8db00bcca4acbff3cb36e05acc63584ab47990374f207e2a7480"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e2fc7b0aa0b46bd56a8f4dba4933ed9d6b30f5b2cae6b92483e3c0f2ab21cd4a"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "72cacd091eb6129890612b535a2ebdbc117ec1deff7b568a1bccedde1972af29"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "50c98715b194f43d25be9282bb0e8a67c3e553ad2e7b7d08cb8390a41b67498c"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "5761c59fd2a98881771296560b8b3291b59c3f02e3464adac2ecdd352041e575"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "57762143619d7332191e617e25c850fb758275127ea06df5ca8e0337ba45b592"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "56e1def4b970edb773372f3dd406ea47d5530b33e9ab577b2f7d38e179609a3e"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e232401bf4e8e0cf14691093612b5125cb0e52fc881b14278092931bf8ce175b"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "4f8f2588efb51906bbbbf40ba33585f086e0c34f035ae36c809deb5af186df63"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "2a96c91a345991ef48960a94ef629d318581e9baf99f4771980d143e60b08d0e"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "3d69b9c1ed45a1d6c20308bedd3028f6dfe116e424ed281dd87f5e2f67cd5f78"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e679b103c31bcaa349bf655992a96e0141a3bb9087a827bb04ee1daab647634e"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "cf738bd15a1d051f13d39c71b73ea156adfe33493e2501c6aa421e877a553dc2"
+    },
+    {
+      "case": "fixture",
+      "name": "p2-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "dce2340488915a2f9bdeef8517c29dfe17fed2a717bd3be65e3bb967f1cabb48"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "2d9059fe6988f604f45aaa624968a3658d70426220e04627149c1996c9ab55f9"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "317860a916ffed3595368ad9963004bb6a32c3aa5dc14b8838b96153a2d6710c"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "3e5f023f33debcb6d34b197fa0b3e40c87ace8ace09820457802ecfa3db85ed2"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "8d4f54d0746ce74533269c535828b5d8dff59c3e363ceb2eda4d2aef6754f958"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "e3ad23dc7a6072d5b3a4090502e2e25bf3ce9c2872441882f932966bc0d69364"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "c2037fdf0dcb73367649306cce285dc9fe5e3db999d51c68a72d7f2013d802fd"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "9c8e6a28f8debd55dffea2d01a69c41801e5d971ba15a536ff07a3dc337c9893"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "e1bbe137a3e7ec29fa58976c30c6a282a9062cf4a8f1e25c201afbfe942828c9"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "53a2aafcc411dd9e7379460a75457b77f6152a15ac89372356448f50f534021e"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "29ec7259e8bfcc0dfc85fd902d80cc5c0239cf3d23006c01b0f8ae92eeb8e04e"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "7bdf15b9c7fc0bddc0c0bec75dc4a43d1d28baae548032c2602cd900ef7fe942"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "a9d78c6d6b8b73680811c3bd99018294980b5d00a3e2418812763f7f83eaeb7b"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "6f04dbb1e9ed81bb9b7bd7f1060c1bb9bfd2c42c794202bda2bc39a24681d588"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "d67053256d00d32c8350b31955bc81d4d471a9a07f0b0f17811ba5f6e90bb739"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "807ddd02656dca7226c82c89456dc794bd2166bf5577e054bc660afa1abc57ef"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "23961a0e169d048d5eb730a92639c508abf12dfdc1eb10e4921fe9eb26d5c0c9"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "1c57e034df9c34318763b0036a4e4758e31fa55ea3d7917f3dcfaa79158ce50f"
+    },
+    {
+      "case": "fixture",
+      "name": "p3-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "7e7dc8b4fe05fef3da9c4daad8d2563824407c87f0a8a34a91e9462557241006"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "59772c1783eb71ba25deaa5b6c58fd0a94dc77edd4466a5c1c35ef001f1e80a7"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "4cb57645ac6b0b9cdafcb8c3084ea9206bcebdd64ca9c87b87d3999a4896a4e0"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "9f5c6bcc023cb465b37d0682224ccd9fe24989d865a85d26dfcc6dfe1bcd7b32"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "6ea423b5bbcb074df41db2c386b23d65348086199583bd2e1e33883436bcca78"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "80cba75d326cf8f7829a60fc76d51956028151ef951a1b3f627ca015c918ae2a"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "6ea423b5bbcb074df41db2c386b23d65348086199583bd2e1e33883436bcca78"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "80cba75d326cf8f7829a60fc76d51956028151ef951a1b3f627ca015c918ae2a"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "f1459323547090588352f1053a11766ec5a96d5f312913553fa95d0f2380c68b"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "aeb9e30df72faffb05a732acb2627c408a2c0bc0a48addbbcb3acd05f7b8b54e"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "c4d8218c90fcab17ec51d04c56c56dd6d438219ec3c439c765e6165db3127384"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "341a41123ebbbb12ba10543a051321451e8ae352635b0919a8b243f55af9a18b"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "b603e08dbab7d74b115fdfa5c0c88f9c5d190afc694ce17078ab8b8ebcbdf316"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "74f8b1df53cb21cc3415735f9fe810a25161b57096e781c3e943e9d6c945cd57"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "298e6664fbbb6e8da285579f40ac3e7220d18c8372bff4851e9fdfe7b3c27edf"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "ecfcac3dcc9dcb45de6e2bef00510663d6d452ec2172553c8efa0dcfd0571569"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "6aded2ed8e7fe61a8f0a78d73e83976b33383ae350db8b532d53077d28b97133"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p0-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "13ef72fac68cc2893a03e29645305083521a1e52c17248a7868889108c3ddd7c"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "55544d9eae4c5f66fef5c0cb8fd290028ac5c195400cb89efcd7dd10507b6a42"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "3a2225147f3a2124e19bd48efdaa151555f948637a3c776ad68bd5bff499e5c1"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "2fc5a5e34002b5c1dd17c3b6dad5cc6307c640ef9edc29a747c723e5f40526da"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "3fc60d3d324bb6a11cde747a1fd96eeb3969bbda30b712bb5b18099876c6872c"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "2648b0d79e9fa4980aa8c6287a11bc8bc870a7e47e216fd6d7a43f0fb9989eb7"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "d033b97cab19d1e0d7592a9ff0f2444dcca1eb0f141e6e89ea26cc81524f0e8b"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "2a8759311c3a18bfe3fd71a1722b7b7304abc4197a2a14eb5c24dc6e72429510"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "dafa47bce964c77fda91916dfe50cb352795f59654648da725dad5f912d9ed2d"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "42cbade8a751168b01348cfcee3e28f4f65efea9053e144f4033e1cccd819e4a"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "209493c95f3a63f65e46566995c8161b0916c004abfd1cc62a40de273cc11fb5"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "c4adc0dce7167934cf3194121a15e366151cd036d19132dabb0d2bf12bcbbc77"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "223f0e4215add37620a32f4f0e0ed6970f46358aaa222c766c10e31293f2672a"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "9c62588a1c729817be113eca99d3172c3dbec74f09847c23424fba48ac9b4326"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "7ef1fe4987bddc97b6288ac73c1869d21aaa7ad7eae8565c9b4ae40acd327d4f"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "495499d6c7809338fedd26c5a8f25bdfc73bae1b879b74cd6b7bedf098956c3d"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "590160371e5604b9e997076717d5a3f5b9e9b7cbddbf31ad961fc952f8985529"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "aadec0f5f8b9e145568f55601fc548ff49e3359cac8d72456a9947db1d52c243"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p1-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "7e85c2101913eb89e34aef72a1823d188c55f50d74f79533acf6914326505bef"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "fa482e1414362a33ac1260966a051bf851c1eee671e99bbdb8837adbb96d08e8"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "766ee1698f1bfff01e8e65d96ec1bf8fb559259c7fe703158dba30ed852baaae"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "eabf27a70cba0c6b8fa012a8fe8642b6fedabd6a59ba349f2d3d905ebbad2dc3"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "43e777916cf80d8f6e94a95cdc95e7219e2bafd216abae8bd78589fa9fc038a8"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "3890a8b7f87f44b8c56d9b403111c65ffdb724c563c2b4204d999f6c73f7c407"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "34d18f31c1959f7d8e27158e29232fc6bcd58a7d8bcd115fc20ddaa1e5ab5139"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "8557837b706af1fd497be8aa1fe4de9c947774271fb6927b07024e895587dc55"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "c5178bd3457122bc2d6a42514d3c2f358b70f8b47ef9dc632984286e6dceed1a"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "df31d5170951d6a2d274549da9d96e618ca56eff12189ab47e8831b916fae9d6"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "259aa87e76a11b22b92849f107e0eceff0ef9809eec6bc3f32c79887fd822e72"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "e2a9cce23e306475bbb909f7342173851743fc30e7c48e3bc477b0d015429c7f"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "3402d76775e295b8c2bad0003dd8e6a2e155ac7695cf465f5a28a3d2317d76c5"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "4957bdf3dc9e8a1f9b12c45b6c433d17a261f1ab678d60ec809f31971e20099e"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "07569d361bb7e12082906f6e8a7dc1d299ae81fbf2b90dbea446a50c381f8223"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "4f4972a47d1366745c42aa046246bf31d8d9fdff9cb3803f25e364c92b9a67d2"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "45ae434646e72c346d901fb5f9af12d04ba1d547e0a184510e508a18fe6d7ddd"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "5a7bae9156a40238073d4635c781c26af777d6ab05b55d5afbc9aa85a98cd906"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p2-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "ae0bba6319c8bfd50e295ab58ee6c017acac17f632742943d5bf6c5c7b45210e"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-attn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "2d9059fe6988f604f45aaa624968a3658d70426220e04627149c1996c9ab55f9"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-vres_in-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "317860a916ffed3595368ad9963004bb6a32c3aa5dc14b8838b96153a2d6710c"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-Vcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "45dbdd39dafeba61e93268fcf201435996d781f557dbecaffd272f1414b4c368"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-Qcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "15c79e0292cccf9cfd0b2171bb5fc5394c977a92074c2ab404c0adc9cf6f63cc"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-Kcur_normed-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "66dadf160f11271cafbbdcde16ac7022b184e24cbab879ec0e2f5bd5d731de2e"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-Qcur-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "986b3d0f068854f1e4fea8d3252cbdddc69454601ca486ff19dd1850d712f519"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-Kcur-0.bin",
+      "byte_exact": true,
+      "bytes": 512,
+      "sha256": "1bf18ddf386a7e1cac4a69d48806aca256492936a02aaa14454adb0f407ca949"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-kq_soft_max-0.bin",
+      "byte_exact": true,
+      "bytes": 4096,
+      "sha256": "a8b2fc7082be4d2cbdc85b30fc5ffaf86ec6fb0de337e55e9bea20e67e42b158"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-attn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "de9c9f53552014e4956294a5406d087f3fb4132ebd93ef751a4ca4d470552368"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-attn_gate-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "9c25d1631375b34378b7ca55a3ce4d5d7e8d887a11af7b7ebabbd62f00b8b8c9"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-attn_gated-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "02ef7f25de1d087f66ccf0459bab1c85e0d5ddceb59b1cd33717a59567c131f4"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-attn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "3adc1709fb62ca3bc927c072cdf838e7783eae2be5b8ec6ff51135259089fff5"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-ffn_inp-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "cae4e3d75e2dc9a19ab2be13b2779375a8beef73e6d2036d0fd4a4830bb44046"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-ffn_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "6b3b14e9a35335a0a654c261cebb0dcf504cf40534a475eb88666106d4ffa7c7"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-ffn_swiglu-0.bin",
+      "byte_exact": true,
+      "bytes": 2048,
+      "sha256": "9ec2d4de56d6744fa2599a8b98b2c27216d9c1dbf56decd8a93081af822623f2"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-ffn_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "94c07ed44a9e28a81f97a3dcc0109f0f8d7762c851ba2c451d940abc28499fa2"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-ffn_post_norm-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "190ced03899ffff1d19aedd01d97ccdb93f81a39f181195cdbecdc26662547f1"
+    },
+    {
+      "case": "fixture-quantized",
+      "name": "p3-l_out-0.bin",
+      "byte_exact": true,
+      "bytes": 1024,
+      "sha256": "9959f4c8eaaaea5a5633f05ac205b77747d2c66ed52dc6287a9b3dfa704669bc"
+    }
+  ],
+  "passed": 144,
+  "synthetic_only": true,
+  "real_reference_qualified": false
+}

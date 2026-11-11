@@ -1,0 +1,404 @@
+{
+  "activation_clamp_f32": 20.0,
+  "attention": "sliding_causal",
+  "attention_scale_f32": 0.0883883461356163,
+  "backend": {
+    "candidate_ggml": "0.25.3",
+    "flash_attention": false,
+    "kind": "CPU",
+    "kv_type": "F16",
+    "stock_ggml": "0.29.0",
+    "threads": 1,
+    "use_extra_bufts": false
+  },
+  "comparison": "exact shape/dtype/byte count and every byte, zero tolerance; reject missing/nonfinite computed outputs; layer-output equals l_out",
+  "context": 256,
+  "ffn": 40960,
+  "head_dimension": 128,
+  "heads": 80,
+  "hidden": 5120,
+  "input_semantics": "external already-scaled synthetic activation; input equals x0; no embedding lookup or token generation",
+  "inputs": {
+    "initial-kv.f16": {
+      "bytes": 1048576,
+      "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58"
+    },
+    "input.f32": {
+      "bytes": 20480,
+      "sha256": "edc12d25f89ab142a15cb9dbed09787e07121946f5abfaa71269ec4086531207"
+    },
+    "mask.f32": {
+      "bytes": 1024,
+      "sha256": "1eccacccdaaa37bab7f988c764ae002568db263fca867468e537ff4c612dc726"
+    },
+    "x0.f32": {
+      "bytes": 20480,
+      "sha256": "edc12d25f89ab142a15cb9dbed09787e07121946f5abfaa71269ec4086531207"
+    }
+  },
+  "kv_heads": 8,
+  "layer": 0,
+  "logical_kv_length": 0,
+  "model_sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "next_position": 1,
+  "outputs": {
+    "Kcur.f32": {
+      "bytes": 4096,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        8,
+        1
+      ]
+    },
+    "Kcur_normed.f32": {
+      "bytes": 4096,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        8,
+        1
+      ]
+    },
+    "Qcur.f32": {
+      "bytes": 40960,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        80,
+        1
+      ]
+    },
+    "Qcur_normed.f32": {
+      "bytes": 40960,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        80,
+        1
+      ]
+    },
+    "Vcur.f32": {
+      "bytes": 4096,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        8,
+        1
+      ]
+    },
+    "attn_gate.f32": {
+      "bytes": 40960,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        10240,
+        1
+      ]
+    },
+    "attn_gated.f32": {
+      "bytes": 40960,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        10240,
+        1
+      ]
+    },
+    "attn_norm.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "attn_out.f32": {
+      "bytes": 40960,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        10240,
+        1
+      ]
+    },
+    "attn_post_norm.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "ffn_inp.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "ffn_norm.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "ffn_out.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "ffn_post_norm.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "ffn_swiglu.f32": {
+      "bytes": 163840,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        40960,
+        1
+      ]
+    },
+    "key-written.f16": {
+      "bytes": 2048,
+      "dtype": "F16_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        8,
+        1
+      ]
+    },
+    "kq_soft_max.f32": {
+      "bytes": 81920,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        256,
+        1,
+        80,
+        1
+      ]
+    },
+    "l_out.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "layer-output.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    },
+    "value-written.f16": {
+      "bytes": 2048,
+      "dtype": "F16_LE",
+      "expected_sha256": null,
+      "shape": [
+        128,
+        8,
+        1
+      ]
+    },
+    "vres_in.f32": {
+      "bytes": 20480,
+      "dtype": "F32_LE",
+      "expected_sha256": null,
+      "shape": [
+        5120,
+        1
+      ]
+    }
+  },
+  "position": 0,
+  "previous_kv_argument": "-",
+  "qualification": "reference and live guard pending; never infer qualification from this file",
+  "rms_epsilon_f32": 9.999999974752427e-07,
+  "rope": "NEOX; position 0",
+  "rope_base_f32": 10000.0,
+  "sequence_id": 0,
+  "status": "CONTRACT_ONLY_NO_GOLDEN_OUTPUTS",
+  "stock_source": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "tensor_manifest_sha256": "73fe0b8f35d22b0271d974dba25cc2bd8fc12ea070e43d1bd52ddcb1ef9c9b76",
+  "tensor_plan_sha256": "8521a365b87b4591d488f9e95ea5c58396b1c853e8bb09c5f628c374ffc82b11",
+  "tensors": [
+    {
+      "bytes": 29491200,
+      "name": "blk.0.attn_gate.weight",
+      "sha256": "71fe9444caf92b7dc8a14c4861abc79e14b07d6628e23fe75fdd3509ac307158",
+      "shape": [
+        5120,
+        10240
+      ],
+      "type": 12
+    },
+    {
+      "bytes": 5570560,
+      "name": "blk.0.attn_k.weight",
+      "sha256": "05836fa4be027e49d4f31b17486affb0cc86f7b5d051c506265f1adb5f098cbc",
+      "shape": [
+        5120,
+        1024
+      ],
+      "type": 8
+    },
+    {
+      "bytes": 512,
+      "name": "blk.0.attn_k_norm.weight",
+      "sha256": "2a9cc010c309a2619c992c913b4ad50a46ca761fa9b75f537a924c4fed3faf04",
+      "shape": [
+        128
+      ],
+      "type": 0
+    },
+    {
+      "bytes": 20480,
+      "name": "blk.0.attn_norm.weight",
+      "sha256": "18e2a026c799cc67e382f6743b42cfab183eae0ee23ced7d38e59261cc806bf9",
+      "shape": [
+        5120
+      ],
+      "type": 0
+    },
+    {
+      "bytes": 43008000,
+      "name": "blk.0.attn_output.weight",
+      "sha256": "6e49416ecadcd3d118e50d9eac192d79fa6b167f55c7548a27d6194383f95394",
+      "shape": [
+        10240,
+        5120
+      ],
+      "type": 14
+    },
+    {
+      "bytes": 29491200,
+      "name": "blk.0.attn_q.weight",
+      "sha256": "2f2dd05d6f246be31c12edd04b0ca9d911115b2364752b888038df625011894f",
+      "shape": [
+        5120,
+        10240
+      ],
+      "type": 12
+    },
+    {
+      "bytes": 512,
+      "name": "blk.0.attn_q_norm.weight",
+      "sha256": "580f0cbbf6b64a1e40e8991de24903c01d0f377aa0a42e43c403b2b142a0d571",
+      "shape": [
+        128
+      ],
+      "type": 0
+    },
+    {
+      "bytes": 5570560,
+      "name": "blk.0.attn_v.weight",
+      "sha256": "067dc406cee43b7665ce2b0b8278b9d66efffa5a2b4912ab0f6eae841c24bb63",
+      "shape": [
+        5120,
+        1024
+      ],
+      "type": 8
+    },
+    {
+      "bytes": 4,
+      "name": "blk.0.attn_vres_lambda.weight",
+      "sha256": "4768da617bd9a19f30c068169fd15579cb8df7424f912902bc244bf8430b6518",
+      "shape": [
+        1
+      ],
+      "type": 0
+    },
+    {
+      "bytes": 144179200,
+      "name": "blk.0.ffn_down.weight",
+      "sha256": "ca62eb18d1ef4ad486b990b02841c861b99613452c3bd579ca820b344e5b1638",
+      "shape": [
+        40960,
+        5120
+      ],
+      "type": 13
+    },
+    {
+      "bytes": 144179200,
+      "name": "blk.0.ffn_gate.weight",
+      "sha256": "7e5be9f493702db4342abbed2cc4b34d501c76dc56c8172b2a071f5dd0663c3e",
+      "shape": [
+        5120,
+        40960
+      ],
+      "type": 13
+    },
+    {
+      "bytes": 20480,
+      "name": "blk.0.ffn_norm.weight",
+      "sha256": "d634bc334cdaf25c3b3961ea0800a92fa6a4508892e3fc89170d88d499ab31af",
+      "shape": [
+        5120
+      ],
+      "type": 0
+    },
+    {
+      "bytes": 144179200,
+      "name": "blk.0.ffn_up.weight",
+      "sha256": "2a66ac254820110e5c9f28a2f00e9e073078142d3a47131a6a235b0564be70e1",
+      "shape": [
+        5120,
+        40960
+      ],
+      "type": 13
+    },
+    {
+      "bytes": 20480,
+      "name": "blk.0.post_attention_norm.weight",
+      "sha256": "19efc7e1c3c898a8bdb60bff52093ab38eea872c9757da65ccc56dcd96bf94cc",
+      "shape": [
+        5120
+      ],
+      "type": 0
+    },
+    {
+      "bytes": 20480,
+      "name": "blk.0.post_ffw_norm.weight",
+      "sha256": "c26a05a9ef950e47e1f4fd5fd98810572f8dc83153219846c1d22c35f9519b42",
+      "shape": [
+        5120
+      ],
+      "type": 0
+    }
+  ],
+  "tokens": 1,
+  "unwritten_kv_comparison": "exclude; initialized zero for deterministic physical buffers",
+  "version": 1,
+  "window": 1024
+}

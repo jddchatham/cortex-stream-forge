@@ -1,0 +1,550 @@
+{
+  "baseline_rss_kib": 5104,
+  "baseline_pss_kib": 1135,
+  "tensor_storage_measurements": [
+    {
+      "name": "blk.0.attn_gate.weight",
+      "payload_bytes": 29491200,
+      "ggml_buffer_bytes": 29491200,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 8268,
+      "after_free_pss_kib": 3989
+    },
+    {
+      "name": "blk.0.attn_k.weight",
+      "payload_bytes": 5570560,
+      "ggml_buffer_bytes": 5570560,
+      "rss_kib": 13716,
+      "pss_kib": 9437,
+      "after_free_rss_kib": 13716,
+      "after_free_pss_kib": 9437
+    },
+    {
+      "name": "blk.0.attn_k_norm.weight",
+      "payload_bytes": 512,
+      "ggml_buffer_bytes": 512,
+      "rss_kib": 13716,
+      "pss_kib": 9437,
+      "after_free_rss_kib": 13716,
+      "after_free_pss_kib": 9437
+    },
+    {
+      "name": "blk.0.attn_norm.weight",
+      "payload_bytes": 20480,
+      "ggml_buffer_bytes": 20480,
+      "rss_kib": 13716,
+      "pss_kib": 9437,
+      "after_free_rss_kib": 13716,
+      "after_free_pss_kib": 9437
+    },
+    {
+      "name": "blk.0.attn_output.weight",
+      "payload_bytes": 43008000,
+      "ggml_buffer_bytes": 43008000,
+      "rss_kib": 55720,
+      "pss_kib": 51441,
+      "after_free_rss_kib": 13716,
+      "after_free_pss_kib": 9437
+    },
+    {
+      "name": "blk.0.attn_q.weight",
+      "payload_bytes": 29491200,
+      "ggml_buffer_bytes": 29491200,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.attn_q_norm.weight",
+      "payload_bytes": 512,
+      "ggml_buffer_bytes": 512,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.attn_v.weight",
+      "payload_bytes": 5570560,
+      "ggml_buffer_bytes": 5570560,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.attn_vres_lambda.weight",
+      "payload_bytes": 4,
+      "ggml_buffer_bytes": 32,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.ffn_down.weight",
+      "payload_bytes": 144179200,
+      "ggml_buffer_bytes": 144179200,
+      "rss_kib": 177880,
+      "pss_kib": 173601,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.ffn_gate.weight",
+      "payload_bytes": 144179200,
+      "ggml_buffer_bytes": 144179200,
+      "rss_kib": 177880,
+      "pss_kib": 173601,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.ffn_norm.weight",
+      "payload_bytes": 20480,
+      "ggml_buffer_bytes": 20480,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.ffn_up.weight",
+      "payload_bytes": 144179200,
+      "ggml_buffer_bytes": 144179200,
+      "rss_kib": 177880,
+      "pss_kib": 173601,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.post_attention_norm.weight",
+      "payload_bytes": 20480,
+      "ggml_buffer_bytes": 20480,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    },
+    {
+      "name": "blk.0.post_ffw_norm.weight",
+      "payload_bytes": 20480,
+      "ggml_buffer_bytes": 20480,
+      "rss_kib": 37076,
+      "pss_kib": 32797,
+      "after_free_rss_kib": 37076,
+      "after_free_pss_kib": 32797
+    }
+  ],
+  "peak_observed_rss_kib": 177880,
+  "peak_observed_pss_kib": 173601,
+  "max_single_buffer_bytes": 144179200,
+  "max_alignment_overhead_bytes": 28,
+  "final_after_free_rss_kib": 37076,
+  "final_after_free_pss_kib": 32797,
+  "synthetic_execution_measurements": [
+    {
+      "case": "fixture-run.log",
+      "position": 0,
+      "layer": 0,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 7668,
+      "post_execute_pss_kib": 3107
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 0,
+      "layer": 1,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 11564,
+      "post_execute_pss_kib": 7003
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 0,
+      "layer": 2,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 13172,
+      "post_execute_pss_kib": 8611
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 0,
+      "layer": 3,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15148,
+      "post_execute_pss_kib": 10587
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 0,
+      "layer": 4,
+      "weight_bytes": 2626052,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15408,
+      "post_execute_pss_kib": 10847
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 1,
+      "layer": 0,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15412,
+      "post_execute_pss_kib": 10851
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 1,
+      "layer": 1,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 1,
+      "layer": 2,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 1,
+      "layer": 3,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 1,
+      "layer": 4,
+      "weight_bytes": 2626052,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 2,
+      "layer": 0,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 2,
+      "layer": 1,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 2,
+      "layer": 2,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 2,
+      "layer": 3,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 2,
+      "layer": 4,
+      "weight_bytes": 2626052,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 3,
+      "layer": 0,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 3,
+      "layer": 1,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 3,
+      "layer": 2,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 3,
+      "layer": 3,
+      "weight_bytes": 2626052,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-run.log",
+      "position": 3,
+      "layer": 4,
+      "weight_bytes": 2626052,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 15544,
+      "post_execute_pss_kib": 10983
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 0,
+      "layer": 0,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 7732,
+      "post_execute_pss_kib": 3177
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 0,
+      "layer": 1,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 9468,
+      "post_execute_pss_kib": 4913
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 0,
+      "layer": 2,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 9948,
+      "post_execute_pss_kib": 5393
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 0,
+      "layer": 3,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10420,
+      "post_execute_pss_kib": 5865
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 0,
+      "layer": 4,
+      "weight_bytes": 472068,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10480,
+      "post_execute_pss_kib": 5925
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 1,
+      "layer": 0,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10724,
+      "post_execute_pss_kib": 6169
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 1,
+      "layer": 1,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 1,
+      "layer": 2,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 1,
+      "layer": 3,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 1,
+      "layer": 4,
+      "weight_bytes": 472068,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 2,
+      "layer": 0,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 2,
+      "layer": 1,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 2,
+      "layer": 2,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 2,
+      "layer": 3,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 2,
+      "layer": 4,
+      "weight_bytes": 472068,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 3,
+      "layer": 0,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 3,
+      "layer": 1,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 3,
+      "layer": 2,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 3,
+      "layer": 3,
+      "weight_bytes": 472068,
+      "graph_bytes": 241216,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    },
+    {
+      "case": "fixture-quantized-run.log",
+      "position": 3,
+      "layer": 4,
+      "weight_bytes": 472068,
+      "graph_bytes": 239680,
+      "kv_bytes": 131072,
+      "post_execute_rss_kib": 10800,
+      "post_execute_pss_kib": 6245
+    }
+  ],
+  "real_layer_workspace_measured": false
+}

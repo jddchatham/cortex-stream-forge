@@ -1,0 +1,13 @@
+{
+  "host": {
+    "available": 3845861376,
+    "swap_free": 15277563904,
+    "disk_free": 64590655488,
+    "psi": 0.0
+  },
+  "entry_pass": false,
+  "qualified_reference_and_guard": false,
+  "blocker": "real stock reference and live guard qualification absent",
+  "real_numerical_execution": false,
+  "guard_policy_unchanged": true
+}

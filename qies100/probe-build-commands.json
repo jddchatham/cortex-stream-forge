@@ -1,0 +1,51 @@
+[
+  [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock_probe.cpp",
+    "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libllama.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-cpu.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-base.so",
+    "-o",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-probe"
+  ],
+  [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock_metadata.cpp",
+    "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-cpu.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-base.so",
+    "-o",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-metadata"
+  ],
+  [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies099",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies099/ricursive-layer.cpp",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/candidate_probe.cpp",
+    "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+    "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so",
+    "-o",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/candidate-probe"
+  ]
+]

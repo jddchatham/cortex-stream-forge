@@ -1,0 +1,15 @@
+/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock_probe.cpp: In function ‘int main(int, char**)’:
+/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock_probe.cpp:27:81: error: ‘struct llama_model_params’ has no member named ‘use_mmap’
+   27 |  llama_backend_init();auto mp=llama_model_default_params();mp.n_gpu_layers=0;mp.use_mmap=false;mp.check_tensors=true;
+      |                                                                                 ^~~~~~~~
+Traceback (most recent call last):
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/run_comparison.py", line 11, in <module>
+    compile('stock-probe',[R/'stock_probe.cpp'],[S/'include',S/'ggml/include'],stocklibs,B)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/run_comparison.py", line 9, in compile
+    subprocess.run(cmd,env=env,check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['c++', '-std=c++17', '-O2', '-Wall', '-Wextra', '-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include', '-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include', '/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock_probe.cpp', '-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin', '/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libllama.so', '/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml.so', '/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-cpu.so', '/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-base.so', '-o', '/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-probe']' returned non-zero exit status 1.

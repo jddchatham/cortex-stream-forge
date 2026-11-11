@@ -1,0 +1,2522 @@
+[
+  {
+    "name": "p0-Kcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur-0.bin",
+    "sha256": "80cba75d326cf8f7829a60fc76d51956028151ef951a1b3f627ca015c918ae2a",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur-1.bin",
+    "sha256": "bd8dd42c19da9382a1a324a58b5be1bb6191952d0d141c203ddcd63d19ed9d94",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur-2.bin",
+    "sha256": "44e0fde7e2d1d09cde15f70e86ee4688d9810c987f469eb3eb560f564d9a2fe6",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur-3.bin",
+    "sha256": "835c8cfce08992ee163d7bd99e73ca62b62be8f3ceedaeb0fbcafd13f5026e6e",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur-4.bin",
+    "sha256": "086286276b4f81dda5ff6c2771cf39719bf5d8084368709114189f01e6507941",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur_normed-0.bin",
+    "sha256": "80cba75d326cf8f7829a60fc76d51956028151ef951a1b3f627ca015c918ae2a",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur_normed-1.bin",
+    "sha256": "bd8dd42c19da9382a1a324a58b5be1bb6191952d0d141c203ddcd63d19ed9d94",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur_normed-2.bin",
+    "sha256": "44e0fde7e2d1d09cde15f70e86ee4688d9810c987f469eb3eb560f564d9a2fe6",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur_normed-3.bin",
+    "sha256": "835c8cfce08992ee163d7bd99e73ca62b62be8f3ceedaeb0fbcafd13f5026e6e",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Kcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Kcur-4.bin",
+    "sha256": "086286276b4f81dda5ff6c2771cf39719bf5d8084368709114189f01e6507941",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur-0.bin",
+    "sha256": "6ea423b5bbcb074df41db2c386b23d65348086199583bd2e1e33883436bcca78",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur-1.bin",
+    "sha256": "515a99087a98df7120c877b6b63bf28b40909ae7030aa3ca9a04b71b76e38978",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur-2.bin",
+    "sha256": "d884fc31d5b54e8cd659eb15939b251bf787a509295c96edb80006dc9583d926",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur-3.bin",
+    "sha256": "27394b8716bb0d38489c6b62bbecb4bdb5d36129fdedc1a59c2b81c3e06df4af",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur-4.bin",
+    "sha256": "a3ad01af36b29c9d342c395bda645b19e06a1e44e7b4996977f39080ab9c2597",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur_normed-0.bin",
+    "sha256": "6ea423b5bbcb074df41db2c386b23d65348086199583bd2e1e33883436bcca78",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur_normed-1.bin",
+    "sha256": "515a99087a98df7120c877b6b63bf28b40909ae7030aa3ca9a04b71b76e38978",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur_normed-2.bin",
+    "sha256": "d884fc31d5b54e8cd659eb15939b251bf787a509295c96edb80006dc9583d926",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur_normed-3.bin",
+    "sha256": "27394b8716bb0d38489c6b62bbecb4bdb5d36129fdedc1a59c2b81c3e06df4af",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Qcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Qcur-4.bin",
+    "sha256": "a3ad01af36b29c9d342c395bda645b19e06a1e44e7b4996977f39080ab9c2597",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Vcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Vcur-0.bin",
+    "sha256": "9f5c6bcc023cb465b37d0682224ccd9fe24989d865a85d26dfcc6dfe1bcd7b32",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Vcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Vcur-1.bin",
+    "sha256": "c8ec02596c1ec576ee99e1eef4b126f5460ef41140dc57a62952f77046f20df1",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Vcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Vcur-2.bin",
+    "sha256": "6c27a25dad72b71033a0be3b64bd9dbd9e590f9a275b864bd9eb4f0e9dc40320",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Vcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Vcur-3.bin",
+    "sha256": "4168a7bd033a6bd7db8342a322e36ae5d5cfc8632883b843cd5946d95206eac4",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-Vcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-Vcur-4.bin",
+    "sha256": "047fd2adde4f0429b2bc79ca47bd3b1a1ac656b66439260e79f3383d0c503dcc",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gate-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gate-0.bin",
+    "sha256": "aeb9e30df72faffb05a732acb2627c408a2c0bc0a48addbbcb3acd05f7b8b54e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gate-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gate-1.bin",
+    "sha256": "6f5937f52cba52a3ba76c264bc880a1040588f1d205d36246fe33a0557ef00b0",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gate-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gate-2.bin",
+    "sha256": "5e80f557696d58f7b73a887b9506f89b94f205528f8a56fe1c02c933e49740f2",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gate-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gate-3.bin",
+    "sha256": "e979007f848b016869194f1ea35cc9435b9d5cbe7733bd5fd45c7f9f5d841974",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gate-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gate-4.bin",
+    "sha256": "641a5d2886c71a8c2cc9034d33014973d76ccb91b684de429b3a7083f46e0228",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gated-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gated-0.bin",
+    "sha256": "c4d8218c90fcab17ec51d04c56c56dd6d438219ec3c439c765e6165db3127384",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gated-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gated-1.bin",
+    "sha256": "527fa64eb85717ba17f901349a31f760e45c011554c1eefd26affd7b88a763bb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gated-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gated-2.bin",
+    "sha256": "8e4cbab5af252aa429d2649b8cd0489f0772e8730cad474a7f76aff70db1ee60",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gated-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gated-3.bin",
+    "sha256": "b45e0bcd9c55aa3ea29fe46cc419f70609993af032d9dfd05543fc3263a3b8bd",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_gated-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_gated-4.bin",
+    "sha256": "f47bd48a6ad7ec9101cf7b7f8909c54256cbbc76ba863fe1576f287344c84953",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_norm-0.bin",
+    "sha256": "59772c1783eb71ba25deaa5b6c58fd0a94dc77edd4466a5c1c35ef001f1e80a7",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_norm-1.bin",
+    "sha256": "54b904fb06fa570e53d704fb9766059003ff34b9b3bd8c59e9c90945e76e3224",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_norm-2.bin",
+    "sha256": "ba3c32d60845058b4c0593bcd543d157a5939474e6a8bedf34f00768741e5393",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_norm-3.bin",
+    "sha256": "f495db3a1577e6a696892d9e8fa5a33683121eff6a8982d7d434a825717f2b6d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_norm-4.bin",
+    "sha256": "6e1a45c4fbe92cc7c4150742e0e1fabb6b061ea092b6f5979d3e8ef2f1beda18",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_out-0.bin",
+    "sha256": "f1459323547090588352f1053a11766ec5a96d5f312913553fa95d0f2380c68b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_out-1.bin",
+    "sha256": "b6658cb70e2c7413cda6ebf76d255ae21c6716a048ebaf81827a5804067aab44",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_out-2.bin",
+    "sha256": "b60ee3e50f9436550d79f780875f9f70cf18e6f5a0139ec73bdc331e08e98857",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_out-3.bin",
+    "sha256": "a8a2700488215d668379905eef540549e21fdeee98cb63cc23754e867f9c4d07",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_out-4.bin",
+    "sha256": "083c1a0e400232af3dc3eb8d7bfaaa6399709c3a342ac80371ee08e8109321b5",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_post_norm-0.bin",
+    "sha256": "341a41123ebbbb12ba10543a051321451e8ae352635b0919a8b243f55af9a18b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_post_norm-1.bin",
+    "sha256": "10618d45b389f5a880e8c66164888ba75ddce3e7523688f602f4dd328c0aced8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_post_norm-2.bin",
+    "sha256": "6043dff867a49ff564a3fc55f477ec04aed2f88782e614eace5ed96745d1864f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_post_norm-3.bin",
+    "sha256": "bec97b8b264d7e9b8a9c22c6d33c52d0f530ee487a45bfaaf8a4a7137e350d8c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-attn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-attn_post_norm-4.bin",
+    "sha256": "0de04b5cde70f2cd2d807d3536c524c0a4d0d102d5f95b6dcd41f90fe3e8c51a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_inp-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_inp-0.bin",
+    "sha256": "b603e08dbab7d74b115fdfa5c0c88f9c5d190afc694ce17078ab8b8ebcbdf316",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_inp-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_inp-1.bin",
+    "sha256": "c12079590d514d7f69552fe05f76e497b01c26468fc8385939b10d1fa968626d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_inp-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_inp-2.bin",
+    "sha256": "1bf1c43860121bf0d0b8ee674d543dfa3e3addcc298886ad139c335f59aba0a3",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_inp-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_inp-3.bin",
+    "sha256": "a8cd7acc91c7db454c53547c25bea2547beb2f8cc0b25a62a1ede7eba8e08777",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_inp-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_inp-4.bin",
+    "sha256": "5abf19fefb6c0838136bc0682fb0eb34a89f0cf10f3fb31d81b288a921f284ea",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_norm-0.bin",
+    "sha256": "74f8b1df53cb21cc3415735f9fe810a25161b57096e781c3e943e9d6c945cd57",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_norm-1.bin",
+    "sha256": "81f7ed2413c7b87ad6836e6a13d90d25d114bf403c907b3f83296ec3f9990238",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_norm-2.bin",
+    "sha256": "aabea58aa33b273d86ffa86a62749e075f43303b08973386ab819de33d92bbf2",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_norm-3.bin",
+    "sha256": "f53dbd568075db5116edc958bb4e87d9e938ef55b313dab2b03e64fc75754a2d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_norm-4.bin",
+    "sha256": "c189dbb4e06f0cf4fc4e67038ac64f5616c60a62d8f84943a8f75d8ce3f712ae",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_out-0.bin",
+    "sha256": "ecfcac3dcc9dcb45de6e2bef00510663d6d452ec2172553c8efa0dcfd0571569",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_out-1.bin",
+    "sha256": "a0d2aa7db795000c3c28d4aaa29c0702f885531e325197eec55dbb207b68ae85",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_out-2.bin",
+    "sha256": "9f870525e8ce022f6627e2449b440bae48e0ea4988ad312c80235b5796d2d2d1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_out-3.bin",
+    "sha256": "8b67977f1a54a8a7fdc9a4dffdb2a37744f635aed9bf7c29d7b8f1b62bf42067",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_out-4.bin",
+    "sha256": "2f13d632ec3bbc1f51b8c68d2662a8525b6eb5d39f452e94f8a8ee447d7b64ad",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_post_norm-0.bin",
+    "sha256": "6aded2ed8e7fe61a8f0a78d73e83976b33383ae350db8b532d53077d28b97133",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_post_norm-1.bin",
+    "sha256": "160eb9349f4cbefd902fe9816996f348f1312227e5cd52c1bfbe57f08d224259",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_post_norm-2.bin",
+    "sha256": "0c53dc2be1db06b4e3f8ce6533ba2e148463f70d44067aa5e23dce543eb7447c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_post_norm-3.bin",
+    "sha256": "4346cd6644b1a6b50ac671f0f9560a0367005c58121e91be804e8b247d1bab98",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_post_norm-4.bin",
+    "sha256": "6859bb77b62220d9cf8472ce88b46a4a74c671436fcbe8668d82b07b3bc5ee9a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_swiglu-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_swiglu-0.bin",
+    "sha256": "298e6664fbbb6e8da285579f40ac3e7220d18c8372bff4851e9fdfe7b3c27edf",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_swiglu-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_swiglu-1.bin",
+    "sha256": "70eb5f930d7c5ad999921c090ac5957e4af351e7dc0f6acefe0c3f17d4029b64",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_swiglu-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_swiglu-2.bin",
+    "sha256": "d05dd633ba2faf5629eeda74b068993b899d27ea00e751746f97ebbc5b1f1ed7",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_swiglu-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_swiglu-3.bin",
+    "sha256": "42e74c12e986e32754eb9610dfcf6d0edd051f6ffe628741b098653e6783b818",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-ffn_swiglu-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-ffn_swiglu-4.bin",
+    "sha256": "cc546201fdbdd3a32ab96256f8893c97a101a19eb380e2c3a4ec78a9a4950e5d",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-kq_soft_max-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-kq_soft_max-0.bin",
+    "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-kq_soft_max-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-kq_soft_max-1.bin",
+    "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-kq_soft_max-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-kq_soft_max-2.bin",
+    "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-kq_soft_max-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-kq_soft_max-3.bin",
+    "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-kq_soft_max-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-kq_soft_max-4.bin",
+    "sha256": "a37b63043864b87a5382217902ebd95df65d733d90615310af1d223731799924",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-l_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-l_out-0.bin",
+    "sha256": "13ef72fac68cc2893a03e29645305083521a1e52c17248a7868889108c3ddd7c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-l_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-l_out-1.bin",
+    "sha256": "942f2b33d9b050543ed96955e11664254ab0a72a00ae523e246e8e34f99e4bd1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-l_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-l_out-2.bin",
+    "sha256": "9554234f002398a6d498fefe9c48afe571f185970f39c2e767eb6740b8f48719",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-l_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-l_out-3.bin",
+    "sha256": "457e5ef12f6b9c0a8b33952fe32b9617272cdd797ed15a4a896799afd21fa938",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-l_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-l_out-4.bin",
+    "sha256": "1ce4356bb0cd1fca548b357006cacaf3265b75b9364688c32a8a7b9a30602500",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-vres_in-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-vres_in-0.bin",
+    "sha256": "4cb57645ac6b0b9cdafcb8c3084ea9206bcebdd64ca9c87b87d3999a4896a4e0",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-vres_in-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-vres_in-1.bin",
+    "sha256": "6cbf9e0cf3fcf134060db16b42db3e8a08afd2901231aad8c180d69bc5cd0fc8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-vres_in-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-vres_in-2.bin",
+    "sha256": "509e6be0109be26c37046a3eda204e4b658291e11f4f12c3b6277f7358d0c781",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-vres_in-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-vres_in-3.bin",
+    "sha256": "65ed1765cd11e44af07f490247a1c26c30ee8d0415ff8458fa1e2bba39095849",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p0-vres_in-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p0-vres_in-4.bin",
+    "sha256": "fffea38be81d0b575b5549a65a1ab64bca5561cebd0dfe08f491bc6c1a27a422",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur-0.bin",
+    "sha256": "2a8759311c3a18bfe3fd71a1722b7b7304abc4197a2a14eb5c24dc6e72429510",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur-1.bin",
+    "sha256": "a741c69093ca3e1afb82847d1f5cd10018441c07ec02b3e1ef0ceadd63d9f058",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur-2.bin",
+    "sha256": "0dec548c9e96201f2edcf9780e159c7ed306187d36041fd20fe825db8451b797",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur-3.bin",
+    "sha256": "d84a9611d97d766df3b25f76c8612af6eb952f380fda55231cad34d02eaad53c",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur-4.bin",
+    "sha256": "2898629b771d3c4ab14b6eabf521cbb787e9ae3d2c54606de3190c85c3c9c015",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur_normed-0.bin",
+    "sha256": "2648b0d79e9fa4980aa8c6287a11bc8bc870a7e47e216fd6d7a43f0fb9989eb7",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur_normed-1.bin",
+    "sha256": "ddfd0155047e4bc723f6c1614982377bba27e869e21916ab5eb31e159cfae5b1",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur_normed-2.bin",
+    "sha256": "5f539834357d1ffe34b166b3b5944d668fe9c278d442223d881728482bcb5b40",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur_normed-3.bin",
+    "sha256": "b90df8a01b7869328fb0e9c8ec4eb717e479e9f031c8b2956e2c79f8c39e9782",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Kcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Kcur-4.bin",
+    "sha256": "2898629b771d3c4ab14b6eabf521cbb787e9ae3d2c54606de3190c85c3c9c015",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur-0.bin",
+    "sha256": "d033b97cab19d1e0d7592a9ff0f2444dcca1eb0f141e6e89ea26cc81524f0e8b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur-1.bin",
+    "sha256": "e5b978c1f4966af1b89bcde05838230d57e50a7f80d00e148ef13dc56d7dbcdb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur-2.bin",
+    "sha256": "c989569dc64d29df07439a0bc4c242a1903aed3b5fae0d3be16e5053b154f829",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur-3.bin",
+    "sha256": "78dcf1c98e446b3e7ee6975a7bd2043e4cb3a01b92879a507b53f04850ddc74f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur-4.bin",
+    "sha256": "8d574eed0674e00f3f4cda4398a75a4f31403b5bd7551e3aeaf4e1d30df6b5a4",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur_normed-0.bin",
+    "sha256": "3fc60d3d324bb6a11cde747a1fd96eeb3969bbda30b712bb5b18099876c6872c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur_normed-1.bin",
+    "sha256": "6eaa95d0aebfc14700a292d0bc4f4c026397060c431b964e8b095b904dd8f550",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur_normed-2.bin",
+    "sha256": "b0ae89e7ed18a8e43eae8356ed69c9038353dd10cd6bca9cb6a40b6a3ec6f41a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur_normed-3.bin",
+    "sha256": "0d98f1e5758e3c8686910829c5de7bb022f3f329563121e3b771bcd65a470f4d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Qcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Qcur-4.bin",
+    "sha256": "8d574eed0674e00f3f4cda4398a75a4f31403b5bd7551e3aeaf4e1d30df6b5a4",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Vcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Vcur-0.bin",
+    "sha256": "2fc5a5e34002b5c1dd17c3b6dad5cc6307c640ef9edc29a747c723e5f40526da",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Vcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Vcur-1.bin",
+    "sha256": "1b1c1d129176a550a795819cb4352ddcb1af27cb0edab5b91f3b29ee2d9323f7",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Vcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Vcur-2.bin",
+    "sha256": "210014df45d00e72e60d05f6c050f38f803fabb348b32c8e5507c973bf527258",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Vcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Vcur-3.bin",
+    "sha256": "8b63caa27a97c1420270522e3edff18d5bf3c6c126f91548348f2d591d090b5e",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-Vcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-Vcur-4.bin",
+    "sha256": "3a9235f49b0478a7fbad794ecae9b437daac8545d2312afa5fdfa6fe00ce57a9",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gate-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gate-0.bin",
+    "sha256": "209493c95f3a63f65e46566995c8161b0916c004abfd1cc62a40de273cc11fb5",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gate-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gate-1.bin",
+    "sha256": "ecf6bfa70414c59e639f5ee3414f0d4fc629efdc28117189a4ecd91bdb67f7b1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gate-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gate-2.bin",
+    "sha256": "a7a9031463a0437e6f20340897d5bf4d72f65c6d2d15ecd6959d7b40e5857241",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gate-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gate-3.bin",
+    "sha256": "8c84f0a6d6190305de56d137af8a3e31ee298c2863e87f75c5c7cd61022e774c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gate-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gate-4.bin",
+    "sha256": "dfedcc7783c38aad4c4bb01e06a69e004d4d168efb7ff7c3b3e35d1f427c7a19",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gated-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gated-0.bin",
+    "sha256": "c4adc0dce7167934cf3194121a15e366151cd036d19132dabb0d2bf12bcbbc77",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gated-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gated-1.bin",
+    "sha256": "6ee200834de43cf33edfc72efb5aac7e8aff6fba3f5259b05206052231cdd56d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gated-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gated-2.bin",
+    "sha256": "e4b3cd90c232a20e9398840c6945caf949faed32eee844946943b5103002787c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gated-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gated-3.bin",
+    "sha256": "e37db55062b59ccb3f483159bcd23a1e558a0de3d880956d8832dc3bd8857e46",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_gated-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_gated-4.bin",
+    "sha256": "4933f928f569daa6124b562be13a48a77da4b3727fd97ac731bb5a9bfed15381",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_norm-0.bin",
+    "sha256": "55544d9eae4c5f66fef5c0cb8fd290028ac5c195400cb89efcd7dd10507b6a42",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_norm-1.bin",
+    "sha256": "29c8bb79ff9d09846fae3ca307ec50c4242afa85c484e0263347058acf911d99",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_norm-2.bin",
+    "sha256": "7adfed630c88409bae65d908dfdd05fbe87e6b1c403a6c429c3c93dce866992f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_norm-3.bin",
+    "sha256": "63b691b90c639adac88301d4130c67911aee6c037264d7d8004bb1f2aaec6ab8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_norm-4.bin",
+    "sha256": "211f68fdb4e9ff2f5ced2dbc0cd9f12ddc6a5a3d78d791d120a5d9232c47cd3b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_out-0.bin",
+    "sha256": "42cbade8a751168b01348cfcee3e28f4f65efea9053e144f4033e1cccd819e4a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_out-1.bin",
+    "sha256": "0563a054ea8b41f239d6d3b990650b5238ea73f7ccc37b5737f8c59401ddc3ef",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_out-2.bin",
+    "sha256": "1f62f7bf527230c487f22d570759c4183f782e83fca3352e680ae455136ee4bb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_out-3.bin",
+    "sha256": "109930507c7fc2700b8bef272d3b4729c5f5b6a96a0a40fccd2cef256abebcbc",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_out-4.bin",
+    "sha256": "1c8a2d6c275fef4b3442da02b58ce888f70a44b685b98cb2b5433fc919fd1531",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_post_norm-0.bin",
+    "sha256": "223f0e4215add37620a32f4f0e0ed6970f46358aaa222c766c10e31293f2672a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_post_norm-1.bin",
+    "sha256": "4d29dfb0929f3eff36abea8d908a93d71ca6f8752d37db9b51685ea36117c599",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_post_norm-2.bin",
+    "sha256": "66c74c72c13bd0e9839811b779cb93467cda573e42b294cc736ad4028abe06f8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_post_norm-3.bin",
+    "sha256": "eabdcc6b4ebf2eebb3e3bc08e254e8312e85eb89d683e92c619e33195569be41",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-attn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-attn_post_norm-4.bin",
+    "sha256": "edae96fbf4b0230a21a18d49fae679a1a670f2af89774b66c72cc7452147eaf9",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_inp-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_inp-0.bin",
+    "sha256": "9c62588a1c729817be113eca99d3172c3dbec74f09847c23424fba48ac9b4326",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_inp-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_inp-1.bin",
+    "sha256": "8a7e53b8014148ab099ebd96978edf5ae6fafce69b31601e828b1ea84e91c841",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_inp-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_inp-2.bin",
+    "sha256": "f00120932f1b405664224b860267c4cd5ccfca434576d8883caeda2f7588ae92",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_inp-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_inp-3.bin",
+    "sha256": "634a328c98d30509cf428c3a0c76642409e81989053042be37ea73eb6498a91d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_inp-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_inp-4.bin",
+    "sha256": "5659d7b7c7fc08ede94f5e404b968f88d09cce16642940d9c0074194da5cc12e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_norm-0.bin",
+    "sha256": "7ef1fe4987bddc97b6288ac73c1869d21aaa7ad7eae8565c9b4ae40acd327d4f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_norm-1.bin",
+    "sha256": "54544503d5ab65c43484859950651070717a1be20e96560dd3223a4e646a1d6a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_norm-2.bin",
+    "sha256": "311497187bff00cf06550f87447b25ea085e13f97184d7d41bca862c6d9dfefd",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_norm-3.bin",
+    "sha256": "84a560c4063584041a3759005f7bc8b2e8214721c8aaa6b4ea615f10078b9efc",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_norm-4.bin",
+    "sha256": "a4937a6f0d76d6fc610411427e2f76f4a9509f5a67687025f56d8ed951e986ad",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_out-0.bin",
+    "sha256": "590160371e5604b9e997076717d5a3f5b9e9b7cbddbf31ad961fc952f8985529",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_out-1.bin",
+    "sha256": "d4c975c909d2facb20ca2dbfcd39e7333db205be1189447b9a6b2bfddaa13ebc",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_out-2.bin",
+    "sha256": "ea4a15e131080f73b243babb6ed67235583e36f6e86d83c5f30de4493789b61b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_out-3.bin",
+    "sha256": "ff1a042189b8b00cde84cea17157d3f7738aad754223aae8f7bd52f57ec5c7e0",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_out-4.bin",
+    "sha256": "508f91ed3a6f737ae07009f780ead8936442ea29c4538281834cdc3238e1b409",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_post_norm-0.bin",
+    "sha256": "aadec0f5f8b9e145568f55601fc548ff49e3359cac8d72456a9947db1d52c243",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_post_norm-1.bin",
+    "sha256": "c0ca95e7e29d1093f4097f6197b2085c47627d47d1a06747c371b296a9ecb631",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_post_norm-2.bin",
+    "sha256": "94146f843980ed363ea464c43f808657079fb14336ed285a13b2f4cfcec09634",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_post_norm-3.bin",
+    "sha256": "5a7696cc9763b624972a9b205626a6db8d477d4ad8efe2612a73554fd509cd98",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_post_norm-4.bin",
+    "sha256": "230f5509eb915239c42ce9e3741bffbffe05a1f0868c172738aa3b3dcf1d9c8e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_swiglu-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_swiglu-0.bin",
+    "sha256": "495499d6c7809338fedd26c5a8f25bdfc73bae1b879b74cd6b7bedf098956c3d",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_swiglu-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_swiglu-1.bin",
+    "sha256": "3cf65bf7f6ec4f8af2753b928bcc1b265c2227607802e46dc59672cf91834eee",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_swiglu-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_swiglu-2.bin",
+    "sha256": "1bf3e1cee7fa7523bf94071aea1b26d7e0ab3a76946d352a3e4492200c93d191",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_swiglu-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_swiglu-3.bin",
+    "sha256": "e3b6f981966a533bb6c7a01786e392443e0925e419b6576332b8b08e80b28312",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-ffn_swiglu-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-ffn_swiglu-4.bin",
+    "sha256": "d507f0c6ffe581d4fa5f0123aeb66d4d989c23cd0bf664433d5b15f151b1f02e",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-kq_soft_max-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-kq_soft_max-0.bin",
+    "sha256": "dafa47bce964c77fda91916dfe50cb352795f59654648da725dad5f912d9ed2d",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-kq_soft_max-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-kq_soft_max-1.bin",
+    "sha256": "c59357851c88f29a9aa1e4240b4451665ef1284bbd2a15878535e2c8dab8ba63",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-kq_soft_max-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-kq_soft_max-2.bin",
+    "sha256": "5bf69f485b05d01c966f11e55d5341a1c9c8bf3ea133bc2dcb995da7bddff4ac",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-kq_soft_max-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-kq_soft_max-3.bin",
+    "sha256": "80a048d3ec8eba2b9deb3fc80a581ab763c4bb0525b851a3d98dbf87a8f9228f",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-kq_soft_max-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-kq_soft_max-4.bin",
+    "sha256": "6ec1889a83da30898f59c28c57b3639aa01a1df47e9533812e3f5fcd8990bcc6",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-l_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-l_out-0.bin",
+    "sha256": "7e85c2101913eb89e34aef72a1823d188c55f50d74f79533acf6914326505bef",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-l_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-l_out-1.bin",
+    "sha256": "d0020a16e26482f59a83110f0c995b0a2ebcc9acc166865c00de33eb68e0fc21",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-l_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-l_out-2.bin",
+    "sha256": "4e31eb0133c442a34dab6868dcafc52b689929326205b412cfb89ca4e962684e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-l_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-l_out-3.bin",
+    "sha256": "7bd9bdd1ff4592e0b82b0a5de57333f49b9c9d828c1641a021a614fa1b80bbef",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-l_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-l_out-4.bin",
+    "sha256": "6afd83821154851c9dfd2cd691239bfdb4fa82c79d1ad96d6a1c0a12a99dac88",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-vres_in-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-vres_in-0.bin",
+    "sha256": "3a2225147f3a2124e19bd48efdaa151555f948637a3c776ad68bd5bff499e5c1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-vres_in-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-vres_in-1.bin",
+    "sha256": "e692dabff6c46af120e1d4411daafa1636bbf062c7674ba3b1afe39cdaa2a20b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-vres_in-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-vres_in-2.bin",
+    "sha256": "ed81b765869467277d9d7e84d72e5e8dc862b60a7750b453fa4222fd362f0946",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-vres_in-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-vres_in-3.bin",
+    "sha256": "9b37c3b1233000d822eb4b3fca34a41632e7e16fec42af8388f498b7e75c1b00",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p1-vres_in-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p1-vres_in-4.bin",
+    "sha256": "e765b34a5763f92b4c3fc36f4ecf617056e4c359e76e0d0a3bebeda1342f9ca7",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur-0.bin",
+    "sha256": "8557837b706af1fd497be8aa1fe4de9c947774271fb6927b07024e895587dc55",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur-1.bin",
+    "sha256": "1ea65c06f872d122ef90176b0c44546456a6244b92976565eee6c0db13b1b994",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur-2.bin",
+    "sha256": "59e684a32932df245688366a8d6ecf130784cf7e17820c0362db4953feba9491",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur-3.bin",
+    "sha256": "fab6883c04ac93f3f77f500439fe768bc505bb498d53fc5d28e22b63dbef8099",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur-4.bin",
+    "sha256": "3ff3ea9e1c423382e3212272b72f728eacfc95000a9634914e5e9d8dd9a85177",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur_normed-0.bin",
+    "sha256": "3890a8b7f87f44b8c56d9b403111c65ffdb724c563c2b4204d999f6c73f7c407",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur_normed-1.bin",
+    "sha256": "6890efba5e5f81636c1024e045b8e2f0df94f133d59230cd3e76213e900c7df5",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur_normed-2.bin",
+    "sha256": "8b1b97a1ba6228e9ec1cfab2e6580952651bc6af7c10d6ca818355a7542440d1",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur_normed-3.bin",
+    "sha256": "dc611c5ac011bb94067f4cd9824a81f82722eca53b66735bebff11ae4cdf940b",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Kcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Kcur-4.bin",
+    "sha256": "3ff3ea9e1c423382e3212272b72f728eacfc95000a9634914e5e9d8dd9a85177",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur-0.bin",
+    "sha256": "34d18f31c1959f7d8e27158e29232fc6bcd58a7d8bcd115fc20ddaa1e5ab5139",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur-1.bin",
+    "sha256": "798af278643b5b40bafbcdf2e64bf18d9fcc4e02ab5eebda8f849438b6e5a19c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur-2.bin",
+    "sha256": "e28c713a17b52aca9413d4e93334108e766db23b823a82e188e241a258e08ada",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur-3.bin",
+    "sha256": "201578101ede297d89886007bb0257af894f07c2a61526d2ed14cd516f4a6583",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur-4.bin",
+    "sha256": "36947804d31f54fee03e2d90c36e9459b0a2bcf25388569dd03fe906747a8c1e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur_normed-0.bin",
+    "sha256": "43e777916cf80d8f6e94a95cdc95e7219e2bafd216abae8bd78589fa9fc038a8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur_normed-1.bin",
+    "sha256": "aa1d9362e27c51a5a2497e26c30a0a22dcd2c9ceeedc7c9e68cf06e229ac176a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur_normed-2.bin",
+    "sha256": "7b643866ed0d833ed4e95a173bd800c7327e910634aa6da3c9c27b890f021c12",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur_normed-3.bin",
+    "sha256": "debb21ea019f47c9f5fb313d121d51ab3df2218a30281220b4d3d3065206bf1b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Qcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Qcur-4.bin",
+    "sha256": "36947804d31f54fee03e2d90c36e9459b0a2bcf25388569dd03fe906747a8c1e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Vcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Vcur-0.bin",
+    "sha256": "eabf27a70cba0c6b8fa012a8fe8642b6fedabd6a59ba349f2d3d905ebbad2dc3",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Vcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Vcur-1.bin",
+    "sha256": "5828fd6814ffb63c9e0cd34135e28133c403c0e43c2ed11df4bd433851015945",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Vcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Vcur-2.bin",
+    "sha256": "fe146814e459bd8636e2aa9e5dbef20f3d7777ab4bc2706ad029ceecd4f56ef9",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Vcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Vcur-3.bin",
+    "sha256": "f1bb251927111707dd180df3828adbd209d4b46984907e114783ebe18ccc39ac",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-Vcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-Vcur-4.bin",
+    "sha256": "620efb38d1174b703fac1c2160f66d8fef834a10ff434b7cb7f75215b3ae619e",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gate-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gate-0.bin",
+    "sha256": "259aa87e76a11b22b92849f107e0eceff0ef9809eec6bc3f32c79887fd822e72",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gate-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gate-1.bin",
+    "sha256": "bdd01daf62909027363750dc94bef5520a4222455a7642c0f47d4ca6ef497ded",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gate-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gate-2.bin",
+    "sha256": "7ec1fb82772c75038df266acf252a3a0a0477e397f8f02eb3bce32934406fe57",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gate-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gate-3.bin",
+    "sha256": "fb1ef7bea892179ad2a05778404b90d26205ade9a4ff9805d06a95ac70b50f32",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gate-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gate-4.bin",
+    "sha256": "19fb2aa75ae889683cb425d3db87f430a77cd969bdcf53fc3603cb1c78094536",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gated-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gated-0.bin",
+    "sha256": "e2a9cce23e306475bbb909f7342173851743fc30e7c48e3bc477b0d015429c7f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gated-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gated-1.bin",
+    "sha256": "6761a10767973dfe6a173597a72c8e0dc800defdff63a5d2ee7fe988327e04a6",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gated-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gated-2.bin",
+    "sha256": "7895466a50a0d65014ddae141ff2204e8a522d1f75e56e1237e5d98884afda2e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gated-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gated-3.bin",
+    "sha256": "3e9d903ea4e0e2060d0e7476e5de2d0b8a606609b8067df511e9bac45ea38fc0",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_gated-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_gated-4.bin",
+    "sha256": "e5602f2f67a94dd246b7cf01bf1fe46609590a76848f916cfc42577219ce4466",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_norm-0.bin",
+    "sha256": "fa482e1414362a33ac1260966a051bf851c1eee671e99bbdb8837adbb96d08e8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_norm-1.bin",
+    "sha256": "802cee56205fc6c91c91474ae6aa5e2d006e052b5143aff2b658c2aa9b48629a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_norm-2.bin",
+    "sha256": "14ac7b096a18e81f940f3bf39c6efdaa86dc14a0ebb8c9fa0b198b1147208039",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_norm-3.bin",
+    "sha256": "5acd3413de8ef9788be038dd00b1c29e5cad7b2e6c55e12c15b9addc3e336813",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_norm-4.bin",
+    "sha256": "ce1b0e2b2067de36c5a6aa59862ae692c268c31e5987c6343d73166c2c6c737d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_out-0.bin",
+    "sha256": "df31d5170951d6a2d274549da9d96e618ca56eff12189ab47e8831b916fae9d6",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_out-1.bin",
+    "sha256": "f5cbc20546af4168a58c52d35f5f30af6e8db8574a2ccebfc7f3aa23c8a30065",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_out-2.bin",
+    "sha256": "dbdb1d1892eccee2fe3f24f8cbe6f1fb8a63b485a554caf16b9bc713a508b315",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_out-3.bin",
+    "sha256": "c34217e17b0e0324f1979594a69a0cfe9a6bf7bbb6aa2349ef96663d490bbb64",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_out-4.bin",
+    "sha256": "ef70b4fc170d6f4858547f447bc3a8ea8cb0a180bf34e1678b753b4cb9b3155f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_post_norm-0.bin",
+    "sha256": "3402d76775e295b8c2bad0003dd8e6a2e155ac7695cf465f5a28a3d2317d76c5",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_post_norm-1.bin",
+    "sha256": "75493fa6ddcdb066525a152eb533fa1e7d1526c19bc007ba801d5784f679f1c8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_post_norm-2.bin",
+    "sha256": "6e6be07e037180aab497408779fe642f55cb4aaa3f7de6cca53f758578a99feb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_post_norm-3.bin",
+    "sha256": "6a25ec5e5e50f17fb8f0744b925b7d5091771b7a9aeda095df616257a21162e5",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-attn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-attn_post_norm-4.bin",
+    "sha256": "48f97cb8415b8b755176cdb97c8a3674eb58517dc4274a203c84f59c074aa63b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_inp-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_inp-0.bin",
+    "sha256": "4957bdf3dc9e8a1f9b12c45b6c433d17a261f1ab678d60ec809f31971e20099e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_inp-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_inp-1.bin",
+    "sha256": "9f6f1101e8386b8c38da8d26a729c127b7423f34fe62101d2d02eb9d6445db47",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_inp-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_inp-2.bin",
+    "sha256": "d22597ee4cbe73b07f944cb67c06d418c906fc464985b6b607ad4b36a65c6e41",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_inp-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_inp-3.bin",
+    "sha256": "0c06495e0b9f096de074b48fa4073e8ead8f97c28620d41208bd78e825f80a3a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_inp-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_inp-4.bin",
+    "sha256": "6dcb325ad4afb6bde5530c2e2a5a0377d46c8e1b51c23eaa47bbd765b6d1bb56",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_norm-0.bin",
+    "sha256": "07569d361bb7e12082906f6e8a7dc1d299ae81fbf2b90dbea446a50c381f8223",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_norm-1.bin",
+    "sha256": "0c31366cf032b69dc8a874fcf0d8faf257b82b8482419650bb6f2486f8afb145",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_norm-2.bin",
+    "sha256": "9e333885bacf137c238bcb1dcf1d4e794d0ecd49963d371b969d576cba4fdfe8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_norm-3.bin",
+    "sha256": "8a100a71374c08cc91ec2a53eb48a4e6ebbb7bfc401e5d91a26c86232d480cec",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_norm-4.bin",
+    "sha256": "9b8dbbbdea8db8f714e9c0cb54ac3e77aae68e8967b1689ac27c9d5cbcd20f50",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_out-0.bin",
+    "sha256": "45ae434646e72c346d901fb5f9af12d04ba1d547e0a184510e508a18fe6d7ddd",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_out-1.bin",
+    "sha256": "324ee70c530a9b900461c05ab48ac11108395dd436c6d10b1b53c184ce9580eb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_out-2.bin",
+    "sha256": "41aa6008c15128d5c6faa0a35499e3464e3a86e56343630494c9c8fcd839f2c6",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_out-3.bin",
+    "sha256": "e3373367be3faaa2561870bdafa597cbafceb7a1a5482ade3b8ce1be4015de49",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_out-4.bin",
+    "sha256": "6fee93b3185cf55f9e76fc8211a9875d616949887c39c759ff9608a50d1ecc0f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_post_norm-0.bin",
+    "sha256": "5a7bae9156a40238073d4635c781c26af777d6ab05b55d5afbc9aa85a98cd906",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_post_norm-1.bin",
+    "sha256": "21f1d5808108c384cd85840bd34e462985aa31da961c6fc9f01f246af58c9764",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_post_norm-2.bin",
+    "sha256": "dfb8e5def5b772e8e9e3ffba16811605b805fca73034bcf0c6fa99d61d844402",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_post_norm-3.bin",
+    "sha256": "a86238e830391e5e2bb738cabbbb66a0821e4b4d6231f510bcaa8bb70fcff692",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_post_norm-4.bin",
+    "sha256": "3ed110639cf85db3772b0a3d2cda948be961e28384968b3511eb5659db0519f5",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_swiglu-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_swiglu-0.bin",
+    "sha256": "4f4972a47d1366745c42aa046246bf31d8d9fdff9cb3803f25e364c92b9a67d2",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_swiglu-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_swiglu-1.bin",
+    "sha256": "f573760b64b62182774ebadc5c19759659113c46d0d85ba340da0f0ddea2db2e",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_swiglu-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_swiglu-2.bin",
+    "sha256": "554696c218955a1adf10a4f828b76cced46ff4c24ff3f7c5371cd31f8c89ff90",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_swiglu-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_swiglu-3.bin",
+    "sha256": "b2055745302410d56a439053e0e117576509a34238ffb37d64e90043eecb8e57",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-ffn_swiglu-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-ffn_swiglu-4.bin",
+    "sha256": "594cdb42555fe7d4e0f96fd53b0495610487e968109375784fddf1442811d193",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-kq_soft_max-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-kq_soft_max-0.bin",
+    "sha256": "c5178bd3457122bc2d6a42514d3c2f358b70f8b47ef9dc632984286e6dceed1a",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-kq_soft_max-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-kq_soft_max-1.bin",
+    "sha256": "b52c14bbcb9ffe21e902123ef5e2fdcb4df241a7f1b6645450dce0b38e09be9c",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-kq_soft_max-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-kq_soft_max-2.bin",
+    "sha256": "9ddfc5d1928e11cf4396f66444cb393b2d5418b64890ab30501b442d3494f02e",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-kq_soft_max-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-kq_soft_max-3.bin",
+    "sha256": "2b2062c445ceb5976cafe152c87f6bc08e830730f7ffb2445e13e076b7645b27",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-kq_soft_max-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-kq_soft_max-4.bin",
+    "sha256": "cebd2f03abff2d096c94fa67bfaf444afa22f603a62214349ed72f2e2cdd6579",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-l_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-l_out-0.bin",
+    "sha256": "ae0bba6319c8bfd50e295ab58ee6c017acac17f632742943d5bf6c5c7b45210e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-l_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-l_out-1.bin",
+    "sha256": "898f8150a50655e088e2cafd50bd348046abce79f4fdfd99b8d6ce9775e1e440",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-l_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-l_out-2.bin",
+    "sha256": "5a7ae61c86359f0f8b7847368f0c84139ec631b40b16fa4d2b85ecc2cd7422a1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-l_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-l_out-3.bin",
+    "sha256": "4138b68a099c6dab65ed931cbc34540a279b3edcdab9ef257d2c7f1a912d1dab",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-l_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-l_out-4.bin",
+    "sha256": "5d0102980ba0be88659022286e03c60d7aba559ab44251f1fc5d4c2b543bb64d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-vres_in-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-vres_in-0.bin",
+    "sha256": "766ee1698f1bfff01e8e65d96ec1bf8fb559259c7fe703158dba30ed852baaae",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-vres_in-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-vres_in-1.bin",
+    "sha256": "3061f30f8d8067e27c1b42294c0cd2a0fca0d82bee7d78b1c05bfc45d82b1ec0",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-vres_in-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-vres_in-2.bin",
+    "sha256": "d3736c191e2e8984f6e422460ac0d917a706f2003ec8214596dd73f76d079b4b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-vres_in-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-vres_in-3.bin",
+    "sha256": "e8c4d4a2e15f25f0fa380dc0de8120ebddb82008ed099ef13a34a3b035263eb8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p2-vres_in-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p2-vres_in-4.bin",
+    "sha256": "f50bbbe9c078092ae4d9187023de95e8bd82623205285ad46c09c1aae02e654a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur-0.bin",
+    "sha256": "1bf18ddf386a7e1cac4a69d48806aca256492936a02aaa14454adb0f407ca949",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur-1.bin",
+    "sha256": "03ec6a924031e721a5949b19e3f1bb3836fefb34d37de3db899dea33c7d1baad",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur-2.bin",
+    "sha256": "e74e2cfa47cfa82ab02b65b36a4998f28e9364136a120a8a77265f5d6856fa08",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur-3.bin",
+    "sha256": "710a5bf324e3f5cf98e6282b1c618e8b3fed63cd275d8d6eb51beff0f0a502fc",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur-4.bin",
+    "sha256": "a676c3e7ecd76397762543a47a4354154662420d1e9884f804ec7c8063de561d",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur_normed-0.bin",
+    "sha256": "66dadf160f11271cafbbdcde16ac7022b184e24cbab879ec0e2f5bd5d731de2e",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur_normed-1.bin",
+    "sha256": "582f3384a29829ab74a8c337f51b39712dbd318d26a5aea145f86417d45a0db2",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur_normed-2.bin",
+    "sha256": "47b83a09c261abcf3f0029213d27ed15ab36db9061fab206fdaebffb6bf38041",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur_normed-3.bin",
+    "sha256": "3703d60bea9c52ee09e38f44885fda2ab737bc97924de957de5f813945ab1d53",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Kcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Kcur-4.bin",
+    "sha256": "a676c3e7ecd76397762543a47a4354154662420d1e9884f804ec7c8063de561d",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur-0.bin",
+    "sha256": "986b3d0f068854f1e4fea8d3252cbdddc69454601ca486ff19dd1850d712f519",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur-1.bin",
+    "sha256": "d2cd96d0419d62bf04033eb192f4f08fd51f90972be182a9dd6b4f85e1d3a034",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur-2.bin",
+    "sha256": "a721d0b90fc3fe522692506b85de8fe8b832954cb6e8d9b350aa4ca3a7df53cc",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur-3.bin",
+    "sha256": "7420cfb91ec0b092b466c90a04b490b05114271e3afd2c458600cd9e9efbe728",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur-4.bin",
+    "sha256": "219283196fbf12225b738cb91a304a2869a877ef0a49ad35433d045c40b2cd2e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur_normed-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur_normed-0.bin",
+    "sha256": "15c79e0292cccf9cfd0b2171bb5fc5394c977a92074c2ab404c0adc9cf6f63cc",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur_normed-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur_normed-1.bin",
+    "sha256": "b5ebb074320067695cbc4854e9a5ed4c8e87cd66a505d1aab144850e300eb310",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur_normed-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur_normed-2.bin",
+    "sha256": "aee58022f02cf6d2250cf1cc53de1ef8f6725f86786f4c19c9acac287c472c5f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur_normed-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur_normed-3.bin",
+    "sha256": "4d27bd1e958b6c32b906da77cf89d60b60fbc5af8c329f50d90bbeb54054af29",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Qcur_normed-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Qcur-4.bin",
+    "sha256": "219283196fbf12225b738cb91a304a2869a877ef0a49ad35433d045c40b2cd2e",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Vcur-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Vcur-0.bin",
+    "sha256": "45dbdd39dafeba61e93268fcf201435996d781f557dbecaffd272f1414b4c368",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Vcur-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Vcur-1.bin",
+    "sha256": "04488086b0fb517143f3b46e159c274582584eaf347f505c87242ba01962a8fb",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Vcur-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Vcur-2.bin",
+    "sha256": "d84c40289989d2bc267698edc8e44b1b5049275a35267e4026a79ec743cae206",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Vcur-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Vcur-3.bin",
+    "sha256": "f1f280d841cfab6c44fdce50ed335184e86e84c0d24d40c461a3416c608043e3",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-Vcur-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-Vcur-4.bin",
+    "sha256": "81bb42252c1da52dc6304232e3094aca1e1a96393b0731193677264288b5f4be",
+    "bytes": 512,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gate-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gate-0.bin",
+    "sha256": "9c25d1631375b34378b7ca55a3ce4d5d7e8d887a11af7b7ebabbd62f00b8b8c9",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gate-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gate-1.bin",
+    "sha256": "a98903be5b7ce1ac072ad55b6dda6a42208485669dbc898547ada3626623bf63",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gate-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gate-2.bin",
+    "sha256": "5ca4d7229c1299d0a0b48c115a807617718638ed167fdf79296d5b0b6160bce3",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gate-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gate-3.bin",
+    "sha256": "69436eac0f102a408405bb161aea2be561e074c4e36d4e21d3c101a131565e78",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gate-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gate-4.bin",
+    "sha256": "871b6a1e4a5585adc610867b4b4e875e83a575d89e3064a9d1990f8fe91a82fb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gated-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gated-0.bin",
+    "sha256": "02ef7f25de1d087f66ccf0459bab1c85e0d5ddceb59b1cd33717a59567c131f4",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gated-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gated-1.bin",
+    "sha256": "6b08301975192b336301fa6f296114cbd5f06c292ae5de56eaa845d66a7c836a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gated-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gated-2.bin",
+    "sha256": "28a47eee4d1443308c0908171f39636a5b7c8b97d243eda9109dc45cc8f221ab",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gated-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gated-3.bin",
+    "sha256": "1d9e5b2ac270c9233b066a983ce45f482d40b119132e093329d00f934eb0f656",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_gated-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_gated-4.bin",
+    "sha256": "cd571b08b4d9a28579776d7091c6122bd0f544603dfecf1885505434b6b55521",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_norm-0.bin",
+    "sha256": "2d9059fe6988f604f45aaa624968a3658d70426220e04627149c1996c9ab55f9",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_norm-1.bin",
+    "sha256": "1ccdf79e43f86c635272522a205565f9848a04a37262f4d63fa524c62a311492",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_norm-2.bin",
+    "sha256": "566454aea7c8f6b36d136e7215a2970a41ac18bdc1154ee17a526e7888d900f8",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_norm-3.bin",
+    "sha256": "233ffc36db994ab596b56ae5412c6440e3843b60fabdf78503bbd05c2bcac313",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_norm-4.bin",
+    "sha256": "6cf2f04d96fa40ca2c8bc07e3b00996f92d0ea2b1ad93a6c6521b83aa2592b44",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_out-0.bin",
+    "sha256": "de9c9f53552014e4956294a5406d087f3fb4132ebd93ef751a4ca4d470552368",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_out-1.bin",
+    "sha256": "4c822d4ed2106d284a1882a835ba5b31c4f6319db15e90320536c3d5b7290b25",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_out-2.bin",
+    "sha256": "198c9b05a1664367367662fadfbd790237bc1b7280baeb4cfa4940f228760f3a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_out-3.bin",
+    "sha256": "e629d08c0a0e5f9e6ac24d231db33cff901ee9dff4cafc5a0af1d02cf4233c33",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_out-4.bin",
+    "sha256": "abeac5906ecd2e486a08c3ee076d926ab6a60fa7250e0d482521dc8dece59fc1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_post_norm-0.bin",
+    "sha256": "3adc1709fb62ca3bc927c072cdf838e7783eae2be5b8ec6ff51135259089fff5",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_post_norm-1.bin",
+    "sha256": "ac16642b848532f7434bab37c0c63c9e5885b5788402792f1b6b90250b7ebe1a",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_post_norm-2.bin",
+    "sha256": "ff60f89e69b8522a8c4f1160cb2278e7d145da32b5fd855584ea502ff024822c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_post_norm-3.bin",
+    "sha256": "ed7c7062cdc087b3d24e2597ff948195adcae1870805ba61aa02156ff86e8a31",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-attn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-attn_post_norm-4.bin",
+    "sha256": "2ba49f3d32f0a458cbe9b48655eb95c2212213cd5f947ece8c44b2ab3cf57313",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_inp-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_inp-0.bin",
+    "sha256": "cae4e3d75e2dc9a19ab2be13b2779375a8beef73e6d2036d0fd4a4830bb44046",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_inp-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_inp-1.bin",
+    "sha256": "e37c794a9c9e0ef48113182406c452ef66d813589ca8e197f07af01575f3ba49",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_inp-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_inp-2.bin",
+    "sha256": "8e94148fe9360fed97626026792dfcfd04f5549a3b02d3441b29582470974c03",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_inp-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_inp-3.bin",
+    "sha256": "5d3a5410e403af0c758e4279fffac6e6d84e25aa4d929e772814c6e1656924cb",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_inp-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_inp-4.bin",
+    "sha256": "ef081aeaf9fea623bbce9f883b0a1371d30742af0c37ff48c6fce8d695f4c32f",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_norm-0.bin",
+    "sha256": "6b3b14e9a35335a0a654c261cebb0dcf504cf40534a475eb88666106d4ffa7c7",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_norm-1.bin",
+    "sha256": "56da7bd12033ab217546fa69409fcdd3988d7dbc49fa1ab848799983ea2d0d81",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_norm-2.bin",
+    "sha256": "f83800289ddc3c883ce8e3bffe8c6d80d7a291a0d14389b0189e98f7d406be52",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_norm-3.bin",
+    "sha256": "70f89c11e98babbc9c700c6c85ad8b619e1bd510dd5ab0e22f131c76c7c2150c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_norm-4.bin",
+    "sha256": "77183147e5c8047e5cea3c68a343cf3f5e6c154a4a863cb83fd833fbaf555f63",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_out-0.bin",
+    "sha256": "94c07ed44a9e28a81f97a3dcc0109f0f8d7762c851ba2c451d940abc28499fa2",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_out-1.bin",
+    "sha256": "bfc1862b33fedbd5ea6b4f5c217926818ba26c11c271162d73369a4766c514c9",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_out-2.bin",
+    "sha256": "e0737ed960d505bd96fe625b89239b998e8575e4968c3f57df0bd2df2dad14db",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_out-3.bin",
+    "sha256": "01bbaa97767a536f5dba6e343a1ab8dfcd1f2544085247e1ce7cba3880245e8d",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_out-4.bin",
+    "sha256": "997bd1c5f8a800417f78cf681953334efd2858fde2403a010405a4874f9747f7",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_post_norm-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_post_norm-0.bin",
+    "sha256": "190ced03899ffff1d19aedd01d97ccdb93f81a39f181195cdbecdc26662547f1",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_post_norm-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_post_norm-1.bin",
+    "sha256": "98f00b3ca1443d72fc288edca79b6911334ec934dca37265a829bd1731bd2459",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_post_norm-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_post_norm-2.bin",
+    "sha256": "7cf37fab369b60600686ffd941c40acf8469bf12ecb0a36d2f1bfd62fb51a4c6",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_post_norm-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_post_norm-3.bin",
+    "sha256": "0c45eb89aa3ce47e88d2649b5635fb70bdeb5aef21ff79d85c7c2adfc39bf373",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_post_norm-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_post_norm-4.bin",
+    "sha256": "339a146b2788d98b602d8708bae740b1a477cd2412ad040aa735b0b07bfc0a8b",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_swiglu-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_swiglu-0.bin",
+    "sha256": "9ec2d4de56d6744fa2599a8b98b2c27216d9c1dbf56decd8a93081af822623f2",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_swiglu-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_swiglu-1.bin",
+    "sha256": "25f9d216f265e2b49b4ebb70bf7ad727fdcd6b250f185d35ca72c3082c9469a6",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_swiglu-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_swiglu-2.bin",
+    "sha256": "7b0ee219500c1b4de45ac512104b542311fc48187786f9a5dec509f8973ea3d7",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_swiglu-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_swiglu-3.bin",
+    "sha256": "7f9b59be0e840139f4419d6c6389767907753e7e90a259f070a700b97ca11c5f",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-ffn_swiglu-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-ffn_swiglu-4.bin",
+    "sha256": "19cdcbb4bd305b97e910fb498878d4381b5a0d9416f7265d63eb17334760ffcb",
+    "bytes": 2048,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-kq_soft_max-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-kq_soft_max-0.bin",
+    "sha256": "a8b2fc7082be4d2cbdc85b30fc5ffaf86ec6fb0de337e55e9bea20e67e42b158",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-kq_soft_max-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-kq_soft_max-1.bin",
+    "sha256": "c946e9893fdf8573943dbd900b3a7b45edfd73ea9645964d659453fd4a1abf54",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-kq_soft_max-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-kq_soft_max-2.bin",
+    "sha256": "029317c20a7dba141a8db0cc637d889e78817198437438d4ecf0ee23a81b3c1d",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-kq_soft_max-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-kq_soft_max-3.bin",
+    "sha256": "95865dc17a3b008b1ee973168269fb6d3f56b0f2f67a23d34efdf652de2041ff",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-kq_soft_max-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-kq_soft_max-4.bin",
+    "sha256": "5b9bcf25e6334767fefade1c2fb1166014b79aded972cd30e58b41452867f114",
+    "bytes": 4096,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-l_out-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-l_out-0.bin",
+    "sha256": "9959f4c8eaaaea5a5633f05ac205b77747d2c66ed52dc6287a9b3dfa704669bc",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-l_out-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-l_out-1.bin",
+    "sha256": "171c3a95e1845d0fddc0313d91f10584bced91228840d884c7aa98ad6e58c354",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-l_out-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-l_out-2.bin",
+    "sha256": "3e2cb28b5394b2b2f3fe1c796a42e9d122638879768e215f2e23fda076eacf92",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-l_out-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-l_out-3.bin",
+    "sha256": "5de80c9fcfefe27963ef76c3800fbc1a74709e00e40cda9342ab6df58feaab12",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-l_out-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-l_out-4.bin",
+    "sha256": "94327c32c6c9d4958933f10313c31fbf22a0770b6f2eb9b8279e5a995a838940",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-vres_in-0.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-vres_in-0.bin",
+    "sha256": "317860a916ffed3595368ad9963004bb6a32c3aa5dc14b8838b96153a2d6710c",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-vres_in-1.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-vres_in-1.bin",
+    "sha256": "126103f904426b4706e04f9b34ca20029160eee85cee5edee4e5898d85725f79",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-vres_in-2.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-vres_in-2.bin",
+    "sha256": "31f61f28536086275d85d69b0fb7499744dae8ddca721518002057657a7932c4",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-vres_in-3.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-vres_in-3.bin",
+    "sha256": "ca5f4a5c511dba6642e60b62d2b81b858a11cd8280a0f644aa6bccd1d57eb341",
+    "bytes": 1024,
+    "byte_exact": true
+  },
+  {
+    "name": "p3-vres_in-4.bin",
+    "reference": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-captures-quantized-plain/p3-vres_in-4.bin",
+    "sha256": "2640c6664448339b6d96a40536c805e00ac59b64706391a5a09320e4e7a15361",
+    "bytes": 1024,
+    "byte_exact": true
+  }
+]

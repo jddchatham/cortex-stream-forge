@@ -1,0 +1,19 @@
+-- llama.cpp version: 0.9.0-dev
+CMAKE_BUILD_TYPE=Release
+-- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF
+-- CMAKE_SYSTEM_PROCESSOR: x86_64
+-- GGML_SYSTEM_ARCH: x86
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu: -march=native 
+-- ggml version: 0.29.0
+-- ggml commit:  8fac93b
+-- OpenSSL found: 3.6.5
+CMake Warning at common/CMakeLists.txt:33 (message):
+  Git repository not found; to enable automatic generation of build info,
+  make sure Git is installed and the project is a Git repository.
+
+
+-- Configuring done (0.2s)
+-- Generating done (0.4s)
+-- Build files have been written to: /home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build

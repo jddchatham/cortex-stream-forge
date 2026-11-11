@@ -1,0 +1,17 @@
+{
+  "source": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies098-checks/ripple-tensor-index.provisional.json",
+  "descriptor_count": 1203,
+  "all_offsets_lengths_types_shapes_exact": true,
+  "build_command": [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/src",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies098-tools/index_compat.cpp",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/src/flashnext-tensor-index.cpp",
+    "-o",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies098-checks/index-compat"
+  ],
+  "tensor_payload_read": false,
+  "does_not_validate_expert_stride_for_dense_model": true
+}

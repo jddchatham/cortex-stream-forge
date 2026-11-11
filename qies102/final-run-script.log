@@ -1,0 +1,2 @@
+PASS CPU bundle adapter build
+PASS 720 synthetic intermediate comparisons, adapter failures, actual quantized storage roundtrip, unchanged runtime blocking

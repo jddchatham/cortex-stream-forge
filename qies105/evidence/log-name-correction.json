@@ -1,0 +1,5 @@
+{
+  "only_change": "unique retired-builder log names; five identical rejection assertions rerun against publication tree",
+  "final_driver_sha256": "31848c7f51830fd0f1e62177961ffe02faa2d46b669ae7337834368b4afa24c0",
+  "numerical_assertions_changed": false
+}

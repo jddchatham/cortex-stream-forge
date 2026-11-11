@@ -1,0 +1,14 @@
+{
+  "host": {
+    "available": 3708104704,
+    "swap_free": 15313387520,
+    "disk_free": 65336573952,
+    "psi": 0.0
+  },
+  "unchanged_entry_ram_bytes": 6442450944,
+  "entry_ram_pass": false,
+  "real_reference_qualified": false,
+  "live_guard_adapter_qualified": false,
+  "inference_executed": false,
+  "guard_sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2"
+}

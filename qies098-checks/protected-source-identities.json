@@ -1,0 +1,7 @@
+{
+  "runtime-flashnext-layer-exp/examples/flashnext-chat.cpp": "3e78f699b92a21f199b01274adaf50f5e88b69729359eab002424e988339e8d0",
+  "runtime-flashnext-layer-exp/src/llama-model.cpp": "38b509ac671ae0163e2614963abd304b34bce7e68ff0490b0fd4bf6704c1bcf7",
+  "runtime-flashnext-layer-exp/src/llama-arch.h": "f0b0cccac019d2fbf9459171f22fb84dbe588dd8c44a9856cbce5a9e13c87c91",
+  "runtime-flashnext-layer-exp/src/llama-arch.cpp": "804b98ace992d3df3fbee1f399032230e8040be35089ef23a4b204abec8e31fa",
+  "runtime-flashnext-layer-exp/src/flashnext-tensor-index.cpp": "908da6952cfc0a394711015b608b0c7cbc3001f40a3a1395011bcef6dbdbf3aa"
+}

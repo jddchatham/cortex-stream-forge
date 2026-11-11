@@ -1,0 +1,8 @@
+{
+  "branch": "experimental/ripple-65b-q4",
+  "HEAD": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "tracked_diff_empty": true,
+  "qies099_manifest_preserved_except_root_run_script": true,
+  "source_syntax_pass": true,
+  "synthetic_file_size_gate_pass": true
+}

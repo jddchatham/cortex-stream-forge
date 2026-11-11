@@ -1,0 +1,18 @@
+{
+  "published_url": "https://huggingface.co/api/models/AtomicChat/Ripple-65B-Preview-GGUF/revision/df550a7178a87bbfb6ee2bdbd37603c553d536ee?blobs=true",
+  "revision": "df550a7178a87bbfb6ee2bdbd37603c553d536ee",
+  "expected": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "actual": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "bytes": 40426079712,
+  "identity": [
+    52,
+    193312,
+    40426079712,
+    1794311853881937877,
+    1794312013896042092
+  ],
+  "elapsed_seconds": 161.69779825699516,
+  "peak_rss_kib": 27412,
+  "chunk_bytes": 1048576,
+  "passed": true
+}

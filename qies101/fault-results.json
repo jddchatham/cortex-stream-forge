@@ -1,0 +1,159 @@
+{
+  "tests": [
+    {
+      "name": "valid_descriptors",
+      "passed": true
+    },
+    {
+      "name": "negative_offset",
+      "passed": true
+    },
+    {
+      "name": "offset_overflow",
+      "passed": true
+    },
+    {
+      "name": "shape_overflow",
+      "passed": true
+    },
+    {
+      "name": "shape_zero",
+      "passed": true
+    },
+    {
+      "name": "bool_type",
+      "passed": true
+    },
+    {
+      "name": "unsupported_type",
+      "passed": true
+    },
+    {
+      "name": "wrong_length",
+      "passed": true
+    },
+    {
+      "name": "wrong_quantization",
+      "passed": true
+    },
+    {
+      "name": "relative_mismatch",
+      "passed": true
+    },
+    {
+      "name": "unaligned_offset",
+      "passed": true
+    },
+    {
+      "name": "wrong_shard",
+      "passed": true
+    },
+    {
+      "name": "quant_row_misalignment",
+      "passed": true
+    },
+    {
+      "name": "overlap",
+      "passed": true
+    },
+    {
+      "name": "past_eof",
+      "passed": true
+    },
+    {
+      "name": "missing_descriptor",
+      "passed": true
+    },
+    {
+      "name": "duplicate_name",
+      "passed": true
+    },
+    {
+      "name": "unsafe_name",
+      "passed": true
+    },
+    {
+      "name": "corrupt_schema",
+      "passed": true
+    },
+    {
+      "name": "bool_alignment",
+      "passed": true
+    },
+    {
+      "name": "invalid_alignment",
+      "passed": true
+    },
+    {
+      "name": "exact_requested_bytes",
+      "passed": true
+    },
+    {
+      "name": "missing_tensor_cleanup",
+      "passed": true
+    },
+    {
+      "name": "short_reads_and_writes_complete",
+      "passed": true
+    },
+    {
+      "name": "truncated_read",
+      "passed": true
+    },
+    {
+      "name": "read_error",
+      "passed": true
+    },
+    {
+      "name": "write_failure",
+      "passed": true
+    },
+    {
+      "name": "no_overwrite",
+      "passed": true
+    },
+    {
+      "name": "preexisting_partial_preserved",
+      "passed": true
+    },
+    {
+      "name": "actual_truncated_file_rejection",
+      "passed": true
+    },
+    {
+      "name": "identity_before_open",
+      "passed": true
+    },
+    {
+      "name": "identity_during_read",
+      "passed": true
+    },
+    {
+      "name": "path_inode_replacement",
+      "passed": true
+    },
+    {
+      "name": "source_symlink_refusal",
+      "passed": true
+    },
+    {
+      "name": "duplicate_json_keys",
+      "passed": true
+    },
+    {
+      "name": "metadata_budget",
+      "passed": true
+    },
+    {
+      "name": "bounded_multi_chunk_read",
+      "passed": true
+    },
+    {
+      "name": "descriptor_cleanup_no_leaks",
+      "passed": true
+    }
+  ],
+  "passed": 38,
+  "peak_rss_kib": 21324,
+  "synthetic_only": true
+}

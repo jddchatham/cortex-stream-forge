@@ -1,0 +1,1 @@
+9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc  ../qies098-data/models/Ripple-65B-Preview-AD-Q4_K_M.gguf

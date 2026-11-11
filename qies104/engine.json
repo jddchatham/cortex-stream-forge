@@ -1,0 +1,33 @@
+{
+  "command": [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-I/active",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+    "/active/admission.cpp",
+    "/active/reference.cpp",
+    "-Wl,-rpath,/stock-sdk",
+    "/stock-sdk/libllama.so",
+    "/stock-sdk/libggml.so",
+    "/stock-sdk/libggml-cpu.so",
+    "/stock-sdk/libggml-base.so",
+    "-lcrypto",
+    "-o",
+    "/tmp/reference-engine"
+  ],
+  "binary_sha256": "a80182804c75874e6099e4a2792cae9f69c7a56c2576e283bc8f3f19b29906db",
+  "archive_sha256": "cf3cb4da33ca13c573e37429f9a707e6d601a66860d38840aff26793b3b24c8e",
+  "source_hashes": {
+    "reference.cpp": "ef9c88cf3c15ac020e52f1819af02e74ad9b799f972e8ec648edef466aa5d811",
+    "admission.cpp": "7e2cfff702c0488b75a8899ac1e0fea9732268c1d34f0f6dc7b048f17495c647",
+    "admission.h": "5850297ebc27407c526dcd5e0ab59ec9547693885963431b9e7e1ac69691d707",
+    "fixture-catalog.inc": "53d803b90669d4ff672a640402cfbb35aac17daa1354c48ab7cb5b8e0c371c7b"
+  },
+  "stock_sdk_manifest_sha256": "8080c94c19763fbc11e5650ccab52be7e7cefb05bcad96a4905b2a74a110adc9",
+  "stock_source": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "real_enabled": false
+}

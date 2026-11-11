@@ -1,0 +1,9 @@
+{
+  "files": {
+    "libggml-base.so.0.29.0": "f34fb8f64ea4efe5aa82894c3eaaa8a0cee38e63e0c31feafc1ecdb8afc3e519",
+    "libggml-cpu.so.0.29.0": "518740a3c6e33cbf4c55deaebf3387d0aa9f37cd9df0b9dc314ea11cec9e7a2d",
+    "libggml.so.0.29.0": "09e17409039a4c587aee40bcf3b72f205bc72d72f85cbd81a983352e160f028c",
+    "libllama.so.0.9.0": "90fec77df735191dff53184966cd5ed6d0c0ac31d7521d163456267698292846"
+  },
+  "archive_sha256": "60b540206ebc38233a08ee315859cfdc22caff84190fffbee33a2bddb31cac06"
+}

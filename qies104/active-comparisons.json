@@ -1,0 +1,29 @@
+{
+  "profiles": [
+    {
+      "role": "candidate",
+      "case": "fixture",
+      "exact_comparisons": 360
+    },
+    {
+      "role": "independent stock reference",
+      "case": "fixture",
+      "exact_comparisons": 72
+    },
+    {
+      "role": "candidate",
+      "case": "fixture-quantized",
+      "exact_comparisons": 360
+    },
+    {
+      "role": "independent stock reference",
+      "case": "fixture-quantized",
+      "exact_comparisons": 72
+    }
+  ],
+  "candidate_total": 720,
+  "reference_total": 144,
+  "new_core_qies099_groups": 14,
+  "new_adapter_qies102_checks": 16,
+  "real_arithmetic": false
+}

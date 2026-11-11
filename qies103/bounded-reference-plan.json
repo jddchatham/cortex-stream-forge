@@ -1,0 +1,86 @@
+{
+  "status": "DESIGN_ONLY_REAL_WEIGHT_CAPSULE_NOT_CREATED",
+  "stock_source": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "source_graph": "llama_model_ricursive::graph; unmodified stock numerical source",
+  "real_tensors": [
+    "blk.0.attn_gate.weight",
+    "blk.0.attn_k.weight",
+    "blk.0.attn_k_norm.weight",
+    "blk.0.attn_norm.weight",
+    "blk.0.attn_output.weight",
+    "blk.0.attn_q.weight",
+    "blk.0.attn_q_norm.weight",
+    "blk.0.attn_v.weight",
+    "blk.0.attn_vres_lambda.weight",
+    "blk.0.ffn_down.weight",
+    "blk.0.ffn_gate.weight",
+    "blk.0.ffn_norm.weight",
+    "blk.0.ffn_up.weight",
+    "blk.0.post_attention_norm.weight",
+    "blk.0.post_ffw_norm.weight"
+  ],
+  "real_tensor_bytes": 545752068,
+  "metadata_changes_requiring_review": {
+    "block_count": 1,
+    "sliding_window_pattern": [
+      true
+    ],
+    "rope_pattern": [
+      true
+    ],
+    "embedding_scale": 1.0,
+    "vocab_size": 32,
+    "tokenizer": "none"
+  },
+  "metadata_preserved": {
+    "embedding_length": 5120,
+    "feed_forward_length": 40960,
+    "heads": 80,
+    "kv_heads": 8,
+    "head_dimension": 128,
+    "original_context": 2097152,
+    "sliding_window": 1024,
+    "rms_epsilon": 1e-06,
+    "rope_base": 10000.0,
+    "swiglu_clamp": 20.0
+  },
+  "synthetic_unobserved_global_tensors": {
+    "token_embd.weight": [
+      5120,
+      32
+    ],
+    "output.weight": [
+      5120,
+      32
+    ],
+    "output_norm.weight": [
+      5120
+    ]
+  },
+  "additional_f32_global_bytes": 1331200,
+  "layer0_scope": "one externally supplied already-scaled activation, one position; no token lookup, final logits excluded",
+  "unresolved_equivalence": [
+    "last-layer output selection branch with one token",
+    "external embedding scaling and x0 identity",
+    "canonical cache ordering/zero initialization",
+    "no claim of full-model semantics from modified metadata"
+  ],
+  "memory_budget_estimate_not_measurement": {
+    "weights_payload_bytes": 545752068,
+    "ggml_weight_ceiling_bytes": 806354944,
+    "graph_ceiling_bytes": 134217728,
+    "native_metadata_arenas_bytes": 18874368,
+    "host_plus_backend_kv_estimate_bytes": 3145728,
+    "read_chunk_bytes": 1048576,
+    "planning_peak_rss_pss_mib": [
+      700,
+      900
+    ],
+    "guaranteed_rss_bound": false,
+    "runtime_planning_seconds": [
+      10,
+      180
+    ],
+    "runtime_confidence": "low; no real-weight timing or validated upper bound"
+  }
+}

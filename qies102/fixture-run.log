@@ -1,0 +1,21 @@
+synthetic_memory	0	0	2626052	241216	131072	7668	3107	resources=0
+synthetic_memory	0	1	2626052	241216	131072	11564	7003	resources=0
+synthetic_memory	0	2	2626052	241216	131072	13172	8611	resources=0
+synthetic_memory	0	3	2626052	241216	131072	15148	10587	resources=0
+synthetic_memory	0	4	2626052	239680	131072	15408	10847	resources=0
+synthetic_memory	1	0	2626052	241216	131072	15412	10851	resources=0
+synthetic_memory	1	1	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	1	2	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	1	3	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	1	4	2626052	239680	131072	15544	10983	resources=0
+synthetic_memory	2	0	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	2	1	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	2	2	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	2	3	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	2	4	2626052	239680	131072	15544	10983	resources=0
+synthetic_memory	3	0	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	3	1	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	3	2	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	3	3	2626052	241216	131072	15544	10983	resources=0
+synthetic_memory	3	4	2626052	239680	131072	15544	10983	resources=0
+PASS synthetic layer-source integration, four positions, five layers

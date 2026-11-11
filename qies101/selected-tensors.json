@@ -1,0 +1,105 @@
+[
+  {
+    "name": "blk.0.attn_q.weight",
+    "shape": [
+      5120,
+      10240
+    ],
+    "type": 12,
+    "relative_offset": 772547072,
+    "bytes": 29491200,
+    "offset": 776162784,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "q4_K"
+  },
+  {
+    "name": "blk.0.ffn_down.weight",
+    "shape": [
+      40960,
+      5120
+    ],
+    "type": 13,
+    "relative_offset": 807609376,
+    "bytes": 144179200,
+    "offset": 811225088,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "q5_K"
+  },
+  {
+    "name": "blk.40.attn_k.weight",
+    "shape": [
+      5120,
+      1024
+    ],
+    "type": 8,
+    "relative_offset": 20587951360,
+    "bytes": 5570560,
+    "offset": 20591567072,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "q8_0"
+  },
+  {
+    "name": "blk.40.ffn_gate.weight",
+    "shape": [
+      5120,
+      40960
+    ],
+    "type": 12,
+    "relative_offset": 20789578016,
+    "bytes": 117964800,
+    "offset": 20793193728,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "q4_K"
+  },
+  {
+    "name": "blk.79.attn_output.weight",
+    "shape": [
+      10240,
+      5120
+    ],
+    "type": 14,
+    "relative_offset": 39911794656,
+    "bytes": 43008000,
+    "offset": 39915410368,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "q6_K"
+  },
+  {
+    "name": "blk.79.ffn_up.weight",
+    "shape": [
+      5120,
+      40960
+    ],
+    "type": 13,
+    "relative_offset": 40278243840,
+    "bytes": 144179200,
+    "offset": 40281859552,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "q5_K"
+  },
+  {
+    "name": "token_embd.weight",
+    "shape": [
+      5120,
+      100352
+    ],
+    "type": 23,
+    "relative_offset": 421498880,
+    "bytes": 272957440,
+    "offset": 425114592,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "iq4_xs"
+  },
+  {
+    "name": "output_norm.weight",
+    "shape": [
+      5120
+    ],
+    "type": 0,
+    "relative_offset": 421478400,
+    "bytes": 20480,
+    "offset": 425094112,
+    "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+    "quantization": "f32"
+  }
+]

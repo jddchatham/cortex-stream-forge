@@ -1,0 +1,6 @@
+{
+  "branch": "experimental/ripple-65b-q4",
+  "head": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "tracked_diff": "",
+  "status": "?? QIES098_RIPPLE65B_Q4_BRINGUP.md\n?? QIES099_RICURSIVE_LAYER_EXECUTION.md\n?? pandacode-run.sh\n?? qies098-checks/\n?? qies098-tools/\n?? qies099/"
+}

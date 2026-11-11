@@ -1,0 +1,6 @@
+Built six workers with shared fail-closed admission; numerical source unchanged
+PASS 20 entry/dispatch/API rejections with allocation trap; model filesystem hidden; rlimits unchanged
+PASS new guarded builds: original 14/16 suites; 720 candidate and 144 independent-reference exact synthetic comparisons
+[{'suite': 'QIES099', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES100', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES101-extract', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES101-stock', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES102', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}, {'suite': 'QIES103', 'returncode': 0, 'unchanged_assertions': True, 'sealed_synthetic_filesystem': True}]
+{"ok": false, "reason": "GuardAbort: resource preflight failed", "unit": "quortex-guard-f2dcc062ee5f47adad7df5ff967ccc14.service", "cleanup": true}
+Verified original guard refusal, 1203 independent descriptors without GGML allocation, preserved baseline/source/limits; real runtime remains locked

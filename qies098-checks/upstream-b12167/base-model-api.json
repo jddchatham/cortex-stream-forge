@@ -1,0 +1,151 @@
+{
+  "_id": "6aea9b519fcffdc5132a3c38",
+  "id": "ricursiveAI/Ripple-65B-Preview",
+  "private": false,
+  "tags": [
+    "safetensors",
+    "ricursive",
+    "custom_code",
+    "license:apache-2.0",
+    "region:us"
+  ],
+  "downloads": 6480,
+  "likes": 468,
+  "modelId": "ricursiveAI/Ripple-65B-Preview",
+  "author": "ricursiveAI",
+  "sha": "b172323ffd63e62de9ce1ba3830dfffe493c7671",
+  "lastModified": "2026-11-10T09:31:23.000Z",
+  "gated": false,
+  "disabled": false,
+  "model-index": null,
+  "config": {
+    "architectures": [
+      "RicursiveForCausalLM"
+    ],
+    "auto_map": {
+      "AutoConfig": "configuration_ricursive.RicursiveConfig",
+      "AutoModel": "modeling_ricursive.RicursiveModel",
+      "AutoModelForCausalLM": "modeling_ricursive.RicursiveForCausalLM"
+    },
+    "model_type": "ricursive",
+    "tokenizer_config": {
+      "bos_token": "<|endoftext|>",
+      "eos_token": "<|im_end|>",
+      "unk_token": "<|endoftext|>",
+      "pad_token": "<|pad|>",
+      "chat_template": "{%- for message in messages %}{{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}{%- endfor %}{%- if add_generation_prompt %}{{- '<|im_start|>assistant\n' }}{%- endif %}"
+    },
+    "chat_template_jinja": "{%- if tools %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if messages[0]['role'] == 'system' %}\n        {{- messages[0]['content'] + '\\n\\n' }}\n    {%- endif %}\n    {{- \"# Tools\\n\\nYou may call one or more functions to assist with the user query.\\n\\nYou are provided with function signatures within <tools> XML tags:\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\\n\\nFor each function call, return exactly one valid JSON object with function name and arguments inside XML tool-call tags. The arguments field must be a JSON object, not a string, and strings must use valid JSON escaping:\\n<tool_call>\\n{\\\"name\\\": \\\"execute_bash\\\", \\\"arguments\\\": {\\\"command\\\": \\\"pwd\\\"}}\\n</tool_call><|im_end|>\\n\" }}\n{%- else %}\n    {%- if messages[0]['role'] == 'system' %}\n        {{- '<|im_start|>system\\n' + messages[0]['content'] + '<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- for message in messages %}\n    {%- set content = message.content or '' %}\n    {%- if message.role == 'assistant' and message.reasoning_content and not (clear_thinking | default(false)) and not content.lstrip().startswith('<think>') %}\n        {%- set content = '<think>\\n' + message.reasoning_content + '\\n</think>\\n' + content %}\n    {%- endif %}\n    {%- if (message.role == \"user\") or (message.role == \"system\" and not loop.first) or (message.role == \"assistant\" and not message.tool_calls) %}\n        {{- '<|im_start|>' + message.role + '\\n' + content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {{- '<|im_start|>' + message.role }}\n        {%- if content %}\n            {{- '\\n' + content }}\n        {%- endif %}\n        {%- for tool_call in message.tool_calls %}\n            {%- if tool_call.function is defined %}\n                {%- set tool_call = tool_call.function %}\n            {%- endif %}\n            {{- '\\n<tool_call>\\n{\"name\": ' }}\n            {{- tool_call.name | tojson }}\n            {{- ', \"arguments\": ' }}\n            {{- tool_call.arguments | tojson }}\n            {{- '}\\n</tool_call>' }}\n        {%- endfor %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if (loop.index0 == 0) or (messages[loop.index0 - 1].role != \"tool\") %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' + message.content + '\\n</tool_response>' }}\n        {%- if loop.last or (messages[loop.index0 + 1].role != \"tool\") %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n{%- endif %}\n"
+  },
+  "cardData": {
+    "license": "apache-2.0"
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes"
+    },
+    {
+      "rfilename": "LICENSE"
+    },
+    {
+      "rfilename": "README.md"
+    },
+    {
+      "rfilename": "chat_template.jinja"
+    },
+    {
+      "rfilename": "config.json"
+    },
+    {
+      "rfilename": "configuration_ricursive.py"
+    },
+    {
+      "rfilename": "inference/server/README.md"
+    },
+    {
+      "rfilename": "inference/server/model.py"
+    },
+    {
+      "rfilename": "inference/server/ripple_format.py"
+    },
+    {
+      "rfilename": "inference/server/serve.py"
+    },
+    {
+      "rfilename": "model-00001-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00002-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00003-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00004-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00005-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00006-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00007-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00008-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00009-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00010-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00011-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00012-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00013-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00014-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00015-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model-00016-of-00016.safetensors"
+    },
+    {
+      "rfilename": "model.safetensors.index.json"
+    },
+    {
+      "rfilename": "modeling_ricursive.py"
+    },
+    {
+      "rfilename": "special_tokens_map.json"
+    },
+    {
+      "rfilename": "tokenizer.json"
+    },
+    {
+      "rfilename": "tokenizer_config.json"
+    }
+  ],
+  "spaces": [
+    "joelniklaus/harness-leaderboard",
+    "akhaliq/ripple-65b-zerogpu",
+    "apathy-exe/Ripple-65B-Preview"
+  ],
+  "createdAt": "2026-11-04T02:41:21.000Z",
+  "safetensors": {
+    "parameters": {
+      "BF16": 64782689360
+    },
+    "total": 64782689360
+  },
+  "usedStorage": 129565519472
+}

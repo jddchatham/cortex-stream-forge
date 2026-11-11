@@ -1,0 +1,289 @@
+{
+  "allocation_detector_positive_control_exit": 97,
+  "allocation_detector_positive_control_message": "QIES104_TEST_FAILURE: unapproved GGML allocation\n",
+  "rejections": [
+    {
+      "case": "candidate-real",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "candidate-admission",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "candidate-storage",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "candidate-alternate-run",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "candidate-unknown",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "candidate-empty",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: missing dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "reference-real",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: independent reference real frontend: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "reference-unlabelled-real",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: synthetic interface requires sealed no-model filesystem",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "direct-execute",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: direct r99::execute: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "direct-file-constructor",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: ModelFile constructor: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "synthetic-outside-domain",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: synthetic interface requires sealed no-model filesystem",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "synthetic-candidate-outside-domain",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: synthetic interface requires sealed no-model filesystem",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "unit-layer-outside-domain",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: synthetic interface requires sealed no-model filesystem",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "unit-adapter-outside-domain",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: synthetic interface requires sealed no-model filesystem",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "forged-environment",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "reference-real-in-sandbox",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: independent reference real frontend: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "private-reference-direct-dispatch",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: stock reference CLI: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "direct-api-in-sandbox",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: direct r99::execute: unchanged 6 GiB MemAvailable gate; before model tensor allocation",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "fake-fixture-real-geometry",
+      "returncode": 1,
+      "message": "QIES104 synthetic geometry budget",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "real-plan-through-synthetic",
+      "returncode": 1,
+      "message": "synthetic mode refuses real bundle",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "unregistered-reference-file",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: unregistered synthetic fixture: /home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/rogue/synthetic.gguf",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies099/checks/ricursive-layer",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies099/checks/test-layer",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies099/checks/test-layer-sanitized",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies100/candidate-probe",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies100/stock-probe",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies100/stock-probe-repack-original",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies100/stock-dequant",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies100/quantize-fixture",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies100/stock-build/bin/llama-simple",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies102/probe",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies102/test-adapter",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies102/test-adapter-sanitized",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-worker-qies103/stock-oneblock-probe",
+      "returncode": "EACCES",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-builder-qies099",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: legacy worker/build entry retired; use the sealed QIES104 synthetic launcher",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-builder-qies100",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: legacy worker/build entry retired; use the sealed QIES104 synthetic launcher",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-builder-qies102",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: legacy worker/build entry retired; use the sealed QIES104 synthetic launcher",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-builder-qies102",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: legacy worker/build entry retired; use the sealed QIES104 synthetic launcher",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-builder-qies103",
+      "returncode": 1,
+      "message": "QIES104 BLOCKED: legacy worker/build entry retired; use the sealed QIES104 synthetic launcher",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    },
+    {
+      "case": "retired-stock-C-ABI",
+      "returncode": "EACCES",
+      "message": "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libllama.so.0.9.0: cannot open shared object file: Permission denied",
+      "ggml_allocation_trap_triggered": false,
+      "real_arithmetic": false
+    }
+  ],
+  "passed_rejections": 40,
+  "sealed_filesystem": {
+    "model": false,
+    "tensor": false,
+    "as": [
+      -1,
+      -1
+    ],
+    "rss": [
+      -1,
+      -1
+    ]
+  },
+  "real_execution_enabled": false,
+  "live_positive_guard_qualified": false,
+  "legacy_workers_nonexecutable": true
+}

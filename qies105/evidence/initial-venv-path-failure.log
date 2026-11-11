@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/qies105/replay.py", line 51, in <module>
+    selftest(ROOT,out,a.numpy_python.resolve())
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/qies105/portable_tests.py", line 64, in selftest
+    run([numpy_python,'-I','-B',work/'qies100/make_fixture.py'],'fixture-f32')
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/qies105/portable_tests.py", line 28, in run
+    if check and p.returncode:raise AssertionError((label,p.returncode,p.stdout[-1000:],p.stderr[-3000:]))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('fixture-f32', 1, '', 'Traceback (most recent call last):\n  File "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/synthetic-work/qies100/make_fixture.py", line 8, in <module>\n    from gguf.gguf_writer import GGUFWriter\n  File "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/synthetic-work/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/gguf-py/gguf/gguf_writer.py", line 17, in <module>\n    import numpy as np\nModuleNotFoundError: No module named \'numpy\'\n')

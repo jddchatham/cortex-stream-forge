@@ -1,0 +1,146 @@
+{
+  "entries": [
+    {
+      "path": "qies099/checks/ricursive-layer",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies099/checks/test-layer",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies099/checks/test-layer-sanitized",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies100/candidate-probe",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies100/stock-probe",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies100/stock-probe-repack-original",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies100/stock-dequant",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies100/quantize-fixture",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies100/stock-build/bin/llama-simple",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies102/probe",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies102/test-adapter",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies102/test-adapter-sanitized",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies103/stock-oneblock-probe",
+      "classification": "not executable",
+      "reason": "legacy numerical worker retired; bytes unchanged and preserved"
+    },
+    {
+      "path": "qies099/build.py",
+      "classification": "guarded synthetic only",
+      "reason": "host builder/dispatch blocked; existing historical assertions run only in ephemeral no-model namespace"
+    },
+    {
+      "path": "qies100/run_comparison.py",
+      "classification": "guarded synthetic only",
+      "reason": "host builder/dispatch blocked; existing historical assertions run only in ephemeral no-model namespace"
+    },
+    {
+      "path": "qies102/build.py",
+      "classification": "guarded synthetic only",
+      "reason": "host builder/dispatch blocked; existing historical assertions run only in ephemeral no-model namespace"
+    },
+    {
+      "path": "qies102/validate.py",
+      "classification": "guarded synthetic only",
+      "reason": "host builder/dispatch blocked; existing historical assertions run only in ephemeral no-model namespace"
+    },
+    {
+      "path": "qies103/compare_capsule.py",
+      "classification": "guarded synthetic only",
+      "reason": "host builder/dispatch blocked; existing historical assertions run only in ephemeral no-model namespace"
+    },
+    {
+      "path": "qies104/worker",
+      "entry": "--real/--storage/--admission/unknown",
+      "classification": "guarded, real locked",
+      "boundary": "q104::real before parsing or model allocation"
+    },
+    {
+      "path": "qies104/ricursive-layer.cpp",
+      "entry": "r99::execute / ModelFile",
+      "classification": "guarded, real locked",
+      "boundary": "direct API admission before validation/backend/weight allocation"
+    },
+    {
+      "path": "qies104/bundle.cpp",
+      "entry": "LayerSource",
+      "classification": "guarded, real locked",
+      "boundary": "real denied; synthetic pinned before computation"
+    },
+    {
+      "path": "qies104/reference-worker",
+      "entry": "public reference frontend",
+      "classification": "guarded, real locked",
+      "boundary": "no host stock SDK dependency; admission before private backend"
+    },
+    {
+      "path": "reference-engine.gz / stock-sdk.tar.gz",
+      "classification": "not executable data on host",
+      "boundary": "decompressed and executed only in ephemeral sealed synthetic namespace"
+    },
+    {
+      "path": "qies100/stock-build/bin/libllama.so.0.9.0",
+      "entry": "legacy stock C ABI",
+      "classification": "not loadable",
+      "boundary": "mode 000; exact bytes preserved in SDK archive; direct ctypes load rejected"
+    },
+    {
+      "path": "qies104/synthetic-layer-tests / synthetic-candidate / adapter-tests",
+      "classification": "guarded synthetic only",
+      "boundary": "explicit namespace/pinned fixture rules; no real file visibility; original assertions retained"
+    },
+    {
+      "path": "qies101/reference-extract / qies100/stock-metadata / qies098-checks/index-compat",
+      "classification": "non-numerical data utilities",
+      "boundary": "metadata/raw byte I/O; no GGML tensor/context allocation for approved inspection"
+    },
+    {
+      "path": "generic GGML kernels / preserved source and archives",
+      "classification": "not an approved host model execution interface",
+      "boundary": "deliberate recompilation/decompression or owner permission restoration is outside accidental-dispatch closure"
+    }
+  ],
+  "scope": "approved harness and normal legacy dispatch; not adversarial security against workspace owner",
+  "real_runtime_enabled": false
+}

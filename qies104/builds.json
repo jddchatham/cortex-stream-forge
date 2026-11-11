@@ -1,0 +1,138 @@
+[
+  {
+    "name": "worker",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/admission.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/ricursive-layer.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/bundle.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/candidate.cpp",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3",
+      "-lcrypto",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/worker"
+    ],
+    "sha256": "93c9c50d8a7cfcf928c1e27c156cfea3f1b9fcfca3c93b4d27158b4b8a148860"
+  },
+  {
+    "name": "direct-api",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/admission.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/ricursive-layer.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/real_api.cpp",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3",
+      "-lcrypto",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/direct-api"
+    ],
+    "sha256": "c7aa0e08f99407005d434dde7504c0d72f5e3f63c59bc57c5f35d27ed01703f3"
+  },
+  {
+    "name": "synthetic-layer-tests",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/admission.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/ricursive-layer.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/guarded_layer_tests.cpp",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3",
+      "-lcrypto",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/synthetic-layer-tests"
+    ],
+    "sha256": "5c12c642de1f92be04b7547e16806f99e10bb3fda0605e56a5babf14da8cc87b"
+  },
+  {
+    "name": "synthetic-candidate",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/admission.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/ricursive-layer.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/synthetic_candidate.cpp",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3",
+      "-lcrypto",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/synthetic-candidate"
+    ],
+    "sha256": "303b110437cec866e05fdf1a983075b5291bacb3b099c2f31af8642d9f241ac6"
+  },
+  {
+    "name": "adapter-tests",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/admission.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/ricursive-layer.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/bundle.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/guarded_adapter_tests.cpp",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-cpu.so.0.25.3",
+      "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/libggml-base.so.0.25.3",
+      "-lcrypto",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/adapter-tests"
+    ],
+    "sha256": "5fb9d419116b6839164de0d2eee978bf2dcdd18b88dfa748fe7c0f1dbe069cef"
+  },
+  {
+    "name": "reference-worker",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104",
+      "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/runtime-flashnext-layer-exp/ggml/include",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/admission.cpp",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/reference_front.cpp",
+      "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin",
+      "-lcrypto",
+      "-o",
+      "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies104/reference-worker"
+    ],
+    "sha256": "4a9b63c324f4ee5aef0ff91afdd1c202fd063849d64efa0f097e87a73acac2c7"
+  }
+]

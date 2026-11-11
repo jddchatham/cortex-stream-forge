@@ -1,0 +1,10 @@
+{
+  "host": {
+    "available": 3985264640,
+    "swap_free": 16062521344,
+    "disk_free": 72300974080,
+    "psi": 0.0
+  },
+  "entry_ram_required": 6442450944,
+  "resources_ready": false
+}

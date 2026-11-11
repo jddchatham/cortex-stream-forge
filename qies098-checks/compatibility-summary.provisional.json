@@ -1,0 +1,23 @@
+{
+  "tensor_count": 1203,
+  "header_bytes": 3615712,
+  "min_layer_bytes": 467108868,
+  "max_layer_bytes": 545752068,
+  "quantization_counts": {
+    "q6_K": 81,
+    "f32": 561,
+    "iq4_xs": 1,
+    "q4_K": 310,
+    "q8_0": 160,
+    "q5_K": 90
+  },
+  "kv_F16_payload_bytes_by_context": {
+    "256": 83886080,
+    "1024": 335544320,
+    "4096": 536870912,
+    "32768": 2415919104,
+    "2097152": 137707388928
+  },
+  "embedding_bytes": 272957440,
+  "output_projection_bytes": 421478400
+}

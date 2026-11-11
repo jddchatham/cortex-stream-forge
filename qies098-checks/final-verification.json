@@ -1,0 +1,26 @@
+{
+  "branch": "experimental/ripple-65b-q4",
+  "HEAD": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "existing_refs_unchanged": true,
+  "tracked_production_diff": "EMPTY",
+  "model_sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "model_bytes": 40426079712,
+  "model_outside_Git": true,
+  "one_model_copy": true,
+  "provisional_vs_verified_tensors": "EXACT_MATCH_1203",
+  "model_free_unit_groups_passed": 6,
+  "inference_executed": false,
+  "native_Ricursive_adapter_implemented": false,
+  "reference_executable_qualified": false,
+  "guard_ready": false,
+  "protected": {
+    "guard": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/qies077-guard.py",
+      "sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2"
+    },
+    "FlashNext_baseline_binary": {
+      "path": "/home/user/PandaCode Bots/meatball-84ccea00/cortex-stream-forge-qies074/build-quortex/bin/quortex",
+      "sha256": "329ebd647b04a2d6464461ddd94fc07a2691a948b2918d320ac1eb3703f9c101"
+    }
+  }
+}

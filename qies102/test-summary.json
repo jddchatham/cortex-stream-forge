@@ -1,0 +1,10 @@
+{
+  "synthetic_byte_exact": {
+    "fixture": 360,
+    "fixture-quantized": 360
+  },
+  "qies101_saved_comparisons_pass": true,
+  "real_weight_storage_only": true,
+  "real_weight_arithmetic": false,
+  "missing_runtime_qualification_rejected": true
+}

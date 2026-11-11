@@ -1,0 +1,14 @@
+{
+  "resources_ready": false,
+  "host": {
+    "available": 3946516480,
+    "swap_free": 15656566784,
+    "disk_free": 71193411584,
+    "psi": 0.0
+  },
+  "reference_ready": false,
+  "reference_error": "Missing/unqualified/mismatched independent reference",
+  "inference_executed": false,
+  "guard_policy_unchanged": true,
+  "runtime_adapter_qualified": false
+}

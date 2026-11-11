@@ -1,0 +1,19 @@
+{
+  "command": [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-I",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies101/reference_extract.cpp",
+    "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-base.so.0.29.0",
+    "-o",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies101/reference-extract"
+  ],
+  "source_sha256": "368b56431db07618ee35410bf7d6aaee440625aa693ab0dd1a8fa0a63948ee86",
+  "binary_sha256": "364b292c44071dc693916494b6bc94deb9a3df2714ed675a28602bdae0feb35d",
+  "library_sha256": "f34fb8f64ea4efe5aa82894c3eaaa8a0cee38e63e0c31feafc1ecdb8afc3e519"
+}

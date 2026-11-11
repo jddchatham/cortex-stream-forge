@@ -1,0 +1,5 @@
+PASS independent stock metadata/range reader build
+PASS 1203 named descriptors: index, original baseline parser and independent stock GGUF parser
+PASS 38 synthetic extraction tests
+PASS 4 stock extraction fault tests; no real GGUF modified
+PASS 1203 indexed descriptors and 8 saved complete tensor byte comparisons; peak_rss_kib=21716

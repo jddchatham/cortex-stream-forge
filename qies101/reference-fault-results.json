@@ -1,0 +1,26 @@
+[
+  {
+    "name": "missing_tensor",
+    "exit_status": 1,
+    "passed": true,
+    "stderr": "ERROR stock tensor missing"
+  },
+  {
+    "name": "missing_file",
+    "exit_status": 1,
+    "passed": true,
+    "stderr": "ERROR open failed"
+  },
+  {
+    "name": "existing_output_preserved",
+    "exit_status": 1,
+    "passed": true,
+    "stderr": "ERROR stock output publication failed"
+  },
+  {
+    "name": "truncated_synthetic_gguf",
+    "exit_status": 1,
+    "passed": true,
+    "stderr": "ERROR stock tensor bounds"
+  }
+]

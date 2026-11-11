@@ -1,0 +1,8 @@
+{
+  "prior_source_evidence_manifests_preserved_except_root_run_script": true,
+  "original_guard_and_baseline_binary_preserved": true,
+  "tracked_staged_diffs_empty": true,
+  "branch": "experimental/ripple-65b-q4",
+  "HEAD": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "real_weight_numeric_execution": false
+}

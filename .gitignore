@@ -38,3 +38,7 @@ runtime-flashnext-layer-exp/benches/
 runtime-flashnext-layer-exp/media/
 runtime-flashnext-layer-exp/skills/
 runtime-flashnext-layer-exp/tools/ui/
+
+# QIES105 local source-build and replay outputs
+.qies105-build/
+.qies105-replay/

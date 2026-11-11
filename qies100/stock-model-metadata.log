@@ -1,0 +1,7 @@
+architecture=ricursive tensor_count=1203 conversion_traits=1 payload_loaded=no
+type=0 name=f32 count=561
+type=8 name=q8_0 count=160
+type=12 name=q4_K count=310
+type=13 name=q5_K count=90
+type=14 name=q6_K count=81
+type=23 name=iq4_xs count=1

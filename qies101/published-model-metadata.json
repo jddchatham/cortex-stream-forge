@@ -1,0 +1,279 @@
+{
+  "_id": "6aeb9f7e954418631a81d853",
+  "id": "AtomicChat/Ripple-65B-Preview-GGUF",
+  "private": false,
+  "pipeline_tag": "text-generation",
+  "library_name": "gguf",
+  "tags": [
+    "gguf",
+    "llama.cpp",
+    "ripple",
+    "ricursiveai",
+    "quantized",
+    "conversational",
+    "agentic-coding",
+    "atomic-chat",
+    "text-generation",
+    "base_model:ricursiveAI/Ripple-65B-Preview",
+    "base_model:quantized:ricursiveAI/Ripple-65B-Preview",
+    "license:apache-2.0",
+    "endpoints_compatible",
+    "region:us",
+    "imatrix"
+  ],
+  "downloads": 81328,
+  "likes": 51,
+  "modelId": "AtomicChat/Ripple-65B-Preview-GGUF",
+  "author": "AtomicChat",
+  "sha": "df550a7178a87bbfb6ee2bdbd37603c553d536ee",
+  "lastModified": "2026-11-06T11:28:22.000Z",
+  "gated": false,
+  "disabled": false,
+  "widgetData": [
+    {
+      "text": "Hi, what can you help me with?"
+    },
+    {
+      "text": "What is 84 * 3 / 2?"
+    },
+    {
+      "text": "Tell me an interesting fact about the universe!"
+    },
+    {
+      "text": "Explain quantum computing in simple terms."
+    }
+  ],
+  "model-index": null,
+  "config": {},
+  "cardData": {
+    "base_model": "ricursiveAI/Ripple-65B-Preview",
+    "base_model_relation": "quantized",
+    "quantized_by": "AtomicChat",
+    "pipeline_tag": "text-generation",
+    "library_name": "gguf",
+    "license": "apache-2.0",
+    "tags": [
+      "gguf",
+      "llama.cpp",
+      "ripple",
+      "ricursiveai",
+      "quantized",
+      "conversational",
+      "agentic-coding",
+      "atomic-chat"
+    ]
+  },
+  "gguf": {
+    "total": 64782689360,
+    "architecture": "ricursive",
+    "context_length": 2097152,
+    "quantize_imatrix_file": "/work/Ripple-65B-Preview/imatrix/imatrix.gguf",
+    "chat_template": "{%- if tools %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if messages[0]['role'] == 'system' %}\n        {{- messages[0]['content'] + '\\n\\n' }}\n    {%- endif %}\n    {{- \"# Tools\\n\\nYou may call one or more functions to assist with the user query.\\n\\nYou are provided with function signatures within <tools> XML tags:\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\\n\\nFor each function call, return exactly one valid JSON object with function name and arguments inside XML tool-call tags. The arguments field must be a JSON object, not a string, and strings must use valid JSON escaping:\\n<tool_call>\\n{\\\"name\\\": \\\"execute_bash\\\", \\\"arguments\\\": {\\\"command\\\": \\\"pwd\\\"}}\\n</tool_call><|im_end|>\\n\" }}\n{%- else %}\n    {%- if messages[0]['role'] == 'system' %}\n        {{- '<|im_start|>system\\n' + messages[0]['content'] + '<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- for message in messages %}\n    {%- set content = message.content or '' %}\n    {%- if message.role == 'assistant' and message.reasoning_content and not (clear_thinking | default(false)) and not content.lstrip().startswith('<think>') %}\n        {%- set content = '<think>\\n' + message.reasoning_content + '\\n</think>\\n' + content %}\n    {%- endif %}\n    {%- if (message.role == \"user\") or (message.role == \"system\" and not loop.first) or (message.role == \"assistant\" and not message.tool_calls) %}\n        {{- '<|im_start|>' + message.role + '\\n' + content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {{- '<|im_start|>' + message.role }}\n        {%- if content %}\n            {{- '\\n' + content }}\n        {%- endif %}\n        {%- for tool_call in message.tool_calls %}\n            {%- if tool_call.function is defined %}\n                {%- set tool_call = tool_call.function %}\n            {%- endif %}\n            {{- '\\n<tool_call>\\n{\"name\": ' }}\n            {{- tool_call.name | tojson }}\n            {{- ', \"arguments\": ' }}\n            {{- tool_call.arguments | tojson }}\n            {{- '}\\n</tool_call>' }}\n        {%- endfor %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if (loop.index0 == 0) or (messages[loop.index0 - 1].role != \"tool\") %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' + message.content + '\\n</tool_response>' }}\n        {%- if loop.last or (messages[loop.index0 + 1].role != \"tool\") %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n{%- endif %}\n",
+    "bos_token": "<|endoftext|>",
+    "eos_token": "<|im_end|>",
+    "totalFileSize": 18493392352
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes",
+      "blobId": "900a7f18bca237080319dd1ceecb24a5150edec0",
+      "size": 2781
+    },
+    {
+      "rfilename": "LICENSE",
+      "blobId": "7a4a3ea2424c09fbe48d455aed1eaa94d9124835",
+      "size": 11357
+    },
+    {
+      "rfilename": "README.md",
+      "blobId": "5e48967e86383d0127416ef9f7cd23f278f6198f",
+      "size": 7839
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ1_M.gguf",
+      "blobId": "3a8747ea0d0733f89d92282e02edc1b09486f7cc",
+      "size": 18493392352,
+      "lfs": {
+        "sha256": "5c06288e7e0212765a338ad316c8a646d689328b5f549c9ba13e7df0f0129641",
+        "size": 18493392352,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ2_S.gguf",
+      "blobId": "4d493e8e7df5346285dc35b7925b0b905067abab",
+      "size": 25310774752,
+      "lfs": {
+        "sha256": "d70560609e411048eddc79b934928e01c2c8b4c0cac0015f4ce0e6586d308947",
+        "size": 25310774752,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ2_XS.gguf",
+      "blobId": "1a41632cf1356e662cb7dca57d521c9d9dc2379d",
+      "size": 22120482272,
+      "lfs": {
+        "sha256": "b05fda60b2a64d57772fb79005b2d3655647b0712b278d9204f8e44ce2559151",
+        "size": 22120482272,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ2_XXS.gguf",
+      "blobId": "9c1b304ed37bfaddd972d19070cf3ff8ea763e99",
+      "size": 20007273952,
+      "lfs": {
+        "sha256": "204f103868951ff6740faa549748120813bf29d0079b866cd145db9747d2c16f",
+        "size": 20007273952,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ3_S.gguf",
+      "blobId": "b0f81f1c4b452e48fe29b7b814914faaf45a0e3e",
+      "size": 32411600352,
+      "lfs": {
+        "sha256": "b0fce8f76c789c83628d88d2dc98c105f6f3f2c2478c95cd5d99b49c89589177",
+        "size": 32411600352,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ3_XXS.gguf",
+      "blobId": "a5545e850b1eab72a6fe536b00180e128b4104cf",
+      "size": 27964982752,
+      "lfs": {
+        "sha256": "0aca90d6d3062dcadbc5f7988504c2b53588d99f648b4e0b09107a72e427401a",
+        "size": 27964982752,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-IQ4_XS.gguf",
+      "blobId": "a287b4b44a01bc054e45d5bbdcf3de5c091ca4ca",
+      "size": 38722143712,
+      "lfs": {
+        "sha256": "e62460658fecffc968d9ac28f494115a1d98ec018d1332d955c579bcebba1406",
+        "size": 38722143712,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "blobId": "a630131395c29bef9d11aeab91caa94d3447a22b",
+      "size": 40426079712,
+      "lfs": {
+        "sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+        "size": 40426079712,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-Q5_K_M.gguf",
+      "blobId": "bbfdb143e5b5b57c498e1494ef2d0ac5cea015dc",
+      "size": 47929624032,
+      "lfs": {
+        "sha256": "f5dff4fa567d88de8f2e934b11b8ecce8d9466f08cac6f2ef46e48cc18206b02",
+        "size": 47929624032,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-Q6_K-00001-of-00002.gguf",
+      "blobId": "d2f7912bf4b458e73249e9cf3c84541f4232bf69",
+      "size": 45000893024,
+      "lfs": {
+        "sha256": "70b15438a27e30b4546d9140d6f0825e41875a02f3dda7e09258598ed3ade085",
+        "size": 45000893024,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-AD-Q6_K-00002-of-00002.gguf",
+      "blobId": "c95a4cd556ebcbd9165145162fc57d3e14ac5fe2",
+      "size": 12665332832,
+      "lfs": {
+        "sha256": "608c4b571e24d27f4aaa81d1210b2cf39584de71c458dc9acb378fedbcdbba26",
+        "size": 12665332832,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-BF16-00001-of-00003.gguf",
+      "blobId": "86ef4cd648231043eae9371cb038a81cf0bdd820",
+      "size": 44979232608,
+      "lfs": {
+        "sha256": "ad646615386715d20d6a398465951375b777c2d3c00a841693a2c5f2419d0fe4",
+        "size": 44979232608,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-BF16-00002-of-00003.gguf",
+      "blobId": "8a25ca0b94bbfc5177c807e2d378bdc932c6e482",
+      "size": 44745107328,
+      "lfs": {
+        "sha256": "0c6d3d8bce6865e4be38392ff920fb67949e3151f6540abafdc96b63a1f3e51d",
+        "size": 44745107328,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-BF16-00003-of-00003.gguf",
+      "blobId": "f7a2bbe8d9b0ede2bbd14dd9589778e642ed4558",
+      "size": 39847984992,
+      "lfs": {
+        "sha256": "62dce5781966846ffcd6c9a2a1ce95462c3b5f3426c7cdf1e6992d1ce06a26cd",
+        "size": 39847984992,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-Q4_K_M.gguf",
+      "blobId": "dcae3b0daffd2e30daca6069ff275a52bab775aa",
+      "size": 38798820576,
+      "lfs": {
+        "sha256": "51de49f0833201d82e624c1273a0316dca6c281616371770213f0c6d277b8652",
+        "size": 38798820576,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-Q8_0-00001-of-00002.gguf",
+      "blobId": "ab15fc98a7ebae7abbc74f472983a336b5a14c22",
+      "size": 44906597984,
+      "lfs": {
+        "sha256": "1fdbb76b6ffcc416b120d74257e2e4412f8b7bb99aac315d9b7088e47adf12b5",
+        "size": 44906597984,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "Ripple-65B-Preview-Q8_0-00002-of-00002.gguf",
+      "blobId": "bc870c8e286adaf6f315d157fce53af443f0418e",
+      "size": 23933515584,
+      "lfs": {
+        "sha256": "48c6dea463d63c471d7f6d225cd52b1c54f7fbfa56c7f03ae1a7aae3f16fa9a7",
+        "size": 23933515584,
+        "pointerSize": 136
+      }
+    },
+    {
+      "rfilename": "ricursive-port.patch",
+      "blobId": "f6c9a96e89262e9e708d805399e714382595fe5f",
+      "size": 26120
+    }
+  ],
+  "spaces": [
+    "fastgpu/vram-and-gpu-cost-calculator",
+    "akhaliq/ripple-65b-zerogpu",
+    "Jhoni08/vram-and-gpu-cost-calculator",
+    "JUDY1024618/vram-and-gpu-cost-calculator",
+    "2023Ryan/vram-and-gpu-cost-calculator",
+    "Shanny1126/test2",
+    "apathy-exe/Ripple-65B-Preview"
+  ],
+  "createdAt": "2026-11-04T21:11:26.000Z",
+  "usedStorage": 568263838816
+}

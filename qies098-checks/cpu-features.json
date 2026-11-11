@@ -1,0 +1,8 @@
+{
+  "sse4_2": true,
+  "avx": true,
+  "avx2": true,
+  "fma": true,
+  "f16c": true,
+  "avx512f": false
+}

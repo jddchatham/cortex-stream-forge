@@ -1,0 +1,1 @@
+PASS independent 1203 descriptors, 15 actual tensor byte comparisons, identical activation/mask/KV contract and 21 output schemas; no arithmetic

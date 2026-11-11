@@ -1,0 +1,20 @@
+[
+  {
+    "case": "stock_missing_fixture",
+    "exit_status": 4,
+    "expected": 4,
+    "passed": true
+  },
+  {
+    "case": "candidate_missing_weights",
+    "exit_status": 1,
+    "expected": 1,
+    "passed": true
+  },
+  {
+    "case": "stock_synthetic_file_budget",
+    "bytes": 17825792,
+    "exit_status": 3,
+    "passed": true
+  }
+]

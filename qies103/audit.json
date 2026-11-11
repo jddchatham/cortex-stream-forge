@@ -1,0 +1,95 @@
+{
+  "branch": "experimental/ripple-65b-q4",
+  "HEAD": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "tracked_staged_diffs_empty": true,
+  "prior_artifact_manifests_intact": true,
+  "stock_source_files_verified": 4084,
+  "stock_binaries_libraries_verified": true,
+  "model_hash_receipt_verified": true,
+  "new_complete_GGUF_hash_this_task": false,
+  "model_sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "fifteen_tensor_hashes_verified": true,
+  "weight_bytes": 545752068,
+  "host": {
+    "available": 3959361536,
+    "swap_free": 15283752960,
+    "disk_free": 64584212480,
+    "psi": 0.0
+  },
+  "policy": {
+    "entry_ram": 6442450944,
+    "entry_swap": 4294967296,
+    "entry_disk": 32212254720,
+    "min_ram": 1073741824,
+    "min_swap": 2147483648,
+    "min_disk": 21474836480,
+    "max_rss": 7516192768,
+    "max_seconds": 14400,
+    "interval": 1,
+    "grace": 2
+  },
+  "rlimit_as": [
+    -1,
+    -1
+  ],
+  "rlimit_rss": [
+    -1,
+    -1
+  ],
+  "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/app-Hyprland-gtk\\x2dlaunch-4bb56349.scope\n",
+  "ancestor_limits": [
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/app-Hyprland-gtk\\x2dlaunch-4bb56349.scope",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.current": "3849588736",
+      "memory.swap.current": "483495936"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.current": "5483339776",
+      "memory.swap.current": "726822912"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.current": "5654253568",
+      "memory.swap.current": "780009472"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.current": "6567038976",
+      "memory.swap.current": "1076297728"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.current": "6578999296",
+      "memory.swap.current": "1076305920"
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice",
+      "memory.max": "max",
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.current": "6579019776",
+      "memory.swap.current": "1076305920"
+    }
+  ],
+  "reference_real_execution_qualified": false,
+  "live_guard_positive_paths_qualified": false,
+  "alternate_entrypoints_guard_complete": false,
+  "real_weight_arithmetic_executed": false,
+  "guard_sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2"
+}

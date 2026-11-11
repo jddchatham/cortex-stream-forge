@@ -1,0 +1,9 @@
+{
+  "preservation_pass": true,
+  "guard_and_FlashNext_baseline_unchanged": true,
+  "no_tracked_or_staged_changes": true,
+  "source_syntax_pass": true,
+  "real_execution_disabled": true,
+  "regressions": "all pass",
+  "closure_checks": 40
+}

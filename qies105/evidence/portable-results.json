@@ -1,0 +1,567 @@
+{
+  "real_execution": false,
+  "baseline": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "stock": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "fresh_source_build": true,
+  "comparisons": [
+    {
+      "case": "fixture",
+      "role": "candidate",
+      "byte_exact": 360
+    },
+    {
+      "case": "fixture",
+      "role": "reference",
+      "byte_exact": 72
+    },
+    {
+      "case": "fixture-quantized",
+      "role": "candidate",
+      "byte_exact": 360
+    },
+    {
+      "case": "fixture-quantized",
+      "role": "reference",
+      "byte_exact": 72
+    }
+  ],
+  "candidate_exact_total": 720,
+  "stock_reference_exact_total": 144,
+  "qies099_groups": 14,
+  "qies102_checks": 16,
+  "qies101_fault_checks": 38,
+  "independent_extraction_fault_checks": 4,
+  "archived_descriptor_comparisons": 1203,
+  "contract_invariant_groups": 9,
+  "guard_rejections": [
+    {
+      "case": "worker-real",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "worker-admission",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "worker-storage",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "worker-alternate",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "worker-unknown",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: candidate CLI dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "worker-empty",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: missing dispatch: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "reference-real",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: independent reference real frontend: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "direct-execute",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: direct r99::execute: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "direct-file",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "QIES104 BLOCKED: ModelFile constructor: unchanged 6 GiB MemAvailable gate; before model tensor allocation"
+    },
+    {
+      "case": "real-plan-synthetic",
+      "returncode": 1,
+      "allocation_trap": false,
+      "diagnostic": "synthetic mode refuses real bundle"
+    }
+  ],
+  "allocation_positive_control_exit": 97,
+  "namespace": {
+    "home_entries": [],
+    "as": [
+      -1,
+      -1
+    ],
+    "rss": [
+      -1,
+      -1
+    ]
+  },
+  "builds": [
+    {
+      "name": "quant",
+      "sha256": "56d23dd967c66512d89c5d3b29abaa2128cf4449ffb15c7b994a55dc53697b49",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/quant.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/quant"
+      ]
+    },
+    {
+      "name": "worker",
+      "sha256": "8d6608c7c9f84836c683eb5b42dc5c7dd3567a5084089009ef1c1f4ddc01c30d",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/ricursive-layer.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/bundle.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/candidate.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/worker"
+      ]
+    },
+    {
+      "name": "direct-api",
+      "sha256": "a8b45d25c28ba3ecb04a1d767ee13a48c509b265baccef62f60bb18112c2f811",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/ricursive-layer.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/real_api.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/direct-api"
+      ]
+    },
+    {
+      "name": "synthetic-layer-tests",
+      "sha256": "812377e75be61156feeb0b1ddd7b389bf2ac33a36971eb475536352ec9a0f836",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/ricursive-layer.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/guarded_layer_tests.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/synthetic-layer-tests"
+      ]
+    },
+    {
+      "name": "synthetic-candidate",
+      "sha256": "7ee7578ab4afcd09039a894134ac22d8ecc769ac4df685883e3f1616f19186a4",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/ricursive-layer.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/synthetic_candidate.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/synthetic-candidate"
+      ]
+    },
+    {
+      "name": "adapter-tests",
+      "sha256": "beb13fb1fa0c53129d9b4c50d74eafbdda33161e5188f7cb264a00123c3bf6ac",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/ricursive-layer.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/bundle.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/guarded_adapter_tests.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/adapter-tests"
+      ]
+    },
+    {
+      "name": "reference-worker",
+      "sha256": "7b540ce45782317844a684a76f57a935c0bbf771e16c4ab39d37d4afc9530042",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/reference_front.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/reference-worker"
+      ]
+    },
+    {
+      "name": "reference-engine",
+      "sha256": "d32961fcba829d6c7826a8e44b5f20c50c27a0a4e6ce6f706429d95f005fa347",
+      "role": "stock",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/reference.cpp",
+        "-Wl,-rpath,/stock-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libllama.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/reference-engine"
+      ]
+    },
+    {
+      "name": "stock-five",
+      "sha256": "170e4ba99526895777775d10396601e8c7e35b91cc1f6e49ab14a50dd319fc3c",
+      "role": "stock",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/admission.cpp",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/stock-five.cpp",
+        "-Wl,-rpath,/stock-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libllama.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/stock-five"
+      ]
+    },
+    {
+      "name": "reference-extract",
+      "sha256": "f03917ef0cc8a9b6d82bfa2a2c9183d58003a5cbfdb42fc7ada8d366377e443b",
+      "role": "stock",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/qies101/reference_extract.cpp",
+        "-Wl,-rpath,/stock-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libllama.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/stock-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/reference-extract"
+      ]
+    },
+    {
+      "name": "allocation-control",
+      "sha256": "0fa719ced7945765a0ef911c418b277ed6a39b9c164fba022f62b201b12a4015",
+      "role": "cpu",
+      "command": [
+        "c++",
+        "-std=c++17",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active",
+        "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/runtime-flashnext-layer-exp/ggml/include",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies105/relocated-package/qies104/allocation_control.cpp",
+        "-Wl,-rpath,/cpu-sdk",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-cpu.so",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/baseline-build/bin/libggml-base.so",
+        "-lcrypto",
+        "-o",
+        "/home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/active/allocation-control"
+      ]
+    }
+  ],
+  "logs": [
+    {
+      "test": "build-quant",
+      "status": 0
+    },
+    {
+      "test": "fixture-f32",
+      "status": 0
+    },
+    {
+      "test": "fixture-quantized",
+      "status": 0
+    },
+    {
+      "test": "fixture-oneblock",
+      "status": 0
+    },
+    {
+      "test": "build-worker",
+      "status": 0
+    },
+    {
+      "test": "build-direct-api",
+      "status": 0
+    },
+    {
+      "test": "build-synthetic-layer-tests",
+      "status": 0
+    },
+    {
+      "test": "build-synthetic-candidate",
+      "status": 0
+    },
+    {
+      "test": "build-adapter-tests",
+      "status": 0
+    },
+    {
+      "test": "build-reference-worker",
+      "status": 0
+    },
+    {
+      "test": "build-reference-engine",
+      "status": 0
+    },
+    {
+      "test": "build-stock-five",
+      "status": 0
+    },
+    {
+      "test": "build-reference-extract",
+      "status": 0
+    },
+    {
+      "test": "qies101-independent-four-faults",
+      "status": 0
+    },
+    {
+      "test": "qies099-14-groups",
+      "status": 0
+    },
+    {
+      "test": "qies102-16-checks",
+      "status": 0
+    },
+    {
+      "test": "stock-fixture",
+      "status": 0
+    },
+    {
+      "test": "candidate-fixture",
+      "status": 0
+    },
+    {
+      "test": "reference-fixture",
+      "status": 0
+    },
+    {
+      "test": "stock-fixture-quantized",
+      "status": 0
+    },
+    {
+      "test": "candidate-fixture-quantized",
+      "status": 0
+    },
+    {
+      "test": "reference-fixture-quantized",
+      "status": 0
+    },
+    {
+      "test": "qies101-original-extraction-faults",
+      "status": 0
+    },
+    {
+      "test": "build-allocation-watch",
+      "status": 0
+    },
+    {
+      "test": "build-allocation-control",
+      "status": 0
+    },
+    {
+      "test": "allocation-control",
+      "status": 97
+    },
+    {
+      "test": "reject-worker-real",
+      "status": 1
+    },
+    {
+      "test": "reject-worker-admission",
+      "status": 1
+    },
+    {
+      "test": "reject-worker-storage",
+      "status": 1
+    },
+    {
+      "test": "reject-worker-alternate",
+      "status": 1
+    },
+    {
+      "test": "reject-worker-unknown",
+      "status": 1
+    },
+    {
+      "test": "reject-worker-empty",
+      "status": 1
+    },
+    {
+      "test": "reject-reference-real",
+      "status": 1
+    },
+    {
+      "test": "reject-direct-execute",
+      "status": 1
+    },
+    {
+      "test": "reject-direct-file",
+      "status": 1
+    },
+    {
+      "test": "reject-real-plan-synthetic",
+      "status": 1
+    },
+    {
+      "test": "outside-domain-worker",
+      "status": 127
+    },
+    {
+      "test": "outside-domain-direct-api",
+      "status": 127
+    },
+    {
+      "test": "outside-domain-synthetic-layer-tests",
+      "status": 127
+    },
+    {
+      "test": "outside-domain-adapter-tests",
+      "status": 127
+    },
+    {
+      "test": "outside-domain-reference-worker",
+      "status": 127
+    },
+    {
+      "test": "sealed-filesystem",
+      "status": 0
+    },
+    {
+      "test": "retired-builder-qies099",
+      "status": 1
+    },
+    {
+      "test": "retired-builder-qies100",
+      "status": 1
+    },
+    {
+      "test": "retired-builder-qies102",
+      "status": 1
+    },
+    {
+      "test": "retired-builder-qies102",
+      "status": 1
+    },
+    {
+      "test": "retired-builder-qies103",
+      "status": 1
+    }
+  ],
+  "scope": "Portable replay differs from historical path/binary-hash retirement checks. No real model weight access or arithmetic. Historical evidence remains archived unchanged."
+}

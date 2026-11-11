@@ -1,0 +1,69 @@
+{
+  "all_numeric_entrypoints_guarded": false,
+  "reference_and_candidate_shared_guard_complete": false,
+  "entries": [
+    {
+      "path": "qies102/runtime.py",
+      "entry": "main -> original run_guard",
+      "role": "candidate managed launcher",
+      "checks": "entry/qualifications/identity + original policy",
+      "gap": "positive live path unqualified"
+    },
+    {
+      "path": "qies102/probe.cpp",
+      "entry": "real_run -> LayerSource -> r99::execute",
+      "role": "candidate native worker",
+      "checks": "6 GiB + marker + cgroup-name check",
+      "gap": "not cryptographic monitor attestation; wrapper required"
+    },
+    {
+      "path": "qies099/layer-cli.cpp",
+      "entry": "--run",
+      "role": "legacy numerical CLI",
+      "checks": "6 GiB + environment marker",
+      "gap": "does not enforce full current guard/qualification contract"
+    },
+    {
+      "path": "qies099/ricursive-layer.cpp",
+      "entry": "r99::execute",
+      "role": "public numerical library API",
+      "checks": "schema/namespace checks",
+      "gap": "no intrinsic host gate or external monitor"
+    },
+    {
+      "path": "qies100/stock_probe.cpp",
+      "entry": "synthetic mode",
+      "role": "stock observer",
+      "checks": "16 MiB + 256 hidden/five blocks",
+      "gap": "synthetic only; no real numerical path"
+    },
+    {
+      "path": "qies103/stock_oneblock_probe.cpp",
+      "entry": "synthetic mode",
+      "role": "new stock observer",
+      "checks": "16 MiB + 256 hidden/one block",
+      "gap": "synthetic only; no real numerical path"
+    },
+    {
+      "path": "qies100/stock-build/bin/llama-simple",
+      "entry": "stock model load/decode",
+      "role": "ordinary stock CLI",
+      "checks": "no QUORTEX guard",
+      "gap": "not approved for real runs"
+    },
+    {
+      "path": "qies101/reference-extract",
+      "entry": "metadata/raw extraction",
+      "role": "non-numerical utility",
+      "checks": "identity/bounds",
+      "gap": "not an inference entrypoint"
+    },
+    {
+      "path": "qies102/probe.cpp",
+      "entry": "--storage / --describe",
+      "role": "non-numerical utility",
+      "checks": "bounded storage/schema",
+      "gap": "not an inference entrypoint"
+    }
+  ]
+}

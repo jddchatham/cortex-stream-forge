@@ -1,0 +1,11 @@
+--- qies099/build.py (original)
++++ qies099/build.py (closed)
+@@ -1,3 +1,8 @@
++from pathlib import Path as _q104_Path
++import sys as _q104_sys
++_q104_sys.path.insert(0,str(_q104_Path(__file__).resolve().parents[1]/'qies104'))
++from gate import legacy_build_only as _q104_gate
++_q104_gate()
+ from pathlib import Path
+ import subprocess,os,json,hashlib
+ r=Path(__file__).resolve().parent.parent;o=r/'qies099/checks';src=r/'runtime-flashnext-layer-exp';libs=r.parent/'cortex-stream-forge-qies074/build-quortex/bin'

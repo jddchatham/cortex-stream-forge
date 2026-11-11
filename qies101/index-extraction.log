@@ -1,0 +1,8 @@
+EXTRACTED blk.0.attn_q.weight 29491200
+EXTRACTED blk.0.ffn_down.weight 144179200
+EXTRACTED blk.40.attn_k.weight 5570560
+EXTRACTED blk.40.ffn_gate.weight 117964800
+EXTRACTED blk.79.attn_output.weight 43008000
+EXTRACTED blk.79.ffn_up.weight 144179200
+EXTRACTED token_embd.weight 272957440
+EXTRACTED output_norm.weight 20480

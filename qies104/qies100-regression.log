@@ -1,0 +1,19 @@
+{
+  "case": "F32",
+  "comparisons": 360,
+  "missing": 0,
+  "byte_exact": 360
+}
+{
+  "case": "-quantized",
+  "comparisons": 360,
+  "missing": 0,
+  "byte_exact": 274
+}
+{
+  "case": "-quantized-plain",
+  "comparisons": 360,
+  "missing": 0,
+  "byte_exact": 360
+}
+PASS F32 and matched plain-CPU quantized synthetic exact-comparison gates; repacked path is diagnostic only

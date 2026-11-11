@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/make_fixture.py", line 6, in <module>
+    import gguf,numpy as np
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/gguf-py/gguf/__init__.py", line 9, in <module>
+    from .metadata import *
+  File "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/gguf-py/gguf/metadata.py", line 5, in <module>
+    import yaml
+ModuleNotFoundError: No module named 'yaml'

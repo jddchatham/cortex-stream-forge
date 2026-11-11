@@ -1,0 +1,1 @@
+PASS 27 contract/provenance/guard-audit tests; detected entrypoint gaps remain BLOCKERS

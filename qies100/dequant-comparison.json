@@ -1,0 +1,37 @@
+[
+  {
+    "type": 8,
+    "tensor": "blk.0.attn_k.weight",
+    "elements": 32768,
+    "byte_exact": true,
+    "stock_sha256": "e329075177ae9f495ad6de3779acca232abfcfffb05ab1406e53c34ceb7f8ea9"
+  },
+  {
+    "type": 12,
+    "tensor": "blk.0.attn_q.weight",
+    "elements": 65536,
+    "byte_exact": true,
+    "stock_sha256": "e263f3dd7ccaf4e7d8de786e413a1e6cb37d851a79ebcd675e7216c07912f23a"
+  },
+  {
+    "type": 13,
+    "tensor": "blk.0.ffn_gate.weight",
+    "elements": 131072,
+    "byte_exact": true,
+    "stock_sha256": "9dfd7f723d098e149c1fbbe5693879b792becd3e69e234fde59da6a2945a29ea"
+  },
+  {
+    "type": 14,
+    "tensor": "output.weight",
+    "elements": 8192,
+    "byte_exact": true,
+    "stock_sha256": "43a33312b09db3c59361c734fc1966e1d7b4d2fdf0a34ae8dcd347a0dbfb7548"
+  },
+  {
+    "type": 23,
+    "tensor": "token_embd.weight",
+    "elements": 8192,
+    "byte_exact": true,
+    "stock_sha256": "697f8e9c848b86611f4c57148fda9738b3657f1755e0a9aa71dcdccf12c333f4"
+  }
+]

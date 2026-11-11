@@ -1,0 +1,2 @@
+{"ok": false, "reason": "GuardAbort: resource preflight failed", "unit": "quortex-guard-6dc3ecb3df4f44a9a3cc27b0ecaba0bc.service", "cleanup": true}
+PASS 26 contract/provenance/guard-audit tests; detected entrypoint gaps remain BLOCKERS

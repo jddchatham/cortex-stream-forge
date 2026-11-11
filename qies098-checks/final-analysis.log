@@ -1,0 +1,12 @@
+PASS 1203 named descriptors against unchanged baseline parser; no tensor data read
+Final metadata/index inspection PASS; no tensor payloads read during inspection; no inference
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.009s
+
+OK
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.036s
+
+OK

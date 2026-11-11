@@ -1,0 +1,7 @@
+commit 8fac93bb2bfc4b2d7069c4044f2f71cd25f80388
+Author:     Cortex Stream Forge <cortex-stream-forge@local>
+AuthorDate: Fri Nov 6 21:08:48 2026 -0600
+Commit:     Cortex Stream Forge <cortex-stream-forge@local>
+CommitDate: Fri Nov 6 21:08:48 2026 -0600
+
+    QUORTEX: achieve bit-exact non-thinking text generation

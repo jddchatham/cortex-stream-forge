@@ -1,0 +1,10 @@
+Evidence directory: /home/user/PandaCode Bots/meatball-84ccea00/qies105-publication/.qies105-build/replays/20261111-085802-62f2e515/results
+{
+  "candidate_exact_total": 720,
+  "stock_reference_exact_total": 144,
+  "qies099_groups": 14,
+  "qies102_checks": 16,
+  "qies101_fault_checks": 38,
+  "allocation_positive_control_exit": 97,
+  "real_execution": false
+}

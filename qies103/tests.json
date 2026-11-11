@@ -1,0 +1,116 @@
+{
+  "tests": [
+    {
+      "name": "deterministic_regeneration",
+      "passed": true
+    },
+    {
+      "name": "no_golden_outputs_fabricated",
+      "passed": true
+    },
+    {
+      "name": "identical_activation_and_x0",
+      "passed": true
+    },
+    {
+      "name": "exact_dyadic_values",
+      "passed": true
+    },
+    {
+      "name": "position_zero_sliding_mask",
+      "passed": true
+    },
+    {
+      "name": "empty_zero_f16_cache",
+      "passed": true
+    },
+    {
+      "name": "position_advancement_contract",
+      "passed": true
+    },
+    {
+      "name": "output_dimension_contract",
+      "passed": true
+    },
+    {
+      "name": "quantized_weight_inventory",
+      "passed": true
+    },
+    {
+      "name": "unchanged_policy_values",
+      "passed": true
+    },
+    {
+      "name": "pure_boundary_pass_no_launch",
+      "passed": true
+    },
+    {
+      "name": "pure_boundary_fail_available",
+      "passed": true
+    },
+    {
+      "name": "pure_boundary_fail_swap_free",
+      "passed": true
+    },
+    {
+      "name": "pure_boundary_fail_disk_free",
+      "passed": true
+    },
+    {
+      "name": "pure_boundary_fail_psi",
+      "passed": true
+    },
+    {
+      "name": "original_preflight_precedes_launch_source_audit",
+      "passed": true
+    },
+    {
+      "name": "candidate_native_admission_precedes_execute_source_audit",
+      "passed": true
+    },
+    {
+      "name": "candidate_original_guard_no_policy_override",
+      "passed": true
+    },
+    {
+      "name": "missing_reference_or_guard_receipt_blocks",
+      "passed": true
+    },
+    {
+      "name": "actual_original_guard_default_policy_refusal",
+      "passed": true
+    },
+    {
+      "name": "legacy_marker_entry_gap_detected",
+      "passed": true
+    },
+    {
+      "name": "public_core_unguarded_api_gap_detected",
+      "passed": true
+    },
+    {
+      "name": "stock_current_capture_is_synthetic_only",
+      "passed": true
+    },
+    {
+      "name": "independent_reference_linkage",
+      "passed": true
+    },
+    {
+      "name": "oneblock_synthetic_execution_evidence",
+      "passed": true
+    },
+    {
+      "name": "corrupt_input_rejected",
+      "passed": true
+    },
+    {
+      "name": "existing_adapter_failure_cleanup_suite",
+      "passed": true
+    }
+  ],
+  "passed": 27,
+  "real_weight_arithmetic": false,
+  "live_positive_paths_qualified": false,
+  "alternate_entrypoints_guard_complete": false
+}

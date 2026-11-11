@@ -1,0 +1,22 @@
+{
+  "command": [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/include",
+    "-I/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies103/stock_oneblock_probe.cpp",
+    "-Wl,-rpath,/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libllama.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-cpu.so",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies100/stock-build/bin/libggml-base.so",
+    "-o",
+    "/home/user/PandaCode Bots/meatball-84ccea00/qies098-worktree/qies103/stock-oneblock-probe"
+  ],
+  "binary_sha256": "193fe251eee70dfdde27fa8b074f95a054dcfcaa0c6f54186726f3f911f3ab6b",
+  "reference_source": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "quortex_linked": false
+}

@@ -1,0 +1,12 @@
+{
+  "archive_parent": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+  "remote_requested_refs_absent_before_commit": true,
+  "tracked_engine_changes": false,
+  "source_diff_whitespace_check": "PASS",
+  "historical_evidence_whitespace": "preserved exactly; log/patch whitespace deliberately retained",
+  "added_blob_model_elf_credential_scan": "PASS",
+  "actual_model_arithmetic": false,
+  "legacy_binaries_shipped": false,
+  "inherited_source_file_model_elf_scan": "PASS",
+  "portable_results_sha256": "1465c58281f4cd0a8fa50840ba2347fd8facbbc742d6a3c7a1dcbec5538c80f6"
+}

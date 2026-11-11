@@ -1,0 +1,401 @@
+{
+  "plans": [
+    {
+      "kind": "Ricursive_SINGLE_LAYER_TEST_CONTRACT_ONLY",
+      "layer": 0,
+      "attention": "sliding",
+      "n_ctx": 256,
+      "n_batch": 1,
+      "seq_id": 0,
+      "reference_commit": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+      "weight_bytes": 545752068,
+      "kv_f16_payload_bytes": 1048576,
+      "kv_payload_assumes_one_active_layer": true,
+      "full_80_layer_f16_payload_at_this_context": 83886080,
+      "native_cache_allocation_not_measured": true,
+      "input_hidden_f32_bytes": 20480,
+      "original_scaled_embedding_f32_bytes": 20480,
+      "gate_up_activation_f32_bytes_each": 163840,
+      "tensors": [
+        {
+          "name": "blk.0.attn_gate.weight",
+          "shape": [
+            5120,
+            10240
+          ],
+          "type": 12,
+          "relative_offset": 694456320,
+          "bytes": 29491200,
+          "offset": 698072032
+        },
+        {
+          "name": "blk.0.attn_k.weight",
+          "shape": [
+            5120,
+            1024
+          ],
+          "type": 8,
+          "relative_offset": 723947520,
+          "bytes": 5570560,
+          "offset": 727563232
+        },
+        {
+          "name": "blk.0.attn_k_norm.weight",
+          "shape": [
+            128
+          ],
+          "type": 0,
+          "relative_offset": 729518080,
+          "bytes": 512,
+          "offset": 733133792
+        },
+        {
+          "name": "blk.0.attn_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 729518592,
+          "bytes": 20480,
+          "offset": 733134304
+        },
+        {
+          "name": "blk.0.attn_output.weight",
+          "shape": [
+            10240,
+            5120
+          ],
+          "type": 14,
+          "relative_offset": 729539072,
+          "bytes": 43008000,
+          "offset": 733154784
+        },
+        {
+          "name": "blk.0.attn_q.weight",
+          "shape": [
+            5120,
+            10240
+          ],
+          "type": 12,
+          "relative_offset": 772547072,
+          "bytes": 29491200,
+          "offset": 776162784
+        },
+        {
+          "name": "blk.0.attn_q_norm.weight",
+          "shape": [
+            128
+          ],
+          "type": 0,
+          "relative_offset": 802038272,
+          "bytes": 512,
+          "offset": 805653984
+        },
+        {
+          "name": "blk.0.attn_v.weight",
+          "shape": [
+            5120,
+            1024
+          ],
+          "type": 8,
+          "relative_offset": 802038784,
+          "bytes": 5570560,
+          "offset": 805654496
+        },
+        {
+          "name": "blk.0.attn_vres_lambda.weight",
+          "shape": [
+            1
+          ],
+          "type": 0,
+          "relative_offset": 807609344,
+          "bytes": 4,
+          "offset": 811225056
+        },
+        {
+          "name": "blk.0.ffn_down.weight",
+          "shape": [
+            40960,
+            5120
+          ],
+          "type": 13,
+          "relative_offset": 807609376,
+          "bytes": 144179200,
+          "offset": 811225088
+        },
+        {
+          "name": "blk.0.ffn_gate.weight",
+          "shape": [
+            5120,
+            40960
+          ],
+          "type": 13,
+          "relative_offset": 951788576,
+          "bytes": 144179200,
+          "offset": 955404288
+        },
+        {
+          "name": "blk.0.ffn_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 1095967776,
+          "bytes": 20480,
+          "offset": 1099583488
+        },
+        {
+          "name": "blk.0.ffn_up.weight",
+          "shape": [
+            5120,
+            40960
+          ],
+          "type": 13,
+          "relative_offset": 1095988256,
+          "bytes": 144179200,
+          "offset": 1099603968
+        },
+        {
+          "name": "blk.0.post_attention_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 1240167456,
+          "bytes": 20480,
+          "offset": 1243783168
+        },
+        {
+          "name": "blk.0.post_ffw_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 1240187936,
+          "bytes": 20480,
+          "offset": 1243803648
+        }
+      ],
+      "mandatory_comparisons": [
+        "attn_norm",
+        "Qcur_normed",
+        "Kcur_normed",
+        "Qcur",
+        "Kcur",
+        "Vcur",
+        "attn_out",
+        "attn_gate",
+        "attn_gated",
+        "attn_post_norm",
+        "ffn_inp",
+        "ffn_norm",
+        "ffn_swiglu",
+        "ffn_out",
+        "ffn_post_norm",
+        "l_out",
+        "KV positions and bytes"
+      ],
+      "inference_executed": false,
+      "native_adapter_implemented": false
+    },
+    {
+      "kind": "Ricursive_SINGLE_LAYER_TEST_CONTRACT_ONLY",
+      "layer": 4,
+      "attention": "global",
+      "n_ctx": 256,
+      "n_batch": 1,
+      "seq_id": 0,
+      "reference_commit": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+      "weight_bytes": 545752068,
+      "kv_f16_payload_bytes": 1048576,
+      "kv_payload_assumes_one_active_layer": true,
+      "full_80_layer_f16_payload_at_this_context": 83886080,
+      "native_cache_allocation_not_measured": true,
+      "input_hidden_f32_bytes": 20480,
+      "original_scaled_embedding_f32_bytes": 20480,
+      "gate_up_activation_f32_bytes_each": 163840,
+      "tensors": [
+        {
+          "name": "blk.4.attn_gate.weight",
+          "shape": [
+            5120,
+            10240
+          ],
+          "type": 12,
+          "relative_offset": 2877464704,
+          "bytes": 29491200,
+          "offset": 2881080416
+        },
+        {
+          "name": "blk.4.attn_k.weight",
+          "shape": [
+            5120,
+            1024
+          ],
+          "type": 8,
+          "relative_offset": 2906955904,
+          "bytes": 5570560,
+          "offset": 2910571616
+        },
+        {
+          "name": "blk.4.attn_k_norm.weight",
+          "shape": [
+            128
+          ],
+          "type": 0,
+          "relative_offset": 2912526464,
+          "bytes": 512,
+          "offset": 2916142176
+        },
+        {
+          "name": "blk.4.attn_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 2912526976,
+          "bytes": 20480,
+          "offset": 2916142688
+        },
+        {
+          "name": "blk.4.attn_output.weight",
+          "shape": [
+            10240,
+            5120
+          ],
+          "type": 14,
+          "relative_offset": 2912547456,
+          "bytes": 43008000,
+          "offset": 2916163168
+        },
+        {
+          "name": "blk.4.attn_q.weight",
+          "shape": [
+            5120,
+            10240
+          ],
+          "type": 12,
+          "relative_offset": 2955555456,
+          "bytes": 29491200,
+          "offset": 2959171168
+        },
+        {
+          "name": "blk.4.attn_q_norm.weight",
+          "shape": [
+            128
+          ],
+          "type": 0,
+          "relative_offset": 2985046656,
+          "bytes": 512,
+          "offset": 2988662368
+        },
+        {
+          "name": "blk.4.attn_v.weight",
+          "shape": [
+            5120,
+            1024
+          ],
+          "type": 8,
+          "relative_offset": 2985047168,
+          "bytes": 5570560,
+          "offset": 2988662880
+        },
+        {
+          "name": "blk.4.attn_vres_lambda.weight",
+          "shape": [
+            1
+          ],
+          "type": 0,
+          "relative_offset": 2990617728,
+          "bytes": 4,
+          "offset": 2994233440
+        },
+        {
+          "name": "blk.4.ffn_down.weight",
+          "shape": [
+            40960,
+            5120
+          ],
+          "type": 13,
+          "relative_offset": 2990617760,
+          "bytes": 144179200,
+          "offset": 2994233472
+        },
+        {
+          "name": "blk.4.ffn_gate.weight",
+          "shape": [
+            5120,
+            40960
+          ],
+          "type": 13,
+          "relative_offset": 3134796960,
+          "bytes": 144179200,
+          "offset": 3138412672
+        },
+        {
+          "name": "blk.4.ffn_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 3278976160,
+          "bytes": 20480,
+          "offset": 3282591872
+        },
+        {
+          "name": "blk.4.ffn_up.weight",
+          "shape": [
+            5120,
+            40960
+          ],
+          "type": 13,
+          "relative_offset": 3278996640,
+          "bytes": 144179200,
+          "offset": 3282612352
+        },
+        {
+          "name": "blk.4.post_attention_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 3423175840,
+          "bytes": 20480,
+          "offset": 3426791552
+        },
+        {
+          "name": "blk.4.post_ffw_norm.weight",
+          "shape": [
+            5120
+          ],
+          "type": 0,
+          "relative_offset": 3423196320,
+          "bytes": 20480,
+          "offset": 3426812032
+        }
+      ],
+      "mandatory_comparisons": [
+        "attn_norm",
+        "Qcur_normed",
+        "Kcur_normed",
+        "Qcur",
+        "Kcur",
+        "Vcur",
+        "attn_out",
+        "attn_gate",
+        "attn_gated",
+        "attn_post_norm",
+        "ffn_inp",
+        "ffn_norm",
+        "ffn_swiglu",
+        "ffn_out",
+        "ffn_post_norm",
+        "l_out",
+        "KV positions and bytes"
+      ],
+      "inference_executed": false,
+      "native_adapter_implemented": false
+    }
+  ],
+  "status": "PREPARED_NOT_EXECUTABLE; native adapter and qualified oracle missing"
+}

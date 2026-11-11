@@ -1,0 +1,84 @@
+{
+  "host": {
+    "available": 4028395520,
+    "swap_free": 15336349696,
+    "disk_free": 63377215488,
+    "psi": 0.0
+  },
+  "original_policy": {
+    "entry_ram": 6442450944,
+    "entry_swap": 4294967296,
+    "entry_disk": 32212254720,
+    "min_ram": 1073741824,
+    "min_swap": 2147483648,
+    "min_disk": 21474836480,
+    "max_rss": 7516192768,
+    "max_seconds": 14400,
+    "interval": 1,
+    "grace": 2
+  },
+  "ancestors": [
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/app-Hyprland-gtk\\x2dlaunch-4bb56349.scope",
+      "memory.max": "max",
+      "memory.current": 2133745664,
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.swap.current": 323514368
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice",
+      "memory.max": "max",
+      "memory.current": 4152344576,
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.swap.current": 729591808
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice",
+      "memory.max": "max",
+      "memory.current": 4219281408,
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.swap.current": 812265472
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service",
+      "memory.max": "max",
+      "memory.current": 5398315008,
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.swap.current": 1019301888
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice",
+      "memory.max": "max",
+      "memory.current": 5409734656,
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.swap.current": 1019797504
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice",
+      "memory.max": "max",
+      "memory.current": 5409755136,
+      "memory.high": "max",
+      "memory.swap.max": "max",
+      "memory.swap.current": 1019797504
+    }
+  ],
+  "rlimit_as": [
+    -1,
+    -1
+  ],
+  "rlimit_rss": [
+    -1,
+    -1
+  ],
+  "resource_snapshot_pass": false,
+  "issues": [
+    "available below original entry threshold"
+  ],
+  "real_execution_enabled": false,
+  "note": "Diagnostic only. Actual original run_guard rechecks the user-manager app.slice ancestors; no positive runtime qualification is implied."
+}

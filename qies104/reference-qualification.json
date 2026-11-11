@@ -1,0 +1,49 @@
+{
+  "stock_source": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "independent_real_descriptors_verified": 1203,
+  "independent_real_tensors_byte_exact": [
+    "blk.0.attn_gate.weight",
+    "blk.0.attn_k.weight",
+    "blk.0.attn_k_norm.weight",
+    "blk.0.attn_norm.weight",
+    "blk.0.attn_output.weight",
+    "blk.0.attn_q.weight",
+    "blk.0.attn_q_norm.weight",
+    "blk.0.attn_v.weight",
+    "blk.0.attn_vres_lambda.weight",
+    "blk.0.ffn_down.weight",
+    "blk.0.ffn_gate.weight",
+    "blk.0.ffn_norm.weight",
+    "blk.0.ffn_up.weight",
+    "blk.0.post_attention_norm.weight",
+    "blk.0.post_ffw_norm.weight"
+  ],
+  "input_contract_verified": {
+    "initial-kv.f16": {
+      "bytes": 1048576,
+      "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58"
+    },
+    "input.f32": {
+      "bytes": 20480,
+      "sha256": "edc12d25f89ab142a15cb9dbed09787e07121946f5abfaa71269ec4086531207"
+    },
+    "mask.f32": {
+      "bytes": 1024,
+      "sha256": "1eccacccdaaa37bab7f988c764ae002568db263fca867468e537ff4c612dc726"
+    },
+    "x0.f32": {
+      "bytes": 20480,
+      "sha256": "edc12d25f89ab142a15cb9dbed09787e07121946f5abfaa71269ec4086531207"
+    }
+  },
+  "output_schema_count": 21,
+  "guard_before_reference_model_load": true,
+  "synthetic_reference_exact_comparisons": 144,
+  "kernel_versions_identical": false,
+  "candidate_ggml": "0.25.3",
+  "stock_ggml": "0.29.0",
+  "matched_profile": "CPU single thread; nonflash; F16 KV; ordinary buffers",
+  "real_reference_worker_enabled": false,
+  "real_numerical_equivalence_qualified": false,
+  "qualification": "non-inference provenance/data/control checks pass; live positive runtime pending"
+}

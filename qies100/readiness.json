@@ -1,0 +1,69 @@
+{
+  "guard_sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2",
+  "host": {
+    "available": 3404001280,
+    "swap_free": 15438450688,
+    "disk_free": 71046217728,
+    "psi": 0.0
+  },
+  "entry_pass": false,
+  "limits": {
+    "rlimit_as": [
+      -1,
+      -1
+    ],
+    "cgroup_v2": true,
+    "ancestors": [
+      {
+        "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/app-Hyprland-gtk\\x2dlaunch-4bb56349.scope",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "memory.current": "2852659200"
+      },
+      {
+        "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "memory.current": "5631582208"
+      },
+      {
+        "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "memory.current": "5756289024"
+      },
+      {
+        "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "memory.current": "6639247360"
+      },
+      {
+        "path": "/sys/fs/cgroup/user.slice/user-1000.slice",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "memory.current": "6651457536"
+      },
+      {
+        "path": "/sys/fs/cgroup/user.slice",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "memory.current": "6651478016"
+      }
+    ]
+  },
+  "reference_qualified": false,
+  "real_guard_adapter_qualified": false,
+  "ready": false,
+  "inference_executed": false,
+  "blockers": [
+    "independent reference not real-model qualified",
+    "live passing-gate guard/cgroup/address-space enforcement qualification pending"
+  ]
+}

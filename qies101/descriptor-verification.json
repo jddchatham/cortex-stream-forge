@@ -1,0 +1,11 @@
+{
+  "descriptor_count": 1203,
+  "baseline_parser_exact": true,
+  "stock_parser_exact": true,
+  "index_validation_exact": true,
+  "selected_count": 8,
+  "total_selected_bytes": 757370880,
+  "projected_two_copies_bytes": 1514741760,
+  "free_at_check": 65336459264,
+  "reserve_bytes": 32212254720
+}
