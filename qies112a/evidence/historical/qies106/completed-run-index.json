@@ -1,0 +1,16 @@
+[
+  {
+    "run": "20261111-105517-22a33342",
+    "summary_original_sha256": "17ed61d210d6233b1c8627d42ced2d7687b9f15cd504b0913f413cc31144d272",
+    "comparison_count": 1,
+    "fault_count": 0,
+    "historical_only": true
+  },
+  {
+    "run": "20261111-110200-6ff0dc68",
+    "summary_original_sha256": "75ccbef67bd905beebc34b0c4eed95f998506a8abb079278f81c458b183f137b",
+    "comparison_count": 7,
+    "fault_count": 0,
+    "historical_only": true
+  }
+]

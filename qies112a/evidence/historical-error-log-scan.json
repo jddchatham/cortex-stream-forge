@@ -1,0 +1,5 @@
+{
+  "rg_exit_status": 1,
+  "matched_lines": 0,
+  "patterns": "SIGSEGV/segfault/ASan/UBSan/GGML/assert/core/signal"
+}

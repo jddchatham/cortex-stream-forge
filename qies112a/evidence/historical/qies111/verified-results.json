@@ -1,0 +1,253 @@
+{
+  "success": true,
+  "campaigns": [
+    {
+      "root": "<workspace>/qies111-worktree/qies111/runs/20261111-173551-4fd516a5",
+      "layers": 2,
+      "positions": [
+        0,
+        1
+      ],
+      "capture_comparisons": 104,
+      "weight_hash_comparisons": 32,
+      "metrics": {
+        "candidate": {
+          "rss": 25513984,
+          "pss": 15926272,
+          "anon": 12632064,
+          "file_pss": 3574784,
+          "controller_min_kib": 39924.0,
+          "controller_max_kib": 39924.0,
+          "controller_first_kib": 39924.0,
+          "controller_last_kib": 39924.0,
+          "controller_peak_pss_bytes": 32918528,
+          "controller_peak_anon_bytes": 29581312,
+          "after_cleanup_max_rss_kib": 17384,
+          "weight_staging_max": 3604480,
+          "cpu_buffer_max": 3768832,
+          "workspace_max": 571136,
+          "source_cache_max": 1048320
+        },
+        "reference": {
+          "rss": 567955456,
+          "pss": 558431232,
+          "anon": 554979328,
+          "file_pss": 3587072,
+          "controller_min_kib": 39924.0,
+          "controller_max_kib": 39924.0,
+          "controller_first_kib": 39924.0,
+          "controller_last_kib": 39924.0,
+          "controller_peak_pss_bytes": 32918528,
+          "controller_peak_anon_bytes": 29581312,
+          "after_cleanup_max_rss_kib": 12320,
+          "weight_staging_max": 545669120,
+          "cpu_buffer_max": 548718688,
+          "workspace_max": 571136,
+          "source_cache_max": 0
+        }
+      },
+      "mask_rope_routing_and_state_checks": true,
+      "kv_payload_per_layer": 1048576,
+      "persistent_stack_kv_bytes": 2097152
+    },
+    {
+      "root": "<workspace>/qies111-worktree/qies111/runs/20261111-173551-4fd516a5",
+      "layers": 4,
+      "positions": [
+        0,
+        1
+      ],
+      "capture_comparisons": 208,
+      "weight_hash_comparisons": 64,
+      "metrics": {
+        "candidate": {
+          "rss": 25681920,
+          "pss": 16102400,
+          "anon": 12627968,
+          "file_pss": 3572736,
+          "controller_min_kib": 39924.0,
+          "controller_max_kib": 39924.0,
+          "controller_first_kib": 39924.0,
+          "controller_last_kib": 39924.0,
+          "controller_peak_pss_bytes": 32918528,
+          "controller_peak_anon_bytes": 29581312,
+          "after_cleanup_max_rss_kib": 17560,
+          "weight_staging_max": 3604480,
+          "cpu_buffer_max": 3768832,
+          "workspace_max": 571136,
+          "source_cache_max": 1048320
+        },
+        "reference": {
+          "rss": 566857728,
+          "pss": 556892160,
+          "anon": 553930752,
+          "file_pss": 3644416,
+          "controller_min_kib": 39924.0,
+          "controller_max_kib": 39924.0,
+          "controller_first_kib": 39924.0,
+          "controller_last_kib": 39924.0,
+          "controller_peak_pss_bytes": 32918528,
+          "controller_peak_anon_bytes": 29581312,
+          "after_cleanup_max_rss_kib": 12452,
+          "weight_staging_max": 545669120,
+          "cpu_buffer_max": 548718688,
+          "workspace_max": 571136,
+          "source_cache_max": 0
+        }
+      },
+      "mask_rope_routing_and_state_checks": true,
+      "kv_payload_per_layer": 1048576,
+      "persistent_stack_kv_bytes": 4194304
+    },
+    {
+      "root": "<workspace>/qies111-worktree/qies111/runs/20261111-173551-4fd516a5",
+      "layers": 5,
+      "positions": [
+        1023,
+        1024
+      ],
+      "capture_comparisons": 260,
+      "weight_hash_comparisons": 80,
+      "metrics": {
+        "candidate": {
+          "rss": 37580800,
+          "pss": 28001280,
+          "anon": 24645632,
+          "file_pss": 3572736,
+          "controller_min_kib": 38604.0,
+          "controller_max_kib": 38640.0,
+          "controller_first_kib": 38604.0,
+          "controller_last_kib": 38640.0,
+          "controller_peak_pss_bytes": 31603712,
+          "controller_peak_anon_bytes": 28266496,
+          "after_cleanup_max_rss_kib": 23820,
+          "weight_staging_max": 3604480,
+          "cpu_buffer_max": 8819712,
+          "workspace_max": 571136,
+          "source_cache_max": 1048320
+        },
+        "reference": {
+          "rss": 587427840,
+          "pss": 578081792,
+          "anon": 574701568,
+          "file_pss": 3722240,
+          "controller_min_kib": 38604.0,
+          "controller_max_kib": 38640.0,
+          "controller_first_kib": 38604.0,
+          "controller_last_kib": 38640.0,
+          "controller_peak_pss_bytes": 31603712,
+          "controller_peak_anon_bytes": 28266496,
+          "after_cleanup_max_rss_kib": 16812,
+          "weight_staging_max": 545669120,
+          "cpu_buffer_max": 555669600,
+          "workspace_max": 571136,
+          "source_cache_max": 0
+        }
+      },
+      "mask_rope_routing_and_state_checks": true,
+      "kv_payload_per_layer": 5242880,
+      "persistent_stack_kv_bytes": 26214400
+    },
+    {
+      "root": "<workspace>/qies111-worktree/qies111/runs/20261111-173551-4fd516a5",
+      "layers": 8,
+      "positions": [
+        0,
+        1
+      ],
+      "capture_comparisons": 416,
+      "weight_hash_comparisons": 128,
+      "metrics": {
+        "candidate": {
+          "rss": 40886272,
+          "pss": 32922624,
+          "anon": 29585408,
+          "file_pss": 3574784,
+          "controller_min_kib": 39212.0,
+          "controller_max_kib": 39928.0,
+          "controller_first_kib": 39928.0,
+          "controller_last_kib": 39212.0,
+          "controller_peak_pss_bytes": 32922624,
+          "controller_peak_anon_bytes": 29585408,
+          "after_cleanup_max_rss_kib": 17440,
+          "weight_staging_max": 3604480,
+          "cpu_buffer_max": 3768832,
+          "workspace_max": 571136,
+          "source_cache_max": 1048320
+        },
+        "reference": {
+          "rss": 568053760,
+          "pss": 558558208,
+          "anon": 554983424,
+          "file_pss": 3673088,
+          "controller_min_kib": 39212.0,
+          "controller_max_kib": 39928.0,
+          "controller_first_kib": 39928.0,
+          "controller_last_kib": 39212.0,
+          "controller_peak_pss_bytes": 32189440,
+          "controller_peak_anon_bytes": 29585408,
+          "after_cleanup_max_rss_kib": 12412,
+          "weight_staging_max": 545669120,
+          "cpu_buffer_max": 548718688,
+          "workspace_max": 571136,
+          "source_cache_max": 0
+        }
+      },
+      "mask_rope_routing_and_state_checks": true,
+      "kv_payload_per_layer": 1048576,
+      "persistent_stack_kv_bytes": 8388608
+    },
+    {
+      "root": "<workspace>/qies111-worktree/qies111/runs/20261111-174023-e367d945",
+      "layers": 80,
+      "positions": [
+        0,
+        1
+      ],
+      "capture_comparisons": 4160,
+      "weight_hash_comparisons": 1280,
+      "metrics": {
+        "candidate": {
+          "rss": 40853504,
+          "pss": 32898048,
+          "anon": 29560832,
+          "file_pss": 3625984,
+          "controller_min_kib": 38888.0,
+          "controller_max_kib": 39896.0,
+          "controller_first_kib": 39896.0,
+          "controller_last_kib": 38888.0,
+          "controller_peak_pss_bytes": 32898048,
+          "controller_peak_anon_bytes": 29560832,
+          "after_cleanup_max_rss_kib": 17616,
+          "weight_staging_max": 3604480,
+          "cpu_buffer_max": 3768832,
+          "workspace_max": 571136,
+          "source_cache_max": 1048320
+        },
+        "reference": {
+          "rss": 568033280,
+          "pss": 558528512,
+          "anon": 554987520,
+          "file_pss": 3722240,
+          "controller_min_kib": 38888.0,
+          "controller_max_kib": 38888.0,
+          "controller_first_kib": 38888.0,
+          "controller_last_kib": 38888.0,
+          "controller_peak_pss_bytes": 31865856,
+          "controller_peak_anon_bytes": 28528640,
+          "after_cleanup_max_rss_kib": 12480,
+          "weight_staging_max": 545669120,
+          "cpu_buffer_max": 548718688,
+          "workspace_max": 571136,
+          "source_cache_max": 0
+        }
+      },
+      "mask_rope_routing_and_state_checks": true,
+      "kv_payload_per_layer": 1048576,
+      "persistent_stack_kv_bytes": 83886080
+    }
+  ],
+  "real_weight_arithmetic": false,
+  "synthetic_weight_profiles_repeated": true,
+  "raw_controller_units_correction": "METRICS controller_samples fields named *_kib actually contain bytes from inherited tree_memory; final RSS KiB values divide by 1024 and controller PSS/anon byte values preserve those raw bytes"
+}

@@ -1,0 +1,52 @@
+{
+  "HEAD": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "worktree": "isolated detached experimental worktree",
+  "QIES106_source_and_results_files_verified_unchanged": 263,
+  "QIES106_archive_contents_and_archive_sha_verified": true,
+  "QIES105_branch_tag_and_publication_worktree_unchanged": true,
+  "original_guard_and_QIES104_admission_and_geometry_unchanged": true,
+  "production_FlashNext_changed": false,
+  "canonical_retired_libllama_still_disabled": true,
+  "commits_merges_pushes_performed": false,
+  "new_final_sources_match_tested_build": true,
+  "worker_sha256": {
+    "candidate": "28240d9983e203ded333d1d2d48703f4fb7bd073ac62db8294bb8c16a5b3ea2b",
+    "reference": "011de0553e77f4fbbf143d333387765b7ec24ccb5b0e2b8ac95911439162f144"
+  },
+  "final_summary_sha256": "9d824d895058df8b6b3487818b491ad60e2a3b8d79498bcee55e4bc1cfd66f7b",
+  "comparisons": 63,
+  "F32_elements": 1290240,
+  "byte_tolerance": 0,
+  "faults_passed": 100,
+  "interface_rejections": 6,
+  "resource_violations": 0,
+  "models_read": 0,
+  "completion_reuse_audit": {
+    "same_sources_and_binaries_verified": true,
+    "accepted_existing_jobs": 103,
+    "new_jobs": 16,
+    "retried_labels": [
+      "fault-up.before-output-allocation",
+      "fault-up.after-output-allocation",
+      "fault-active.before-output-allocation",
+      "fault-active.after-output-allocation",
+      "fault-down.before-output-allocation",
+      "fault-down.after-output-allocation",
+      "fault-post-norm.before-output-allocation",
+      "fault-post-norm.after-output-allocation",
+      "fault-residual.before-output-allocation",
+      "fault-residual.after-output-allocation",
+      "reject-candidate-real",
+      "reject-candidate-no-marker",
+      "reject-candidate-file-input",
+      "reject-reference-real",
+      "reject-reference-no-marker",
+      "reject-reference-file-input"
+    ],
+    "original_incomplete_attempts_preserved": [
+      "<workspace>/qies107-worktree/qies107/runs/20261111-112705-03caed05/fault-up.before-output-allocation"
+    ],
+    "completion_directory": "<workspace>/qies107-worktree/qies107/runs/20261111-112705-03caed05-completion",
+    "note": "No incomplete/missing result accepted. Original attempt files unchanged; new attempts have separate directories. Numerical comparisons/clamp coverage/repeated weight identities rechecked."
+  }
+}

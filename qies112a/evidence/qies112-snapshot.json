@@ -1,0 +1,13 @@
+{
+  "active": {
+    "root": "<workspace>/qies112-worktree/qies112/runs/20261112-101448-3a2ee8ab"
+  },
+  "decisions": {
+    "<workspace>/qies112-worktree/qies112/runs/20261112-101448-3a2ee8ab/decision-0.json": "0530ed1f91314eb2693e1781776e6ce1c42bf5d6e88f707fbcbd2644c519dd5b"
+  },
+  "committed_stack_dirs": [
+    "<workspace>/qies112-worktree/qies112/runs/20261112-101448-3a2ee8ab/stack/candidate-token-0.COMMITTED",
+    "<workspace>/qies112-worktree/qies112/runs/20261112-101448-3a2ee8ab/stack/reference-token-0.COMMITTED"
+  ],
+  "incomplete_generation_not_classified_as_engine_crash": true
+}

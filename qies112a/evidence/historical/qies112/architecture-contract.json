@@ -1,0 +1,51 @@
+{
+  "global_tensors": {
+    "output.weight": {
+      "name": "output.weight",
+      "shape": [
+        5120,
+        100352
+      ],
+      "type": 14,
+      "relative_offset": 0,
+      "bytes": 421478400,
+      "offset": 3615712,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "q6_K"
+    },
+    "output_norm.weight": {
+      "name": "output_norm.weight",
+      "shape": [
+        5120
+      ],
+      "type": 0,
+      "relative_offset": 421478400,
+      "bytes": 20480,
+      "offset": 425094112,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "f32"
+    },
+    "token_embd.weight": {
+      "name": "token_embd.weight",
+      "shape": [
+        5120,
+        100352
+      ],
+      "type": 23,
+      "relative_offset": 421498880,
+      "bytes": 272957440,
+      "offset": 425114592,
+      "shard": "Ripple-65B-Preview-AD-Q4_K_M.gguf",
+      "quantization": "iq4_xs"
+    }
+  },
+  "embedding_scale": 71.5541763305664,
+  "rms_epsilon": 9.999999974752427e-07,
+  "vocab_size": 100352,
+  "output_untied": true,
+  "BOS": 100257,
+  "EOS": 100265,
+  "tensor_index_sha256": "1c3f181aca810bc104933fe1c42f14ea4dcfec1a513350d7113ec0a68889e607",
+  "model_sha256": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "synthetic_weights_only": true
+}

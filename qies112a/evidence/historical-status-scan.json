@@ -1,0 +1,21 @@
+{
+  "scanned_result_files": 1799,
+  "roots": [
+    "qies106-worktree/qies106/runs",
+    "qies107-worktree/qies107/runs",
+    "qies108-worktree/qies108/runs",
+    "qies109-worktree/qies109/runs",
+    "qies110-worktree/qies110/runs",
+    "qies111-worktree/qies111/runs",
+    "qies112-worktree/qies112/runs",
+    "qies098-worktree/qies99",
+    "qies098-worktree/qies100",
+    "qies098-worktree/qies101",
+    "qies098-worktree/qies102",
+    "qies098-worktree/qies103",
+    "qies098-worktree/qies104",
+    "qies098-worktree/qies105"
+  ],
+  "negative_status_records": [],
+  "recorded_safety_stops": []
+}

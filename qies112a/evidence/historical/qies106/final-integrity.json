@@ -1,0 +1,22 @@
+{
+  "head": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "detached_experimental_worktree": true,
+  "archive_branch_and_tag_unchanged": true,
+  "archive_publication_worktree_clean": true,
+  "existing_guards_and_r99_geometry_unchanged": true,
+  "production_flashnext_sources_unchanged": true,
+  "original_retired_stock_C_ABI_disabled": true,
+  "worker_real_weight_inputs_supported": false,
+  "commits_merges_pushes_performed": false,
+  "final_worker_binary_sha256s": {
+    "candidate": "548dcd4c1ef620e5a9d776b18a11800cc48c3350f82923e7e8fea4b759d5a562",
+    "reference": "a8ddd640ca71b6991713c06a1b050b6b3e9c380d37e0bb4d13e83af163755e74",
+    "planner": "3ad5593dd05c8ff45d931bd33f2a6bc94470a2076f25f9eddceb6d757ea18380"
+  },
+  "final_summary_sha256": "75ccbef67bd905beebc34b0c4eed95f998506a8abb079278f81c458b183f137b",
+  "seven_exact_comparisons": true,
+  "four_cleanup_faults_passed": true,
+  "six_input_rejections_passed": true,
+  "resource_violations": 0,
+  "rlimits_changes": 0
+}

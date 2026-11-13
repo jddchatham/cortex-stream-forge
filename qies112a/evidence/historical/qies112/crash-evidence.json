@@ -1,0 +1,27 @@
+{
+  "cores": {
+    "command": [
+      "coredumpctl",
+      "list",
+      "--no-pager",
+      "--since",
+      "today"
+    ],
+    "status": 1,
+    "log": "cores.log"
+  },
+  "kernel": {
+    "command": [
+      "journalctl",
+      "-k",
+      "--no-pager",
+      "--since",
+      "today",
+      "--grep",
+      "Out of memory|Killed process|oom-kill|segfault"
+    ],
+    "status": 1,
+    "log": "kernel.log"
+  },
+  "historical_crash": "unresolved; no target executable, command, PID or matching signal evidence"
+}

@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "campaigns": [
+    {
+      "layers": 2,
+      "positions": [
+        0,
+        1
+      ],
+      "byte_exact_captures": 104,
+      "fresh": "<workspace>/qies112-worktree/qies111/runs/q112-replay-20261112-095719-1e7f11/layers-2-start-0",
+      "original": "<workspace>/qies111-worktree/qies111/runs/20261111-173551-4fd516a5/layers-2-start-0",
+      "matches_original_sha256_map": true
+    },
+    {
+      "layers": 5,
+      "positions": [
+        1023,
+        1024
+      ],
+      "byte_exact_captures": 260,
+      "fresh": "<workspace>/qies112-worktree/qies111/runs/q112-replay-20261112-095719-1e7f11/layers-5-start-1023",
+      "original": "<workspace>/qies111-worktree/qies111/runs/20261111-173551-4fd516a5/layers-5-start-1023",
+      "matches_original_sha256_map": true
+    },
+    {
+      "layers": 80,
+      "positions": [
+        0,
+        1
+      ],
+      "byte_exact_captures": 4160,
+      "fresh": "<workspace>/qies112-worktree/qies111/runs/q112-replay-20261112-095719-1e7f11/layers-80-start-0",
+      "original": "<workspace>/qies111-worktree/qies111/runs/20261111-174023-e367d945/layers-80-start-0",
+      "matches_original_sha256_map": true
+    }
+  ],
+  "reproduced_80_layer_captures": 4160,
+  "fresh_subset_captures": 4524,
+  "original_all_5148_captures_and_1584_weight_hashes_preserved": true,
+  "tests": {
+    "contract-results-q112": 31,
+    "fault-results": 13,
+    "recovery-results": 2,
+    "sanitizer-numerical-results": 4,
+    "adapter_sanitizer": 20
+  },
+  "resource_guard_changes": false
+}

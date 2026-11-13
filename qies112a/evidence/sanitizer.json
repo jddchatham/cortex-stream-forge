@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "instrumented_executable": "<workspace>/qies111-worktree/qies111/sanitizer-build/candidate",
+  "sha256": "253cceab3c31bdb1707e7cb3017abe9efeda131a70b709c70fe65d6902d811bc",
+  "cases": [
+    {
+      "name": "continuation",
+      "exit_status": 0,
+      "passed": true
+    },
+    {
+      "name": "kv-update",
+      "exit_status": 1,
+      "passed": true
+    },
+    {
+      "name": "serialization",
+      "exit_status": 1,
+      "passed": true
+    },
+    {
+      "name": "publication",
+      "exit_status": 1,
+      "passed": true
+    }
+  ],
+  "scope": "QIES111 C++ caller, state and adapter; prebuilt GGML libraries are not instrumented",
+  "leak_detection": true,
+  "no_rebuild": true
+}

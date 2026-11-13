@@ -1,0 +1,92 @@
+{
+  "recorded_at": "2026-11-13T09:48:30.349878-06:00",
+  "worktree": "<workspace>/qies111-worktree",
+  "HEAD": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "stock": "240d68fcfe0c2a1f298c8e18ca181368b1914259",
+  "compiler": "c++ (GCC) 16.2.1 20260810\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "threads": 1,
+  "executables": {
+    "candidate": {
+      "path": "<workspace>/qies111-worktree/qies111/build/candidate",
+      "sha256": "a3513830e5a5bf820cd586530954d15d68e005aba8555ebb0e4c0ba634fb440b",
+      "mode": "0o600",
+      "build": {
+        "command": [
+          "c++",
+          "-std=c++17",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-I<workspace>/qies111-worktree/qies111",
+          "-I<workspace>/qies111-worktree/qies107",
+          "-I<workspace>/qies111-worktree/qies104",
+          "-I<workspace>/qies111-worktree/runtime-flashnext-layer-exp/ggml/include",
+          "<workspace>/qies111-worktree/qies111/stream.cpp",
+          "<workspace>/qies111-worktree/qies104/admission.cpp",
+          "<workspace>/qies111-worktree/qies111/build/candidate-libs/libggml.so",
+          "<workspace>/qies111-worktree/qies111/build/candidate-libs/libggml-cpu.so",
+          "<workspace>/qies111-worktree/qies111/build/candidate-libs/libggml-base.so",
+          "-lcrypto",
+          "-Wl,-rpath,/synthetic-sdk",
+          "-o",
+          "<workspace>/qies111-worktree/qies111/build/candidate"
+        ],
+        "libraries": {
+          "libggml.so.0.25.3": "b26a239ce32a5ef43fe1cd8b4abb432c2d4fc504167ccba79220e0b9576bdc2f",
+          "libggml-cpu.so.0.25.3": "36578162f9fce8751cffcb2179629003044bf8848dff5ed940bf0ea3dd34361d",
+          "libggml-base.so.0.25.3": "d937f937782fc208bcafcef24f12bfb482bc03b4e106527ac1f2a943c4fd5dcb"
+        },
+        "sha256": "a3513830e5a5bf820cd586530954d15d68e005aba8555ebb0e4c0ba634fb440b"
+      }
+    },
+    "reference": {
+      "path": "<workspace>/qies111-worktree/qies111/build/reference",
+      "sha256": "aa2bc00dd5f19a64fb9452c902fdca191b3fed9b368bba98e1928b893f23d81f",
+      "mode": "0o600",
+      "build": {
+        "command": [
+          "c++",
+          "-std=c++17",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-I<workspace>/qies111-worktree/qies111",
+          "-I<workspace>/qies111-worktree/qies107",
+          "-I<workspace>/qies111-worktree/qies104",
+          "-I<workspace>/qies098-worktree/qies100/llama.cpp-240d68fcfe0c2a1f298c8e18ca181368b1914259/ggml/include",
+          "<workspace>/qies111-worktree/qies111/reference.cpp",
+          "<workspace>/qies111-worktree/qies104/admission.cpp",
+          "<workspace>/qies111-worktree/qies111/build/reference-libs/libggml.so",
+          "<workspace>/qies111-worktree/qies111/build/reference-libs/libggml-cpu.so",
+          "<workspace>/qies111-worktree/qies111/build/reference-libs/libggml-base.so",
+          "-lcrypto",
+          "-Wl,-rpath,/synthetic-sdk",
+          "-o",
+          "<workspace>/qies111-worktree/qies111/build/reference"
+        ],
+        "libraries": {
+          "libggml.so.0.29.0": "6319a47e5bbd43ef983fc9b299a159c1299e3035a7a03a49d2487de785b11aa9",
+          "libggml-cpu.so.0.29.0": "d06fe406323577c8dad0aac494e4ee102cff0a0295f85613f7862a3da8d28869",
+          "libggml-base.so.0.29.0": "f34fb8f64ea4efe5aa82894c3eaaa8a0cee38e63e0c31feafc1ecdb8afc3e519"
+        },
+        "sha256": "aa2bc00dd5f19a64fb9452c902fdca191b3fed9b368bba98e1928b893f23d81f"
+      }
+    }
+  },
+  "source_manifest_sha256": "10fcd8857ffc4933e98d20125d8d76f21d69f94713adbbb9b93e7e06980d1128",
+  "synthetic_inputs": {
+    "0": {
+      "path": "<workspace>/qies111-worktree/qies111/fixtures/0/tensors.bin",
+      "size": 545752160,
+      "sha256": "a67099aa5159cd8ee8157bea0233564e2366a2cf39c1d67d10d6b9195f4853c1",
+      "manifest_sha256": "f9d067f3b4c11251749b6766b85ae788b73289343d05df87727fe46f2054a2ef"
+    },
+    "15": {
+      "path": "<workspace>/qies111-worktree/qies111/fixtures/15/tensors.bin",
+      "size": 467108960,
+      "sha256": "aa9f59e144e18b4cd00e5cc48b477d491f151082fd86b95ece6825de4e0773f4",
+      "manifest_sha256": "e74819ceffadc0f1b582bab9f762a166e6414eacec3c912ebb2837b59b3df171"
+    }
+  },
+  "no_rebuild": true
+}

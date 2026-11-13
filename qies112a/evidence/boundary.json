@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "layers": 5,
+  "positions": [
+    1023,
+    1024
+  ],
+  "comparisons": 260,
+  "candidate_last": "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/boundary/layers-5-start-1023/candidate-token-1024.COMMITTED",
+  "reference_last": "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/boundary/layers-5-start-1023/reference-token-1024.COMMITTED",
+  "synthetic_only": true,
+  "sliding_expiration_and_global_retention_verified": true
+}

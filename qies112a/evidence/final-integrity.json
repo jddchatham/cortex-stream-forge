@@ -1,0 +1,17 @@
+{
+  "refs": {
+    "HEAD": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+    "archive/ripple65b-qies104": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+    "ripple65b-qies104-frozen": "f52568abe89af569c21b1881aebf1798d14791a9"
+  },
+  "candidate_sha256": "a3513830e5a5bf820cd586530954d15d68e005aba8555ebb0e4c0ba634fb440b",
+  "reference_sha256": "aa2bc00dd5f19a64fb9452c902fdca191b3fed9b368bba98e1928b893f23d81f",
+  "normal_binaries_and_source_unchanged": true,
+  "synthetic_input_hashes_unchanged": true,
+  "qies077_guard_unchanged": true,
+  "retired_libllama_mode": "000",
+  "frozen_refs_unchanged": true,
+  "no_commit_merge_push": true,
+  "no_system_configuration_changes": true,
+  "real_weights": false
+}

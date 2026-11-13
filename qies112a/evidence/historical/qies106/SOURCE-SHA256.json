@@ -1,0 +1,19 @@
+{
+  "QIES106_RIPPLE_REAL_WIDTH_STREAMING.md": "bc3a162bb02e1dd76da3d60f1b1e1c3ecee523e2bf3093cf448fb5ab7707d7b1",
+  "pandacode-run.sh": "4ec06f0fba27caebe3e2ce1d2081f25270c2ce824ff7ce4d18e4a0e98833a90f",
+  "qies106/README.md": "3ddd1eb5d95588aff17b3d6128d69f6f5dd512dc46a4403c1b9a91881233bf24",
+  "qies106/account.py": "82f75f7e64bcc214df449623367bac088d925ec2ee6ace842cb50ba4004a152f",
+  "qies106/build.py": "92a80b96b841c5a2f9aa262589bf4c245ca3a45bc5ca2571316a30448292bf21",
+  "qies106/candidate-cases.inc": "42d9d91705ab39582fae590a6ca2bae743a5a3134b57f953cc5bf22873089d7e",
+  "qies106/final-integrity.json": "76db9553530b4bea3a89ceeb0307849cc7d0ae067f727dec610e83601e785985",
+  "qies106/fixture.h": "c58462c733e704ac1068aa1ea0389dc37887fca66e0d249582b4a1d65d834b69",
+  "qies106/measurements.json": "a17cb5d50f71c82f9a18698ad9d9df6f21128900a023eb62f80c60a7b9fee6f9",
+  "qies106/memory-accounting.json": "1c77bfe6587ea11be6a87ede73d537b9895665ce00f635ca4958ae1568c084a2",
+  "qies106/plan.cpp": "1f340ae86571b7030959fb35d9bd19bcfea45591b393b89781816e375a4461d3",
+  "qies106/plan_only.py": "f5dafd84f8aa34a09c8eeb6097c4caa4e352075908c41ee8822a0a3f9c14b969",
+  "qies106/reference-cases.inc": "42d9d91705ab39582fae590a6ca2bae743a5a3134b57f953cc5bf22873089d7e",
+  "qies106/reference.cpp": "ddd3aaca04db9cdd5a5c9d80ddb7617a42d8e5326c902e6adb3e599d1e2053bd",
+  "qies106/run.py": "fc25085fa59f75cd0cd898164271b4e0d1cf193af6ac00cb7c12d4dc39cf9dfb",
+  "qies106/stream.cpp": "5adbf857668050810329f1b2201a2177e384d760808fa0ed6bc96749304552ca",
+  "qies106/telemetry.h": "241ba3cb902e05bc3c107b0ec38451d125a5b660abf7b7194782747be72d5b81"
+}

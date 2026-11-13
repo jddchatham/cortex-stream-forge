@@ -1,0 +1,27 @@
+{
+  "HEAD": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "source_lineage": "QIES107/QIES108 preserved uncommitted additions in isolated detached worktree",
+  "baseline_saved_bytes_verified": {
+    "FFN": 63,
+    "attention": 228
+  },
+  "baseline_faults_verified": {
+    "FFN": 100,
+    "attention": 105
+  },
+  "preserved_original_files_verified": 3430,
+  "frozen_archive_branch_tag_and_worktree_unchanged": true,
+  "production_FlashNext_and_original_guards_unchanged": true,
+  "commits_merges_pushes": false,
+  "real_weight_bytes_read": 0,
+  "exact_capture_comparisons": 312,
+  "integration_faults_passed": 78,
+  "resource_violations": 0,
+  "KV_row_preservation_checks": 14,
+  "attention_and_FFN_buffer_boundaries_verified": true,
+  "summary_sha256": "3810a61e538ccab5e538bbdc8077f2bf2486c3b391e3e0ea98feae8e6253447b",
+  "worker_sha256": {
+    "candidate": "83b27e51dbc91ca19678ed8e4c5cb5c0c5180d02359b5127337cb1b123fef05e",
+    "reference": "e1ef7fbc88bba97f77b0682418ae5fbe13488d44cdd9d16df9e0c63477fb24fd"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "cores": {
+    "command": [
+      "coredumpctl",
+      "list",
+      "--no-pager",
+      "--since",
+      "2026-11-11"
+    ],
+    "exit_status": 1,
+    "evidence_file": "cores.log"
+  },
+  "kernel": {
+    "command": [
+      "journalctl",
+      "-k",
+      "--no-pager",
+      "--since",
+      "2026-11-11",
+      "--grep",
+      "Out of memory|Killed process|oom-kill|segfault"
+    ],
+    "exit_status": 1,
+    "evidence_file": "kernel.log"
+  },
+  "reported_crash": "Unresolved: no identified target executable/command/PID/signal; no real-weight reproduction."
+}

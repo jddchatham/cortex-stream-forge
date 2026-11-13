@@ -1,0 +1,31 @@
+{
+  "head": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "worktree": "detached isolated qies110-worktree",
+  "protected_original_files_verified": 1233,
+  "frozen_refs": {
+    "archive/ripple65b-qies104": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+    "ripple65b-qies104-frozen": "f52568abe89af569c21b1881aebf1798d14791a9",
+    "ripple65b-qies104-frozen^{}": "14b3f7902864b02e1a84e5e6168a3cf99087e670"
+  },
+  "qies077_guard_sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2",
+  "qies104_guard_matches_archive": true,
+  "inherited_q106_q109_source_files_match_original": true,
+  "retired_libllama_mode": "000",
+  "model_sha256_receipt": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "new_whole_model_hash": false,
+  "qies109_summary_sha256": "21c713068551d9bf940fe11ad1528cae985fb3c144b839eb28e780079729fd3b",
+  "qies110_summary_sha256": "0e3b8498ecca2a9f249404c4d387d8d0c6c65098d3f1cfafc17cb92b82ffeb02",
+  "storage_summary_sha256": "dd035fdcb4f7e400d56ae0e524b4d8108e53be6db1b9ff88abdc2d47b6c58b41",
+  "asan_summary_sha256": "03c55af554d26a8f943346023c4b70f4a86b1db0c5370b608971a0f83658b204",
+  "current_worker_source_and_binary_hashes_match_campaign": true,
+  "real_weight_arithmetic": false,
+  "no_commit_push_merge": true,
+  "rlimit_as": [
+    -1,
+    -1
+  ],
+  "rlimit_rss": [
+    -1,
+    -1
+  ]
+}

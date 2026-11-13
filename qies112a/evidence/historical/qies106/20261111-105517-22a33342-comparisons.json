@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "comparisons": [
+    {
+      "label": "attn_q",
+      "elements": 10240,
+      "bytes": 40960,
+      "byte_exact": true,
+      "output_sha256": "1ea03c71ac74957ae11a939c742ff4f94b4d8a07872d3797db8e8aedbcd717c1",
+      "weight_sha256": "577794ee5b5145a7ef3d983b4a079b8f881a8540670358004da754c12999ff8d"
+    }
+  ],
+  "faults": []
+}

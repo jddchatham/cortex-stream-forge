@@ -1,0 +1,23 @@
+{
+  "QIES110_RIPPLE_REAL_GGUF_STREAMING_ADAPTER.md": "95c4ac7649d017b93e9fc79fb44bfe0efb55fbe0f15685d4bdb5169010692c23",
+  "pandacode-run.sh": "c847cc266069a1681426d7a4fd2e7ed5f2c71040bf851b162ba316b8e2cdbc50",
+  "qies110/.gitignore": "abe1b2384ca10c1007efeaedc7cc119990e81d0d49e57cfd00a9a74bc37b2158",
+  "qies110/README.md": "4331f2a2c072d501a9bd7d256c6563214cc6ae0020b60584429a1649bb7aeec4",
+  "qies110/adapter.py": "217762ac5072674d4ba5c55f24b1975426dfa178daa87375b05103ed0d0c85bd",
+  "qies110/adapter_faults.cpp": "61de7a64b6aeb8b997f4a7a7877592e2955fd845d2bdb5077eaac9b94e412fea",
+  "qies110/build.py": "b407532b4257df113652425f82d2bbe38ce93c58cf97da178605a6cd6ad59234",
+  "qies110/common.h": "e37597af4e9d0e462e0bf423c11037c4304f6aff3f5100c3311d62d3e9d7d8da",
+  "qies110/faults.inc": "3a2e9fb48b57c87e7344020135fbaf6ebf02513b8d06865dbee33304c1b56a94",
+  "qies110/final-integrity.json": "fcf4b10e35405429b49295329bf0452aa5fb02dbbfa2d25348d64e5ec40c73dc",
+  "qies110/fixture_check.cpp": "62e7fc04dcf27f3b00cd95a5960d118a52ce01d0bd3a48b7cbdbeaf6f67dc08d",
+  "qies110/fixture_writer.cpp": "0f96bb07f971c39ba0303ef6996863a065ef2d1e204a0eb3b2440aeb301817ae",
+  "qies110/measurements.json": "f40c47a3c818bd3acfeeb392183ce4fa20e689af3bdd11639b254009cd1253a3",
+  "qies110/range_source.h": "70c304e42bd14d0dd5e4cad2d5ca6754a45682167f7a7a1a99e95e78025c273c",
+  "qies110/reference.cpp": "979647b7983923b2879aa63df052638cc3704b974bf9619f15ae931c66df1e2c",
+  "qies110/reference_hash.cpp": "5c7daf21f23718b09a2ca3ee1ab5595bea17c99a700cb3c4568f072e9c628dae",
+  "qies110/run.py": "8aa121f20afe87b55f56704b057fac418c3237f8be86949afad2ec96c2b04067",
+  "qies110/sanitizer_tests.py": "63c148753305d4c2d9513c983a1a06635d4cbc476acda93643810be25059a529",
+  "qies110/storage.cpp": "28de3153da73ba4c966cab9f885689add8ee65c3fa306e2aeda5b5586213f609",
+  "qies110/storage_tests.py": "1d1fc96a52be27e6da03a328a8f2af32cbca78cec6e5207b6eee90291586c716",
+  "qies110/stream.cpp": "49aa19b34d6f8e53b84670c867db25889133880d44753709cb05422debdb1af7"
+}

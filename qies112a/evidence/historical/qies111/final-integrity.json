@@ -1,0 +1,22 @@
+{
+  "head": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "source_scope": "isolated detached QIES111 experimental worktree",
+  "frozen_refs": {
+    "archive/ripple65b-qies104": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+    "ripple65b-qies104-frozen": "f52568abe89af569c21b1881aebf1798d14791a9",
+    "ripple65b-qies104-frozen^{}": "14b3f7902864b02e1a84e5e6168a3cf99087e670"
+  },
+  "original_q110_files_verified": 35,
+  "qies104_admission_matches_archive": true,
+  "qies077_guard_sha256": "ecffc24bd040473155445689fa3c8bc63a2e73e79f756af7f66cde3a1d5a95e2",
+  "retired_libllama_mode": "000",
+  "capture_comparisons": 5148,
+  "independent_weight_hash_comparisons": 1584,
+  "model_sha256_receipt": "9016e260f93992f0acc7cb590b012fe21fffddf767b53774387fac1b30ca7bfc",
+  "full_model_rehashed": false,
+  "real_weight_arithmetic": false,
+  "no_commit_merge_push": true,
+  "actual_80_layer_captures": 4160,
+  "controller_source_sha256": "ed1ca402fc9d7a860bbadd08bd6689a273f0ff5fd69bebd3a6f7a3c4abcb9c71",
+  "build_manifest_sha256": "5744c54743a9e4c1eda87bb56708df35aba9462d33313b5cd5a7d0c7e96ee47e"
+}

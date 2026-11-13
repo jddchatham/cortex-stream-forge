@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "positions": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "additional_captures": 4160,
+  "total_captures": 8320,
+  "no_binary_changes": true
+}

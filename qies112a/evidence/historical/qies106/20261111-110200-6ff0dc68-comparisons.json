@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "comparisons": [
+    {
+      "label": "attn_q",
+      "elements": 10240,
+      "bytes": 40960,
+      "byte_exact": true,
+      "output_sha256": "1ea03c71ac74957ae11a939c742ff4f94b4d8a07872d3797db8e8aedbcd717c1",
+      "weight_sha256": "577794ee5b5145a7ef3d983b4a079b8f881a8540670358004da754c12999ff8d"
+    },
+    {
+      "label": "attn_q-tile16",
+      "elements": 10240,
+      "bytes": 40960,
+      "byte_exact": true,
+      "output_sha256": "1ea03c71ac74957ae11a939c742ff4f94b4d8a07872d3797db8e8aedbcd717c1",
+      "weight_sha256": "577794ee5b5145a7ef3d983b4a079b8f881a8540670358004da754c12999ff8d"
+    },
+    {
+      "label": "attn_q-tile64",
+      "elements": 10240,
+      "bytes": 40960,
+      "byte_exact": true,
+      "output_sha256": "1ea03c71ac74957ae11a939c742ff4f94b4d8a07872d3797db8e8aedbcd717c1",
+      "weight_sha256": "577794ee5b5145a7ef3d983b4a079b8f881a8540670358004da754c12999ff8d"
+    },
+    {
+      "label": "attn_k",
+      "elements": 1024,
+      "bytes": 4096,
+      "byte_exact": true,
+      "output_sha256": "185de345b108ff8e3c9a3aaef6532d5d61d5ed3836f356fd1dacc39f0d2910f5",
+      "weight_sha256": "91e9e51d3f2fdb99afd1872b40476cc333ab293dd3c168e7dabbf06602c89a23"
+    },
+    {
+      "label": "attn_output",
+      "elements": 5120,
+      "bytes": 20480,
+      "byte_exact": true,
+      "output_sha256": "14fd1bbe6f0d1aa5bf809efb56d15bf1be2d63f44fb383e1feaa418753162ca9",
+      "weight_sha256": "39467dab74fa6b79a6a8e1283d9f0636691782121541544ec19d3e995d2d6b78"
+    },
+    {
+      "label": "ffn_gate",
+      "elements": 40960,
+      "bytes": 163840,
+      "byte_exact": true,
+      "output_sha256": "b69a523b7a6a254b054d3ba4de4dfc61708e98e44a4729bb0b48c9f5de1cb5fb",
+      "weight_sha256": "a1447afdc0a4820f4454a75203256015d8a70f9e1ee3afc4d80635f3587241ad"
+    },
+    {
+      "label": "ffn_down",
+      "elements": 5120,
+      "bytes": 20480,
+      "byte_exact": true,
+      "output_sha256": "55942b5192f334e5706ce716bad915dd5dcb40f73495c5b89429f9239c8bcb77",
+      "weight_sha256": "dff49f680056e2ee65a4d144fa2c501840e2b4b657c84ee979345600ef6fb0d3"
+    }
+  ],
+  "faults": []
+}

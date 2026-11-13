@@ -1,0 +1,774 @@
+{
+  "fresh_two_token_trials": 3,
+  "native_successful_processes_in_trials": 960,
+  "original_capture_comparisons_in_trials": 12480,
+  "trial_metrics": [
+    {
+      "job_count": 320,
+      "peak_subtree_bytes": {
+        "candidate": {
+          "rss": 41148416,
+          "pss": 33823744,
+          "anon": 29859840,
+          "file_pss": 3963904
+        },
+        "reference": {
+          "rss": 568004608,
+          "pss": 558530560,
+          "anon": 554987520,
+          "file_pss": 3963904
+        }
+      },
+      "native_high_water_rss_kib": {
+        "candidate": 21296,
+        "reference": 551208
+      },
+      "minimum_host_MemAvailable_bytes": 3050639360,
+      "no_recorded_safety_violations": true,
+      "trial": 1,
+      "exit_status": 0,
+      "signal": null,
+      "captures": 4160,
+      "elapsed_seconds_latest_attempt": 879.1993185839965,
+      "original_capture_hashes_match": true
+    },
+    {
+      "job_count": 320,
+      "peak_subtree_bytes": {
+        "candidate": {
+          "rss": 38625280,
+          "pss": 31300608,
+          "anon": 27336704,
+          "file_pss": 3963904
+        },
+        "reference": {
+          "rss": 568016896,
+          "pss": 558526464,
+          "anon": 554979328,
+          "file_pss": 4139008
+        }
+      },
+      "native_high_water_rss_kib": {
+        "candidate": 21432,
+        "reference": 551232
+      },
+      "minimum_host_MemAvailable_bytes": 3443691520,
+      "no_recorded_safety_violations": true,
+      "trial": 2,
+      "exit_status": 0,
+      "signal": null,
+      "captures": 4160,
+      "elapsed_seconds_latest_attempt": 892.406611998973,
+      "original_capture_hashes_match": true
+    },
+    {
+      "job_count": 320,
+      "peak_subtree_bytes": {
+        "candidate": {
+          "rss": 25714688,
+          "pss": 17181696,
+          "anon": 13217792,
+          "file_pss": 3963904
+        },
+        "reference": {
+          "rss": 567975936,
+          "pss": 558664704,
+          "anon": 554983424,
+          "file_pss": 3963904
+        }
+      },
+      "native_high_water_rss_kib": {
+        "candidate": 21292,
+        "reference": 551152
+      },
+      "minimum_host_MemAvailable_bytes": 3529310208,
+      "no_recorded_safety_violations": true,
+      "trial": 3,
+      "exit_status": 0,
+      "signal": null,
+      "captures": 4160,
+      "elapsed_seconds_latest_attempt": 859.3063950330252,
+      "original_capture_hashes_match": true
+    }
+  ],
+  "four_token_metrics": {
+    "job_count": 640,
+    "peak_subtree_bytes": {
+      "candidate": {
+        "rss": 25714688,
+        "pss": 17181696,
+        "anon": 13217792,
+        "file_pss": 3963904
+      },
+      "reference": {
+        "rss": 568098816,
+        "pss": 558838784,
+        "anon": 554987520,
+        "file_pss": 3970048
+      }
+    },
+    "native_high_water_rss_kib": {
+      "candidate": 21292,
+      "reference": 551232
+    },
+    "minimum_host_MemAvailable_bytes": 3529310208,
+    "no_recorded_safety_violations": true
+  },
+  "faults": {
+    "passed": true,
+    "original_hooks": 78,
+    "state_contract_refusals": 5,
+    "cases": [
+      {
+        "fault": "after-backend",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "qk.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "qk.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.before-copy",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.after-copy",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.before-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.after-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.after-key-update",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.after-value-update",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "attention.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "attention.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "kv.after-download",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "attention-residual.after",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "between-branches",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "state.before-serialization",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "state.after-serialization",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "after-cleanup-before-publish",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "before-publish",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "q.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "q.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "q.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "q.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "q.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "k.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "k.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "k.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "k.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "k.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "v.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "v.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "v.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "v.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "v.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "gate.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "gate.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "gate.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "gate.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "gate.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "output.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "output.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "output.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "output.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "output.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-gate.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-gate.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-gate.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-gate.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-gate.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-up.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-up.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-up.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-up.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-up.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-down.before-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-down.after-load",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-down.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-down.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-down.after-output",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-input-norm.before-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-input-norm.after-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-input-norm.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-input-norm.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-active.before-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-active.after-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-active.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-active.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-post-norm.before-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-post-norm.after-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-post-norm.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-post-norm.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-residual.before-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-residual.after-buffer",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-residual.before-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "ffn-residual.after-compute",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "capture.attention-residual.before",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "capture.attention-residual.after",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "capture.final.before",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "capture.final.after",
+        "exit_status": 1,
+        "signal": null,
+        "passed": true
+      },
+      {
+        "fault": "truncated",
+        "exit_status": 1,
+        "passed": true
+      },
+      {
+        "fault": "corrupted",
+        "exit_status": 1,
+        "passed": true
+      },
+      {
+        "fault": "cross-layer",
+        "exit_status": 1,
+        "passed": true
+      },
+      {
+        "fault": "wrong-position",
+        "exit_status": 1,
+        "passed": true
+      },
+      {
+        "fault": "invalid-layer",
+        "exit_status": 1,
+        "passed": true
+      }
+    ],
+    "real_malloc_OOM_forced": false,
+    "failure_model": "original bounded exception hooks at allocation/execution boundaries",
+    "source_checkpoint_unchanged": true
+  },
+  "sanitizer": {
+    "passed": true,
+    "instrumented_executable": "<workspace>/qies111-worktree/qies111/sanitizer-build/candidate",
+    "sha256": "253cceab3c31bdb1707e7cb3017abe9efeda131a70b709c70fe65d6902d811bc",
+    "cases": [
+      {
+        "name": "continuation",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "name": "kv-update",
+        "exit_status": 1,
+        "passed": true
+      },
+      {
+        "name": "serialization",
+        "exit_status": 1,
+        "passed": true
+      },
+      {
+        "name": "publication",
+        "exit_status": 1,
+        "passed": true
+      }
+    ],
+    "scope": "QIES111 C++ caller, state and adapter; prebuilt GGML libraries are not instrumented",
+    "leak_detection": true,
+    "no_rebuild": true
+  },
+  "interruption": {
+    "passed": true,
+    "command": [
+      "bwrap",
+      "--unshare-all",
+      "--die-with-parent",
+      "--new-session",
+      "--clearenv",
+      "--ro-bind",
+      "/usr",
+      "/usr",
+      "--ro-bind",
+      "/etc",
+      "/etc",
+      "--symlink",
+      "usr/bin",
+      "/bin",
+      "--symlink",
+      "usr/lib",
+      "/lib",
+      "--symlink",
+      "usr/lib",
+      "/lib64",
+      "--proc",
+      "/proc",
+      "--dev",
+      "/dev",
+      "--tmpfs",
+      "/tmp",
+      "--dir",
+      "/home",
+      "--dir",
+      "/workers",
+      "--ro-bind",
+      "<workspace>/qies111-worktree/qies111/build/candidate",
+      "/workers/candidate",
+      "--ro-bind",
+      "<workspace>/qies111-worktree/qies111/build/candidate-libs",
+      "/synthetic-sdk",
+      "--bind",
+      "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/interruption/layer-0",
+      "/outputs",
+      "--setenv",
+      "PATH",
+      "/usr/bin:/bin",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--setenv",
+      "OMP_NUM_THREADS",
+      "1",
+      "--ro-bind",
+      "<workspace>/qies111-worktree/qies111/build/marker",
+      "/qies104.synthetic",
+      "--setenv",
+      "QIES104_SYNTHETIC",
+      "1",
+      "--dir",
+      "/state",
+      "--ro-bind",
+      "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/trial-1/layers-80-start-0/embedding-1.f32",
+      "/state/input.f32",
+      "--ro-bind",
+      "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/trial-1/layers-80-start-0/embedding-1.f32",
+      "/state/original.f32",
+      "--ro-bind",
+      "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/trial-1/layers-80-start-0/candidate-token-0.COMMITTED/layer-0/captures-0/state.kv",
+      "/state/previous.kv",
+      "--ro-bind",
+      "<workspace>/qies111-worktree/qies111/fixtures/layer-0/manifest",
+      "/fixtures/manifest",
+      "--ro-bind",
+      "<workspace>/qies111-worktree/qies111/fixtures/0/tensors.bin",
+      "/fixtures/tensors.bin",
+      "--",
+      "/lib64/ld-linux-x86-64.so.2",
+      "/workers/candidate",
+      "--synthetic",
+      "0",
+      "256",
+      "1",
+      "resume",
+      "contract-v1",
+      "none"
+    ],
+    "intentional_termination": true,
+    "exit_status": -15,
+    "signal": 15,
+    "peak_subtree_rss_bytes": 17985536,
+    "source_unchanged": true,
+    "no_published_partial_capture": true,
+    "no_live_descendants": true,
+    "retry_byte_exact": true,
+    "uncommitted_disk_evidence_preserved": true
+  },
+  "boundary": {
+    "success": true,
+    "layers": 5,
+    "positions": [
+      1023,
+      1024
+    ],
+    "comparisons": 260,
+    "candidate_last": "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/boundary/layers-5-start-1023/candidate-token-1024.COMMITTED",
+    "reference_last": "<workspace>/qies112a-diagnostic/runs/20261113-095319-4c13aa/boundary/layers-5-start-1023/reference-token-1024.COMMITTED",
+    "synthetic_only": true,
+    "sliding_expiration_and_global_retention_verified": true
+  },
+  "four_token": {
+    "success": true,
+    "positions": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "additional_captures": 4160,
+    "total_captures": 8320,
+    "no_binary_changes": true
+  },
+  "historical_crash_verdict": "INCONCLUSIVE: original inference executable/failure not identified",
+  "synthetic_stability_verdict": "PASS in tested configuration",
+  "no_binary_rebuild": true,
+  "no_real_weight_arithmetic": true
+}

@@ -1,0 +1,29 @@
+{
+  "job_count": 320,
+  "peak_subtree_bytes": {
+    "candidate": {
+      "rss": 38625280,
+      "pss": 31300608,
+      "anon": 27336704,
+      "file_pss": 3963904
+    },
+    "reference": {
+      "rss": 568016896,
+      "pss": 558526464,
+      "anon": 554979328,
+      "file_pss": 4139008
+    }
+  },
+  "native_high_water_rss_kib": {
+    "candidate": 21432,
+    "reference": 551232
+  },
+  "minimum_host_MemAvailable_bytes": 3443691520,
+  "no_recorded_safety_violations": true,
+  "trial": 2,
+  "exit_status": 0,
+  "signal": null,
+  "captures": 4160,
+  "elapsed_seconds_latest_attempt": 892.406611998973,
+  "original_capture_hashes_match": true
+}

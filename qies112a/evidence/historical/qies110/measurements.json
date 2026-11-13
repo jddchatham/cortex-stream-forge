@@ -1,0 +1,201 @@
+{
+  "candidate": {
+    "successful_jobs": 12,
+    "sampled_process_tree_peak_bytes": {
+      "rss": 37408768,
+      "pss": 27908096,
+      "anon": 24645632,
+      "file_pss": 3486720
+    },
+    "worker_phase_maxima": {
+      "peak_rss_kib": 32960,
+      "rss_kib": 30828,
+      "pss_kib": 24717,
+      "anonymous_kib": 21656,
+      "pss_file_kib": 3262,
+      "peak_weight_bytes": 3604480,
+      "peak_cpu_tensor_buffer_bytes": 8819712,
+      "ggml_workspace_bytes": 571136,
+      "adapter_staging_peak": 1048320,
+      "adapter_max_request": 1048320
+    },
+    "elapsed_seconds_total": 35.999647498189006,
+    "minimum_host_MemAvailable_bytes": 4028649472
+  },
+  "reference": {
+    "successful_jobs": 10,
+    "sampled_process_tree_peak_bytes": {
+      "rss": 587759616,
+      "pss": 578247680,
+      "anon": 574758912,
+      "file_pss": 3592192
+    },
+    "worker_phase_maxima": {
+      "peak_rss_kib": 570292,
+      "rss_kib": 554900,
+      "pss_kib": 548841,
+      "anonymous_kib": 546008,
+      "pss_file_kib": 3365,
+      "peak_weight_bytes": 545669120,
+      "peak_cpu_tensor_buffer_bytes": 555669600,
+      "ggml_workspace_bytes": 571136,
+      "adapter_staging_peak": 0,
+      "adapter_max_request": 0
+    },
+    "elapsed_seconds_total": 30.287590285181068,
+    "minimum_host_MemAvailable_bytes": 3534831616
+  },
+  "storage": [
+    {
+      "label": "independent-layer0",
+      "status": 0,
+      "phase_sampled_kib": {
+        "Rss": 18652,
+        "Pss": 12801,
+        "Anonymous": 11180,
+        "Pss_File": 1621
+      },
+      "elapsed_seconds": 2.816491467994638,
+      "real_arithmetic": false
+    },
+    {
+      "label": "bounded-layer0",
+      "status": 0,
+      "phase_sampled_kib": {
+        "Rss": 10520,
+        "Pss": 4642,
+        "Anonymous": 3108,
+        "Pss_File": 1534
+      },
+      "elapsed_seconds": 3.119791532983072,
+      "real_arithmetic": false
+    },
+    {
+      "label": "independent-layer4",
+      "status": 0,
+      "phase_sampled_kib": {
+        "Rss": 18616,
+        "Pss": 12784,
+        "Anonymous": 11180,
+        "Pss_File": 1604
+      },
+      "elapsed_seconds": 3.025040203006938,
+      "real_arithmetic": false
+    },
+    {
+      "label": "bounded-layer4",
+      "status": 0,
+      "phase_sampled_kib": {
+        "Rss": 10520,
+        "Pss": 4377,
+        "Anonymous": 3108,
+        "Pss_File": 1269
+      },
+      "elapsed_seconds": 3.2938869940117,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-missing",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 1104,
+        "Pss": 331,
+        "Anonymous": 100,
+        "Pss_File": 231
+      },
+      "elapsed_seconds": 0.02252740104449913,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-bad-count",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 404,
+        "Pss": 47,
+        "Anonymous": 44,
+        "Pss_File": 3
+      },
+      "elapsed_seconds": 0.020869975036475807,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-bad-mode",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 16,
+        "Pss": 16,
+        "Anonymous": 16,
+        "Pss_File": 0
+      },
+      "elapsed_seconds": 0.02159201999893412,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-bad-shape",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 1276,
+        "Pss": 372,
+        "Anonymous": 108,
+        "Pss_File": 264
+      },
+      "elapsed_seconds": 0.022680923982989043,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-duplicate",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 332,
+        "Pss": 46,
+        "Anonymous": 44,
+        "Pss_File": 2
+      },
+      "elapsed_seconds": 0.021032072021625936,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-negative-offset",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 432,
+        "Pss": 71,
+        "Anonymous": 48,
+        "Pss_File": 23
+      },
+      "elapsed_seconds": 0.021725287020672113,
+      "real_arithmetic": false
+    },
+    {
+      "label": "reject-bad-digest",
+      "status": 1,
+      "phase_sampled_kib": {
+        "Rss": 21088,
+        "Pss": 12729,
+        "Anonymous": 10916,
+        "Pss_File": 1813
+      },
+      "elapsed_seconds": 0.022912086977157742,
+      "real_arithmetic": false
+    },
+    {
+      "label": "qies101-original-faults",
+      "status": 0,
+      "phase_sampled_kib": {
+        "Rss": 21356,
+        "Pss": 12007,
+        "Anonymous": 10248,
+        "Pss_File": 1759
+      },
+      "elapsed_seconds": 0.1703957570134662,
+      "real_arithmetic": false
+    }
+  ],
+  "source_fixture_bytes": 545752160,
+  "kv_bytes_per_layer_at_256": 1048576,
+  "kv_bytes_per_layer_at_1280": 5242880,
+  "all_jobs_without_monitor_violations": true,
+  "rlimits_preserved": true,
+  "campaign": "<workspace>/qies110-worktree/qies110/runs/20261111-165958-790fe5f0",
+  "accounting": "Sampled process-tree bytes vs worker phase KiB; component maxima need not occur simultaneously. Shared desktop cgroup is not isolated worker accounting. No real-model arithmetic."
+}

@@ -1,0 +1,26 @@
+{
+  "historical_crashing_executable": "unidentified",
+  "FlashNext": {
+    "path": "<workspace>/cortex-stream-forge-qies074/build-quortex/bin/quortex",
+    "current_sha256": "329ebd647b04a2d6464461ddd94fc07a2691a948b2918d320ac1eb3703f9c101",
+    "published_Q074_sha256": "329ebd647b04a2d6464461ddd94fc07a2691a948b2918d320ac1eb3703f9c101",
+    "source_commit": "8fac93bb2bfc4b2d7069c4044f2f71cd25f80388",
+    "evidence": "QIES081_FIRST_RUN_DIAGNOSIS.md records answer4, nativeEOG248046, exit0,1326.023seconds; not a recorded crash"
+  },
+  "desktop_core": {
+    "executable": "/usr/bin/pandacode",
+    "signal": "SIGBUS",
+    "si_code": "BUS_ADRERR",
+    "timestamp": "2026-11-06T21:14:45 CST",
+    "command": "pandacode",
+    "source_revision_and_build_flags": "not established from available app metadata",
+    "inference_failure_correlation": "not established"
+  },
+  "Ripple_Q111": {
+    "candidate": "<workspace>/qies111-worktree/qies111/build/candidate",
+    "historical_crash_link": "not established; existing accepted reports record successful exit status 0 and intentional fault/refusal exit status 1"
+  },
+  "Q112": {
+    "status": "preserved and suspended for diagnostic mission; one decision accepted; interrupted sessions are not evidence of a numerical crash"
+  }
+}

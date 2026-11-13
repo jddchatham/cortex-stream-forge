@@ -1,0 +1,12 @@
+{
+  "sources_exact_q106_q111": true,
+  "source_files_total": 82,
+  "exact_source_files_total": 81,
+  "new_text_files_screened": 176,
+  "largest_new_file_bytes": 975003,
+  "new_bytes_total": 8033956,
+  "existing_tracked_files_unchanged": true,
+  "no_weights_ELF_cores_archives_build_cache": true,
+  "privacy_and_secret_pattern_screen_passed": true,
+  "inference_executed_during_preservation": false
+}

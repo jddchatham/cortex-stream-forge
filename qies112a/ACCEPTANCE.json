@@ -1,0 +1,32 @@
+{
+  "status": "QIES111 synthetic stability PASS; historical inference crash INCONCLUSIVE",
+  "parent_commit": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "trials": [
+    {
+      "trial": 1,
+      "native_processes": 320,
+      "exact_capture_pairs": 4160,
+      "all_exit_zero": true
+    },
+    {
+      "trial": 2,
+      "native_processes": 320,
+      "exact_capture_pairs": 4160,
+      "all_exit_zero": true
+    },
+    {
+      "trial": 3,
+      "native_processes": 320,
+      "exact_capture_pairs": 4160,
+      "all_exit_zero": true
+    }
+  ],
+  "native_processes": 960,
+  "exact_capture_pairs": 12480,
+  "qies111_accepted_capture_pairs": 5148,
+  "qies111_accepted_weight_hash_pairs": 1584,
+  "qies112_generation": "unfinished, one accepted synthetic prediction only; no end-to-end generation acceptance",
+  "real_weight_arithmetic": false,
+  "production_acceptance": false,
+  "guard_changes": false
+}

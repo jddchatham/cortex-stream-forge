@@ -1,0 +1,24 @@
+{
+  "HEAD": "14b3f7902864b02e1a84e5e6168a3cf99087e670",
+  "QIES107_original_files_verified_unchanged": 1244,
+  "QIES106_preserved_source_hashes_unchanged": true,
+  "QIES105_branch_tag_and_archive_worktree_unchanged": true,
+  "original_guards_and_geometry_unchanged": true,
+  "new_sources_and_workers_match_tested_build": true,
+  "production_FlashNext_changes": false,
+  "commits_merges_pushes": false,
+  "real_model_bytes_read": 0,
+  "baseline_reproduction": {
+    "summary": "<workspace>/qies108-worktree/qies107/runs/20261111-130001-e209c0f6/summary.json",
+    "sha256": "08351a1bf55b37efad432a77dbcf612d5206f4cff02971edeea3f3745755de79",
+    "comparisons": 63,
+    "faults": 100,
+    "refusals": 6,
+    "same_as_preserved_original": true
+  },
+  "exact_captures": 228,
+  "faults_passed": 105,
+  "resource_violations": 0,
+  "final_summary_sha256": "6bb30cd5448bfba837e80a5a19aa66782d855589519d7a9889be73805c5aa5f9",
+  "checkpoint_row_preservation_checks": 14
+}

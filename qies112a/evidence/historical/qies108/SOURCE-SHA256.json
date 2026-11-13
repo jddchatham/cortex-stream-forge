@@ -1,0 +1,15 @@
+{
+  "QIES108_RIPPLE_SYNTHETIC_ATTENTION_STREAMING.md": "9d3484fd97d872892a53f8504e9e052da18e952110fa62cf98ed74ce715d04ba",
+  "pandacode-run.sh": "f170039fee6ad0489754a58fdd6fbe7cdea364ef3dda528021bb8a3b57c1bbf6",
+  "qies108/README.md": "1c0f45c1e39ce3ad3f54542c7d8a75b700b74d2b56f837cdd6f85f076d0c0dec",
+  "qies108/build.py": "6d7c2a56d6c1b8ad88e707b43e29cf9bce66ea4865bfabce6e62b75d38d62f4d",
+  "qies108/common.h": "183b3a7aa45a50f5cdcc64ad5ccb856f0e9bfa31a886d65247348c47c6f03b39",
+  "qies108/faults.inc": "3573f702b48b7a2424887e3c5d76092897cf4f16c3e84693119eb296bcd0347a",
+  "qies108/final-integrity.json": "4683e9bf7091330d294d8e52a890f491b0c3bc3885a08b5cd920fa350022f451",
+  "qies108/fixture_check.cpp": "7d96ec0a52c0de2a88c62d605985cb19ab970d47b18092959589936718585ffd",
+  "qies108/measurements.json": "17deae887080944835e8133116752e1ad1c0f05724829bf011d411e14bce2f80",
+  "qies108/preservation.json": "1d6f2321d81031cefbfdca3f002869e60d154424e12bc1e226e79521e4e66d19",
+  "qies108/reference.cpp": "398beb017b8a6cbd167970e076e3f0b62b3a73633f51ca2bc38bee3c44879a0d",
+  "qies108/run.py": "a360a1dc5db27e5adfb11ee58911589b8cca051a7eb8df3e1a855ecd8aec76da",
+  "qies108/stream.cpp": "bd6de45b6a0e859a8c5f7874f1b47e383e2a0082f68c3f5e43538d86d05b4f75"
+}

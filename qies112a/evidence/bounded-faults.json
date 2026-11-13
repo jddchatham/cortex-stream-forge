@@ -1,0 +1,503 @@
+{
+  "passed": true,
+  "original_hooks": 78,
+  "state_contract_refusals": 5,
+  "cases": [
+    {
+      "fault": "after-backend",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "qk.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "qk.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.before-copy",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.after-copy",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.before-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.after-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.after-key-update",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.after-value-update",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "attention.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "attention.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "kv.after-download",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "attention-residual.after",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "between-branches",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "state.before-serialization",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "state.after-serialization",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "after-cleanup-before-publish",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "before-publish",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "q.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "q.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "q.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "q.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "q.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "k.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "k.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "k.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "k.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "k.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "v.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "v.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "v.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "v.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "v.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "gate.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "gate.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "gate.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "gate.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "gate.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "output.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "output.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "output.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "output.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "output.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-gate.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-gate.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-gate.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-gate.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-gate.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-up.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-up.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-up.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-up.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-up.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-down.before-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-down.after-load",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-down.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-down.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-down.after-output",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-input-norm.before-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-input-norm.after-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-input-norm.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-input-norm.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-active.before-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-active.after-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-active.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-active.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-post-norm.before-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-post-norm.after-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-post-norm.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-post-norm.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-residual.before-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-residual.after-buffer",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-residual.before-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "ffn-residual.after-compute",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "capture.attention-residual.before",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "capture.attention-residual.after",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "capture.final.before",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "capture.final.after",
+      "exit_status": 1,
+      "signal": null,
+      "passed": true
+    },
+    {
+      "fault": "truncated",
+      "exit_status": 1,
+      "passed": true
+    },
+    {
+      "fault": "corrupted",
+      "exit_status": 1,
+      "passed": true
+    },
+    {
+      "fault": "cross-layer",
+      "exit_status": 1,
+      "passed": true
+    },
+    {
+      "fault": "wrong-position",
+      "exit_status": 1,
+      "passed": true
+    },
+    {
+      "fault": "invalid-layer",
+      "exit_status": 1,
+      "passed": true
+    }
+  ],
+  "real_malloc_OOM_forced": false,
+  "failure_model": "original bounded exception hooks at allocation/execution boundaries",
+  "source_checkpoint_unchanged": true
+}
